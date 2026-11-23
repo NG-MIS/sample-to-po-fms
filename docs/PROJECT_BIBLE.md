@@ -99,5 +99,6 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 23 Nov 2026 | Project uploaded to GitHub for the first time |
 | 23 Nov 2026 | Project notes added: this bible, progress, future, decisions |
 | 23 Nov 2026 | Project set up: Supabase project created, React starter in the project folder, GitHub repository created, starter page confirmed "Connected to the database" |

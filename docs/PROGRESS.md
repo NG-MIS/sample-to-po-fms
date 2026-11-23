@@ -19,16 +19,16 @@ until it is ready for CAD.
 | 23 Nov 2026 | Starter page confirmed "Connected to the database" on the office computer |
 | 23 Nov 2026 | GitHub repository `NG-MIS/sample-to-po-fms` created |
 | 23 Nov 2026 | Project notes added (bible, progress, future, decisions) |
+| 23 Nov 2026 | Project uploaded to GitHub for the first time |
 
 ## Next, in order
 
-1. Upload the project folder to GitHub for the first time
-2. Define the sample steps
-3. Build the reusable building blocks (table, popup, image viewer, form)
-4. Sample stage
-5. CAD stage
-6. Purchase order stage
-7. Receiving stage
+1. Define the sample steps
+2. Build the reusable building blocks (table, popup, image viewer, form)
+3. Sample stage
+4. CAD stage
+5. Purchase order stage
+6. Receiving stage
 
 ## Open questions
 
