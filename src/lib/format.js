@@ -12,6 +12,22 @@ export function formatDateTime(value) {
   return dateTime.format(new Date(value))
 }
 
+const dateOnly = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+
+// For plain dates stored as YYYY-MM-DD (no time of day).
+export function formatDate(value) {
+  if (!value) return ''
+  const [year, month, day] = value.split('-').map(Number)
+  return dateOnly.format(new Date(year, month - 1, day))
+}
+
+// Today's date on this computer, as YYYY-MM-DD.
+export function todayLocal() {
+  const now = new Date()
+  const pad = (number) => String(number).padStart(2, '0')
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+}
+
 export function initials(name) {
   return (name || '')
     .split(/\s+/)
@@ -28,7 +44,9 @@ export function friendlyError(error) {
   if (error.code === '23505') {
     return message.includes('email')
       ? 'That email is already in the user master.'
-      : 'That name already exists.'
+      : message.includes('prefix')
+        ? 'That prefix already exists.'
+        : 'That name already exists.'
   }
   if (error.code === '42501' || /row-level security/i.test(message)) {
     return 'You do not have permission to do this.'

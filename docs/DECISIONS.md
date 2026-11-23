@@ -5,6 +5,17 @@ Newest first. A changed decision is not deleted: a new entry is added that repla
 
 | Date | Decision | Reason |
 |---|---|---|
+| 23 Nov 2026 | Samples are written only through one database routine, never directly by a screen | The sample number and the who-may-do-what rules cannot be bypassed |
+| 23 Nov 2026 | Department "Sample" and role "Designer" are created by the system and cannot be renamed or switched inactive | They decide who is a designer; renaming them would silently break the pick-list and the right to create |
+| 23 Nov 2026 | Sample files are private; a file can be viewed only by people who can see its sample | Concept images are design work and should not leak |
+| 23 Nov 2026 | Reference on a sample: one choice from a References list in Masters, plus one picture, both optional | Nihal chose a list he maintains himself |
+| 23 Nov 2026 | Remarks on a sample: typed notes, voice notes and pictures, any number of each, all optional | Nihal's request |
+| 23 Nov 2026 | Only authority All can change a sample after it is saved; nobody can delete one | Nihal: "authority all can change, no one else" |
+| 23 Nov 2026 | Only people with the role Designer or authority All can create a sample | Nihal's rule |
+| 23 Nov 2026 | Creation date defaults to today; earlier dates allowed, future dates not ("today" is counted in India time) | Agreed |
+| 23 Nov 2026 | Sample number = prefix, dash, number with no padding. Several series, each with its own prefix and starting number from the Numbering master; the person picks the prefix | Matches how numbers are written today: LB-2323, VM-511, ABC-100023 |
+| 23 Nov 2026 | Prefixes are stored in capitals, letters and digits only, up to 10 characters | "lb" and "LB" can never become two series |
+| 23 Nov 2026 | A used series has its prefix and starting number locked | Old sample numbers must keep making sense |
 | 23 Nov 2026 | The app runs on port 3000 on a computer | It is the address Supabase sends people back to from email links, so no dashboard setting is needed yet |
 | 23 Nov 2026 | Pictures are stored privately and shown through temporary links; "Copy link" gives a link that works for 7 days | Avatars now, concept images later, should not be open to anyone on the internet |
 | 23 Nov 2026 | The first person to set up sign-in becomes the first user with authority All | Someone has to exist before anyone can be added |

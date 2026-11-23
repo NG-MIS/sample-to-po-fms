@@ -4,12 +4,18 @@ import { useAuth } from '../lib/auth.jsx'
 
 const MENU = [
   {
+    title: 'Sampling',
+    links: [{ to: '/samples', label: 'Samples' }],
+  },
+  {
     title: 'Masters',
     links: [
       { to: '/users', label: 'User master' },
       { to: '/departments', label: 'Departments' },
       { to: '/designations', label: 'Designations' },
       { to: '/roles', label: 'Roles' },
+      { to: '/numbering', label: 'Numbering' },
+      { to: '/references', label: 'References' },
     ],
   },
 ]

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './supabase.js'
 
-// Pictures are kept private. A picture is shown through a temporary link
-// that only signed-in people can ask for.
+// Pictures and voice notes are kept private. A file is shown through a
+// temporary link that only signed-in people can ask for.
 const VIEW_SECONDS = 60 * 60
 const SHARE_SECONDS = 60 * 60 * 24 * 7
 const MAX_BYTES = 5 * 1024 * 1024
@@ -51,11 +51,42 @@ export function checkImageFile(file) {
   return ''
 }
 
-// Uploads a picture and gives back where it was stored.
-export async function uploadImage(bucket, file, folder) {
-  const extension = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }[file.type]
+const EXTENSIONS = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'audio/webm': 'webm',
+  'audio/mp4': 'm4a',
+  'audio/ogg': 'ogg',
+  'audio/mpeg': 'mp3',
+  'audio/wav': 'wav',
+}
+
+// Uploads a picture or voice note and gives back where it was stored.
+export async function uploadFile(bucket, file, folder) {
+  const type = file.type.split(';')[0]
+  const extension = EXTENSIONS[type]
+  if (!extension) throw new Error('This kind of file cannot be stored.')
   const path = `${folder}/${crypto.randomUUID()}.${extension}`
-  const { error } = await supabase.storage.from(bucket).upload(path, file, { contentType: file.type })
+  const { error } = await supabase.storage.from(bucket).upload(path, file, { contentType: type })
   if (error) throw error
   return path
+}
+
+export const uploadImage = uploadFile
+
+// A temporary address for a file that has been chosen but not uploaded yet.
+export function useObjectUrl(file) {
+  const [state, setState] = useState({ file: null, url: null })
+
+  useEffect(() => {
+    if (!file) return undefined
+    // The address is created and released together, so it is never used after release.
+    const url = URL.createObjectURL(file)
+    // eslint-disable-next-line react/set-state-in-effect
+    setState({ file, url })
+    return () => URL.revokeObjectURL(url)
+  }, [file])
+
+  return state.file === file ? state.url : null
 }

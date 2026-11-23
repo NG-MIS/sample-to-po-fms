@@ -42,7 +42,8 @@ p {
 }
 
 button,
-input {
+input,
+textarea {
   font: inherit;
   color: inherit;
 }
@@ -116,6 +117,10 @@ input {
 }
 .icon-btn:hover {
   background: var(--off-soft);
+}
+.link--strong {
+  font-weight: 600;
+  text-decoration: none;
 }
 .link {
   padding: 0;
@@ -719,4 +724,159 @@ input {
   justify-content: space-between;
   gap: 12px;
   margin-top: 14px;
+}
+
+/* ---------- Remarks, voice notes, details ---------- */
+
+.section-title {
+  margin: 4px 0 10px;
+  font-size: 14px;
+}
+.section-title .hint {
+  font-weight: 400;
+  margin-left: 6px;
+}
+.remarks {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.remarks-part {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+.remarks-label {
+  margin-bottom: 8px;
+  font-weight: 600;
+  font-size: 13px;
+}
+.remarks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 10px;
+  padding: 0;
+  list-style: none;
+}
+.remarks-list:last-child {
+  margin-bottom: 0;
+}
+.remark-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+}
+.remark-row--view {
+  flex-wrap: wrap;
+}
+.remark-text {
+  flex: 1;
+  min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.remark-add {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.remark-add textarea {
+  resize: vertical;
+}
+.voice {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+}
+.remark-pictures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 10px;
+  padding: 0;
+  list-style: none;
+}
+.remark-pictures:last-child {
+  margin-bottom: 0;
+}
+.remark-picture {
+  position: relative;
+}
+.remark-picture-remove {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  background: var(--surface);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+}
+.remark-picture-remove:hover {
+  background: var(--bad-soft);
+  color: var(--bad);
+}
+.recorder {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.recorder-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--bad);
+  font-weight: 600;
+}
+.recorder-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--bad);
+  animation: recorder-pulse 1s ease-in-out infinite;
+}
+@keyframes recorder-pulse {
+  50% {
+    opacity: 0.25;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .recorder-dot {
+    animation: none;
+  }
+}
+.details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 16px;
+  margin: 0 0 18px;
+}
+.details dt {
+  margin-bottom: 2px;
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+.details dd {
+  margin: 0;
+}
+.cell-with-image {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.row-actions {
+  display: inline-flex;
+  gap: 6px;
 }

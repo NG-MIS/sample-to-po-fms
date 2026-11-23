@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import ClickableImage from './ClickableImage.jsx'
-import { checkImageFile } from '../lib/images.js'
+import { checkImageFile, useObjectUrl } from '../lib/images.js'
 
 // Picture field for forms. Shows the current picture (clickable), lets the
 // person choose a new one or remove it. The new file is handed back through
@@ -8,9 +8,7 @@ import { checkImageFile } from '../lib/images.js'
 export default function ImageUpload({ bucket, path, file, onFileChange, onRemove, alt, round = false, fallbackName }) {
   const inputRef = useRef(null)
   const [error, setError] = useState('')
-  const previewUrl = useMemo(() => (file ? URL.createObjectURL(file) : null), [file])
-
-  useEffect(() => () => previewUrl && URL.revokeObjectURL(previewUrl), [previewUrl])
+  const previewUrl = useObjectUrl(file)
 
   const choose = (event) => {
     const chosen = event.target.files?.[0]

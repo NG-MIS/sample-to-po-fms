@@ -20,24 +20,43 @@ It is a fresh build, not the next version of the earlier sample system.
 | Stage | What happens | Detail status |
 |---|---|---|
 | 0. Masters and sign-in | People, departments, designations and roles are kept; people sign in | Built (step 1) |
-| 1. Sample | A sample is created and moves through its steps, each step tracked | Creation headers agreed (see 2.1), steps not yet defined |
+| 1. Sample | A sample is created and moves through its steps, each step tracked | Sample creation built (step 2, see 2.1). Later steps not yet defined |
 | 2. CAD | The CAD drawing is made for the sample and sent for approval | Not yet defined |
 | 3. Purchase order | Once approved, a purchase order is raised for the materials | Not yet defined |
 | 4. Receiving | Materials arrive against the purchase order, fully or in parts | Not yet defined |
 
 Each stage is filled in here as it is discussed and agreed, one step at a time.
 
-### 2.1 Sample creation (agreed, not yet built)
+### 2.1 Sample creation (built)
 
 | Header | How it gets filled |
 |---|---|
 | SL NO | Automatic running number |
 | TIMESTAMP | Automatic, the moment of saving |
 | ENTERED BY | Automatic, the signed-in person |
-| SAMPLE NO | To be decided (typed or automatic) |
-| CREATION DATE | Chosen by the person, defaulting to today |
-| DESIGNER | Picked from people whose department is "Sample" and who hold the role "Designer" |
-| CONCEPT IMAGE | Uploaded picture, clickable |
+| SAMPLE NO | Automatic. The person picks a PREFIX; the system adds the next number of that series |
+| CREATION DATE | Chosen by the person, defaulting to today. Earlier dates allowed, future dates not |
+| DESIGNER | Required. Picked from active people whose department is "Sample" and who hold the role "Designer" |
+| CONCEPT IMAGE | Required. Uploaded picture, clickable |
+| REFERENCE | Optional. One choice from the References list, and one picture |
+| REMARKS | Optional. Any number of typed notes, voice notes and pictures |
+
+**Sample number.** Prefix, a dash, then the number with no padding: `LB-2323`, `VM-511`,
+`ABC-100023`. Each prefix is its own series in the Numbering master, with its own starting
+number. A number is given out exactly once, with no gaps, and never changes afterwards.
+Once a series has been used, its prefix and starting number are locked.
+
+**Who can do what with a sample.**
+
+| Action | Who |
+|---|---|
+| Create | People with the role Designer, or authority All |
+| Change after saving | Authority All only. The sample number never changes |
+| Delete | Nobody |
+| See | All: every sample. Self: samples they entered or are the designer of. Department(s): also samples whose enterer or designer belongs to one of their departments |
+
+**Names the system depends on.** The department "Sample" and the role "Designer" are created
+automatically and cannot be renamed or switched inactive, because they decide who is a designer.
 
 Pick-list pattern for the whole system: each people pick-list is defined as "department X plus role Y".
 Adding a person to the user master with that department and role makes them appear automatically.
@@ -104,6 +123,15 @@ Created by `supabase/migrations/20261123113937_masters_and_sign_in.sql`.
 | `user_roles` | Which roles each person holds (a person can hold several) |
 | `user_authority_departments` | Which departments a person works with when their authority is Department(s) |
 | `avatars` (picture store) | Avatar pictures. Private: only signed-in people can view them |
+| `sample_series` | Numbering master: prefix, starting number, last number used, active or inactive |
+| `sample_reference_options` | References list: name, active or inactive |
+| `samples` | One row per sample: sample number, creation date, designer, concept image, reference |
+| `sample_remarks` | Remarks of a sample: typed notes, voice notes, pictures |
+| `samples` (file store) | Concept images, reference images, remark pictures and voice notes. Private: a file can be viewed only by people who can see its sample |
+
+Step 2 was created by `supabase/migrations/20261123130147_numbering_references_samples.sql`.
+Samples are created and changed only through one database routine (`save_sample`), which
+checks who is asking and gives out the sample number. Screens cannot write to samples directly.
 
 Every row in the four lists records SL NO, TIMESTAMP and ENTERED BY automatically. The database
 fills these itself, so a screen cannot fake them.
@@ -125,8 +153,11 @@ Rules the database enforces, whatever the screens do:
 | Departments | List, add and edit | Built |
 | Designations | List, add and edit | Built |
 | Roles | List, add and edit | Built |
+| Numbering | List, add and edit series (prefix and starting number) | Built |
+| References | List, add and edit | Built |
+| Samples | List with search, sort and filter; new sample form; view; edit (authority All) | Built |
 
-The three small lists share one screen file (`SimpleListPage`). The starter page from the
+The simple lists (departments, designations, roles, references) share one screen file (`SimpleListPage`). The starter page from the
 set-up has been replaced by these screens.
 
 ## 9. Reusable building blocks
@@ -142,6 +173,8 @@ All in `src/components`. A screen never builds its own version of these.
 | `ClickableImage` | Thumbnail that opens the picture popup. Shows initials when there is no picture |
 | `ImageUpload` | Picture field for forms: choose, preview, change, remove |
 | `PickList` | Pick-list, single or multi-tick, with search |
+| `RemarksEditor`, `RemarksView` | Remarks in a form (text, voice, pictures, any number of each) and their read-only display |
+| `VoiceRecorder`, `VoiceNote` | Record a voice note from the microphone; play one back |
 | `Popover` | Floating panel under a button, used by pick-lists and column filters |
 | `Field`, `Tick`, `Badge` | Labelled form row, tick box, coloured yes/no label |
 | `Layout`, `PageHead` | Menu on the left, signed-in person on top, screen heading |
@@ -189,6 +222,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 23 Nov 2026 | Step 2 built: Numbering master, References list, sample creation with automatic sample number, reference, and remarks (text, voice, pictures) |
 | 23 Nov 2026 | Step 1 built: department, designation and role lists, user master, sign-in, and all reusable building blocks |
 | 23 Nov 2026 | Sample creation headers and the DESIGNER pick-list rule agreed |
 | 23 Nov 2026 | Project uploaded to GitHub for the first time |

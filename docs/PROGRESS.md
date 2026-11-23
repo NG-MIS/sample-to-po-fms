@@ -6,10 +6,13 @@ Last updated: 23 Nov 2026
 
 ## Now
 
-Step 1 (masters and sign-in) is built. Waiting for Nihal to set up the first sign-in,
-try the screens, and enter the real departments, designations, roles and people.
+Step 2 (numbering master, references and sample creation) is built. Nihal has set up the
+first sign-in. Waiting for him to try step 2 against the real database.
 
-Next to discuss: sample creation (SAMPLE NO: typed or automatic?), then the sample steps.
+Before the first sample can be created, the masters need: at least one series in Numbering,
+and at least one active person in department Sample with the role Designer.
+
+Next to discuss: what happens to a sample after it is created (the next sample step).
 
 ## Done
 
@@ -26,17 +29,18 @@ Next to discuss: sample creation (SAMPLE NO: typed or automatic?), then the samp
 | 23 Nov 2026 | Step 1 database: three small lists, user master, sign-in rules, private avatar store (19 rule checks passed) |
 | 23 Nov 2026 | Step 1 screens: sign-in, user master, departments, designations, roles |
 | 23 Nov 2026 | Reusable building blocks: table, popup, picture viewer, picture upload, pick-list (45 screen checks passed with stand-in data) |
+| 23 Nov 2026 | First sign-in set up by Nihal on the real database (sign-up and email confirmation worked) |
+| 23 Nov 2026 | Step 2 database: numbering master, references, samples, remarks, private file store (33 rule checks passed) |
+| 23 Nov 2026 | Step 2 screens: Numbering, References, Samples with new, view and edit; remarks with text, voice and pictures (37 screen checks passed with stand-in data) |
 
 ## Next, in order
 
-1. Nihal sets up the first sign-in and tries step 1 against the real database
-2. Sample creation screen
-3. Define and build the remaining sample steps
+1. Nihal tries step 2 against the real database (upload, voice note, sample number)
+2. Define and build the next sample step
 4. CAD stage
 5. Purchase order stage
 6. Receiving stage
 
 ## Open questions
 
-- SAMPLE NO: typed by the person or made automatically? If automatic, in what format?
 - What are the sample steps after creation, in order?
