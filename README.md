@@ -22,6 +22,7 @@ The page should say "Connected to the database".
 | `src/pages` | One file per screen |
 | `src/lib` | Shared helpers, including the database connection |
 | `supabase/migrations` | Every database structure change, in order |
+| `docs` | The project bible and other project notes |
 
 ## Rules for every screen
 
@@ -29,6 +30,15 @@ The page should say "Connected to the database".
 2. Every list has search, sort and a Google-Sheets-style filter.
 3. Every image is clickable and opens in a popup with full screen, copy link and close.
 4. Esc closes any popup or form. It asks "Discard changes?" only when there is unsaved work.
+
+## Project notes
+
+| File | What it is |
+|---|---|
+| `docs/PROJECT_BIBLE.md` | The single source of truth, updated with every change |
+| `docs/PROGRESS.md` | Done, in progress, and next |
+| `docs/FUTURE.md` | Later ideas and things to settle before going live |
+| `docs/DECISIONS.md` | Every important choice and the reason for it |
 
 ## Settings
 
