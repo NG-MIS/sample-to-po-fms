@@ -10,9 +10,9 @@ purchase order, and receiving of materials.
 
 1. Install Node.js (version 20 or newer) if it is not already installed.
 2. Open a terminal in this folder and run `npm install` (first time only).
-3. Run `npm run dev` and open the address it prints.
+3. Run `npm run dev` and open `http://localhost:3000`.
 
-The page should say "Connected to the database".
+The sign-in page opens. The first time, choose "First time here?" to set up your sign-in.
 
 ## Folder layout
 

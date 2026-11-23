@@ -1,39 +1,33 @@
-import { useEffect, useState } from 'react'
-import { checkConnection } from './lib/supabase.js'
-
-const STATUS_TEXT = {
-  checking: 'Checking the database connection…',
-  connected: 'Connected to the database',
-  failed: 'Could not reach the database',
-}
+import { Navigate, Route, Routes } from 'react-router-dom'
+import Layout from './components/Layout.jsx'
+import { useAuth } from './lib/auth.jsx'
+import SignIn, { NoAccess, SetPassword } from './pages/SignIn.jsx'
+import SimpleListPage from './pages/SimpleListPage.jsx'
+import UsersPage from './pages/UsersPage.jsx'
 
 export default function App() {
-  const [status, setStatus] = useState('checking')
-  const [detail, setDetail] = useState('')
+  const { session, profile, loading, recovery, finishRecovery, signOut } = useAuth()
 
-  useEffect(() => {
-    let cancelled = false
-    checkConnection()
-      .then(() => !cancelled && setStatus('connected'))
-      .catch((error) => {
-        if (cancelled) return
-        setStatus('failed')
-        setDetail(error.message)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [])
+  if (loading) return <div className="splash">Loading…</div>
+  if (recovery && session) return <SetPassword onDone={finishRecovery} />
+  if (!session) return <SignIn />
+  if (!profile) return <NoAccess onSignOut={signOut} />
 
   return (
-    <main className="starter">
-      <h1>Sample to PO FMS</h1>
-      <p className="starter-sub">Sample → CAD approval → Purchase order → Material receiving</p>
-      <p className={`starter-status starter-status--${status}`} role="status">
-        <span className="starter-dot" aria-hidden="true" />
-        {STATUS_TEXT[status]}
-      </p>
-      {detail && <p className="starter-detail">{detail}</p>}
-    </main>
+    <Layout>
+      <Routes>
+        <Route path="/users" element={<UsersPage />} />
+        <Route
+          path="/departments"
+          element={<SimpleListPage key="departments" table="departments" title="Departments" singular="department" />}
+        />
+        <Route
+          path="/designations"
+          element={<SimpleListPage key="designations" table="designations" title="Designations" singular="designation" />}
+        />
+        <Route path="/roles" element={<SimpleListPage key="roles" table="roles" title="Roles" singular="role" />} />
+        <Route path="*" element={<Navigate to="/users" replace />} />
+      </Routes>
+    </Layout>
   )
 }

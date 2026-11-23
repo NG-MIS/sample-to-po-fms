@@ -16,3 +16,4 @@ How Nihal wants to work:
 - Ask one question at a time.
 - Plain language in explanations and in these docs.
 - Follow the standing rules for every screen in section 5 of the bible.
+- Reuse the building blocks in `src/components` (listed in section 9 of the bible). Never build a second table, popup, picture viewer or pick-list.

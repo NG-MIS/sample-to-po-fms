@@ -7,8 +7,12 @@ Last updated: 23 Nov 2026
 
 ## To settle before going live
 
-- Sign-in and roles: who can see and change what
-- Where the screens are hosted on the web
+- Where the screens are hosted on the web. When that is decided, the web address must be added
+  in the Supabase dashboard (sign-in settings) so that email links come back to it
+- Email sending: Supabase's built-in email is meant for testing and only sends a few emails
+  per hour. Before the whole team sets up sign-in, connect a proper email sender
+- Make Self and Department(s) authority limit which sample records a person sees, once
+  sample records exist
 - Supabase plan: the free plan allows only 2 active projects, and "NG OWN ERP" is paused
   to make room for this one
 
