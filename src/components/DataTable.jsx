@@ -1,9 +1,15 @@
 import { useMemo, useRef, useState } from 'react'
 import Popover from './Popover.jsx'
+import { recall, remember } from '../lib/remember.js'
+import { useIsPhone } from '../lib/screen.js'
 
 // The one table used on every screen: search box, click-to-sort headings,
-// and a Google-Sheets-style filter on every column.
+// a Google-Sheets-style filter on every column, and a column selector.
+// On a phone the rows are shown as cards, with the same search, sort,
+// filter and column choices.
 //
+// tableId - a short name for this table, used to remember which columns
+//           the person chose to show (in their own browser).
 // columns: [{
 //   key, header,
 //   value(row)      - text, number, or a list of texts. Drives search, sort and filter.
@@ -12,6 +18,7 @@ import Popover from './Popover.jsx'
 //   sortValue(row)  - optional, what to sort by when it differs from the value (e.g. a date)
 //   align, width    - optional
 // }]
+// A column with no header (such as the row buttons) is always shown.
 
 const BLANK = '(Blanks)'
 
@@ -35,6 +42,12 @@ function compare(a, b) {
   if (typeof a === 'number' && typeof b === 'number') return a - b
   return collator.compare(String(a), String(b))
 }
+
+const FilterIcon = () => (
+  <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+    <path d="M1 2h10L7.2 6.4V10L4.8 11V6.4z" fill="currentColor" />
+  </svg>
+)
 
 function FilterPanel({ column, rows, allowed, sort, onSort, onApply, onClose, anchorRef }) {
   const values = useMemo(() => {
@@ -76,6 +89,7 @@ function FilterPanel({ column, rows, allowed, sort, onSort, onApply, onClose, an
 
   return (
     <Popover anchorRef={anchorRef} onClose={onClose} width={260} className="popover--filter">
+      <div className="popover-title">{column.header}</div>
       <div className="filter-sort">
         <button type="button" className={`option ${sortDir === 'asc' ? 'option--on' : ''}`} onClick={() => onSort('asc')}>
           Sort A → Z
@@ -164,9 +178,7 @@ function HeaderCell({ column, rows, sort, allowed, onSort, onFilter }) {
           title="Filter"
           onClick={() => setOpen(true)}
         >
-          <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
-            <path d="M1 2h10L7.2 6.4V10L4.8 11V6.4z" fill="currentColor" />
-          </svg>
+          <FilterIcon />
         </button>
       </div>
       {open && (
@@ -191,7 +203,102 @@ function HeaderCell({ column, rows, sort, allowed, onSort, onFilter }) {
   )
 }
 
+// Tick list of columns. Columns with no header are not listed: they always show.
+function ColumnPicker({ columns, hidden, onChange, onClose, anchorRef }) {
+  const choosable = columns.filter((column) => column.header)
+  const shownCount = choosable.filter((column) => !hidden.has(column.key)).length
+
+  const toggle = (key) => {
+    const next = new Set(hidden)
+    if (next.has(key)) next.delete(key)
+    else if (shownCount > 1) next.add(key)
+    onChange(next)
+  }
+
+  return (
+    <Popover anchorRef={anchorRef} onClose={onClose} width={240} className="popover--columns">
+      <div className="popover-title">Show columns</div>
+      <ul className="option-list">
+        {choosable.map((column) => {
+          const isShown = !hidden.has(column.key)
+          return (
+            <li key={column.key}>
+              <label className="option">
+                <input
+                  type="checkbox"
+                  checked={isShown}
+                  disabled={isShown && shownCount === 1}
+                  onChange={() => toggle(column.key)}
+                />
+                <span>{column.header}</span>
+              </label>
+            </li>
+          )
+        })}
+      </ul>
+      <div className="popover-foot">
+        {hidden.size > 0 && (
+          <button type="button" className="btn btn--small" onClick={() => onChange(new Set())}>
+            Show all
+          </button>
+        )}
+        <button type="button" className="btn btn--small btn--primary" onClick={onClose}>
+          Done
+        </button>
+      </div>
+    </Popover>
+  )
+}
+
+// Phone only: the headings are not on screen, so sort and filter are reached from one button.
+function PhoneSortFilter({ columns, rows, sort, filters, onSort, onFilter, anchorRef, onClose }) {
+  const [columnKey, setColumnKey] = useState(null)
+  const usable = columns.filter((column) => typeof column.value === 'function')
+  const column = usable.find((item) => item.key === columnKey)
+
+  if (column) {
+    return (
+      <FilterPanel
+        column={column}
+        rows={rows}
+        allowed={filters[column.key]}
+        sort={sort}
+        anchorRef={anchorRef}
+        onClose={onClose}
+        onSort={(dir) => {
+          onSort(column.key, dir)
+          onClose()
+        }}
+        onApply={(next) => {
+          onFilter(column.key, next)
+          onClose()
+        }}
+      />
+    )
+  }
+
+  return (
+    <Popover anchorRef={anchorRef} onClose={onClose} width={240} className="popover--columns">
+      <div className="popover-title">Sort or filter by</div>
+      <ul className="option-list">
+        {usable.map((item) => (
+          <li key={item.key}>
+            <button type="button" className="option" onClick={() => setColumnKey(item.key)}>
+              <span>{item.header}</span>
+              <span className="option-mark">
+                {sort?.key === item.key ? (sort.dir === 'asc' ? 'A → Z' : 'Z → A') : ''}
+                {filters[item.key] ? ' filtered' : ''}
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </Popover>
+  )
+}
+
 export default function DataTable({
+  tableId,
   columns,
   rows,
   rowKey = 'id',
@@ -200,14 +307,30 @@ export default function DataTable({
   emptyText = 'Nothing here yet.',
   searchPlaceholder = 'Search…',
 }) {
+  const isPhone = useIsPhone()
+  const columnsRef = useRef(null)
+  const phoneRef = useRef(null)
+  const memoryKey = tableId ? `table-columns:${tableId}` : null
+
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState(null)
   const [filters, setFilters] = useState({})
+  const [hidden, setHidden] = useState(() => new Set(memoryKey ? recall(memoryKey, []) : []))
+  const [panel, setPanel] = useState(null) // null | 'columns' | 'phone'
 
+  const shownColumns = useMemo(() => columns.filter((column) => !hidden.has(column.key)), [columns, hidden])
   const filterCount = Object.keys(filters).length
 
+  const changeHidden = (next) => {
+    setHidden(next)
+    if (memoryKey) remember(memoryKey, [...next])
+    // A hidden column must not keep filtering or sorting rows out of sight.
+    setFilters((previous) => Object.fromEntries(Object.entries(previous).filter(([key]) => !next.has(key))))
+    setSort((previous) => (previous && next.has(previous.key) ? null : previous))
+  }
+
   const visible = useMemo(() => {
-    const active = columns.filter((column) => filters[column.key] && column.value)
+    const active = shownColumns.filter((column) => filters[column.key] && column.value)
     const sets = active.map((column) => new Set(filters[column.key]))
     let out = rows.filter((row) =>
       active.every((column, index) => asList(column.value(row)).some((item) => sets[index].has(item))),
@@ -215,16 +338,18 @@ export default function DataTable({
 
     const q = search.trim().toLowerCase()
     if (q) {
-      const searchable = columns.filter((column) => column.value)
+      const searchable = shownColumns.filter((column) => column.value)
       out = out.filter((row) => searchable.some((column) => asText(column.value(row)).toLowerCase().includes(q)))
     }
 
-    const sortColumn = sort && columns.find((column) => column.key === sort.key)
+    const sortColumn = sort && shownColumns.find((column) => column.key === sort.key)
     if (sortColumn) {
-      const get = sortColumn.sortValue || ((row) => {
-        const value = sortColumn.value(row)
-        return typeof value === 'number' ? value : asText(value)
-      })
+      const get =
+        sortColumn.sortValue ||
+        ((row) => {
+          const value = sortColumn.value(row)
+          return typeof value === 'number' ? value : asText(value)
+        })
       const direction = sort.dir === 'asc' ? 1 : -1
       // Blank values stay at the bottom whichever way the column is sorted.
       out = [...out].sort((a, b) => {
@@ -237,7 +362,7 @@ export default function DataTable({
       })
     }
     return out
-  }, [rows, columns, filters, search, sort])
+  }, [rows, shownColumns, filters, search, sort])
 
   const changeSort = (key, dir) => setSort(dir ? { key, dir } : null)
   const changeFilter = (key, allowed) =>
@@ -247,6 +372,12 @@ export default function DataTable({
       else delete next[key]
       return next
     })
+
+  const emptyMessage = loading
+    ? 'Loading…'
+    : rows.length === 0
+      ? emptyText
+      : 'No rows match the search and filters.'
 
   return (
     <div className="table-block">
@@ -261,6 +392,24 @@ export default function DataTable({
             onChange={(event) => setSearch(event.target.value)}
           />
         </div>
+        {isPhone && (
+          <button
+            type="button"
+            ref={phoneRef}
+            className={`btn btn--small ${filterCount > 0 || sort ? 'btn--marked' : ''}`}
+            onClick={() => setPanel('phone')}
+          >
+            <FilterIcon /> Sort and filter{filterCount > 0 ? ` (${filterCount})` : ''}
+          </button>
+        )}
+        <button
+          type="button"
+          ref={columnsRef}
+          className={`btn btn--small ${hidden.size > 0 ? 'btn--marked' : ''}`}
+          onClick={() => setPanel('columns')}
+        >
+          Columns{hidden.size > 0 ? ` (${hidden.size} hidden)` : ''}
+        </button>
         <span className="table-count" role="status">
           {visible.length === rows.length ? `${rows.length} rows` : `Showing ${visible.length} of ${rows.length}`}
         </span>
@@ -279,43 +428,90 @@ export default function DataTable({
         )}
         <div className="table-toolbar-right">{toolbar}</div>
       </div>
-      <div className="table-scroll">
-        <table className="table">
-          <thead>
-            <tr>
-              {columns.map((column) => (
-                <HeaderCell
-                  key={column.key}
-                  column={column}
-                  rows={rows}
-                  sort={sort}
-                  allowed={filters[column.key]}
-                  onSort={changeSort}
-                  onFilter={changeFilter}
-                />
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {visible.map((row) => (
-              <tr key={row[rowKey]}>
-                {columns.map((column) => (
-                  <td key={column.key} style={{ textAlign: column.align }}>
-                    {column.render ? column.render(row) : asText(column.value?.(row))}
-                  </td>
+
+      {panel === 'columns' && (
+        <ColumnPicker
+          columns={columns}
+          hidden={hidden}
+          onChange={changeHidden}
+          onClose={() => setPanel(null)}
+          anchorRef={columnsRef}
+        />
+      )}
+      {panel === 'phone' && (
+        <PhoneSortFilter
+          columns={shownColumns}
+          rows={rows}
+          sort={sort}
+          filters={filters}
+          onSort={changeSort}
+          onFilter={changeFilter}
+          anchorRef={phoneRef}
+          onClose={() => setPanel(null)}
+        />
+      )}
+
+      {isPhone ? (
+        <ul className="cards">
+          {visible.map((row) => (
+            <li key={row[rowKey]} className="card">
+              {shownColumns.map((column) => {
+                const content = column.render ? column.render(row) : asText(column.value?.(row))
+                if (content === null || content === undefined || content === '' || content === false) return null
+                return column.header ? (
+                  <div key={column.key} className="card-line">
+                    <span className="card-label">{column.header}</span>
+                    <span className="card-value">{content}</span>
+                  </div>
+                ) : (
+                  <div key={column.key} className="card-actions">
+                    {content}
+                  </div>
+                )
+              })}
+            </li>
+          ))}
+          {visible.length === 0 && <li className="table-empty">{emptyMessage}</li>}
+        </ul>
+      ) : (
+        <div className="table-scroll">
+          <table className="table">
+            <thead>
+              <tr>
+                {shownColumns.map((column) => (
+                  <HeaderCell
+                    key={column.key}
+                    column={column}
+                    rows={rows}
+                    sort={sort}
+                    allowed={filters[column.key]}
+                    onSort={changeSort}
+                    onFilter={changeFilter}
+                  />
                 ))}
               </tr>
-            ))}
-            {visible.length === 0 && (
-              <tr>
-                <td className="table-empty" colSpan={columns.length}>
-                  {loading ? 'Loading…' : rows.length === 0 ? emptyText : 'No rows match the search and filters.'}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {visible.map((row) => (
+                <tr key={row[rowKey]}>
+                  {shownColumns.map((column) => (
+                    <td key={column.key} style={{ textAlign: column.align }}>
+                      {column.render ? column.render(row) : asText(column.value?.(row))}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+              {visible.length === 0 && (
+                <tr>
+                  <td className="table-empty" colSpan={shownColumns.length}>
+                    {emptyMessage}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   )
 }

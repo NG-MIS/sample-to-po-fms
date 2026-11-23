@@ -144,6 +144,7 @@ export default function UsersPage() {
         </p>
       )}
       <DataTable
+        tableId="users"
         columns={columns}
         rows={people}
         loading={loading}

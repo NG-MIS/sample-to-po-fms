@@ -101,6 +101,13 @@ from the Supabase dashboard, but only if another project is paused first.
 3. **Every image is clickable.** It opens in a popup with full screen, copy link and close.
 4. **Esc closes any popup or form.** It asks "Discard changes?" only when there is unsaved
    work. With nothing to lose, it closes straight away.
+5. **Every list has a column selector.** The person ticks which columns to show. The choice is
+   remembered per table, in their own browser. Hiding a column also drops its filter and sort,
+   and search only looks at the columns on screen.
+6. **Everything works on a phone.** On a screen 720px wide or narrower: rows are shown as
+   cards instead of a wide table, sort and filter are reached from one "Sort and filter"
+   button, the menu becomes a drawer, popups and forms fill the whole screen, form fields
+   stack one per row, and nothing scrolls sideways.
 
 ## 6. How we work
 
@@ -166,7 +173,7 @@ All in `src/components`. A screen never builds its own version of these.
 
 | Block | What it does |
 |---|---|
-| `DataTable` | Table with search box, click-to-sort headings and a Sheets-style filter on every column |
+| `DataTable` | Table with search box, click-to-sort headings, a Sheets-style filter on every column, and a column selector. Turns into cards on a phone |
 | `Modal` | Popup box for forms. Handles Esc, click outside, and "Discard changes?" when there is unsaved work |
 | `ConfirmDialog` | Yes/no question on top of everything (inside `Modal.jsx`) |
 | `ImageViewer` | Picture popup: full screen, copy link, open in new tab, close |
@@ -177,7 +184,7 @@ All in `src/components`. A screen never builds its own version of these.
 | `VoiceRecorder`, `VoiceNote` | Record a voice note from the microphone; play one back |
 | `Popover` | Floating panel under a button, used by pick-lists and column filters |
 | `Field`, `Tick`, `Badge` | Labelled form row, tick box, coloured yes/no label |
-| `Layout`, `PageHead` | Menu on the left, signed-in person on top, screen heading |
+| `Layout`, `PageHead` | Menu on the left (a drawer on a phone), signed-in person on top, screen heading |
 
 Shared helpers in `src/lib`: database connection, sign-in state, Esc handling, picture links
 and upload, data loading, date and error wording.
@@ -222,6 +229,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 23 Nov 2026 | Two standing rules added and built into the shared blocks: column selector on every list, and phone layout everywhere |
 | 23 Nov 2026 | Step 2 built: Numbering master, References list, sample creation with automatic sample number, reference, and remarks (text, voice, pictures) |
 | 23 Nov 2026 | Step 1 built: department, designation and role lists, user master, sign-in, and all reusable building blocks |
 | 23 Nov 2026 | Sample creation headers and the DESIGNER pick-list rule agreed |

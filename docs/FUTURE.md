@@ -11,6 +11,8 @@ Last updated: 23 Nov 2026
   in the Supabase dashboard (sign-in settings) so that email links come back to it
 - Email sending: Supabase's built-in email is meant for testing and only sends a few emails
   per hour. Before the whole team sets up sign-in, connect a proper email sender
+- Phone use needs the app hosted on the web (or the computer's address opened from the phone
+  on the same network); a phone cannot open `localhost` on the computer
 - Supabase can refuse passwords that are known to have leaked. It is switched off; consider
   switching it on in the Supabase dashboard (sign-in settings) before the whole team joins
 - Pictures and voice notes that were uploaded for a form that was then cancelled, or removed

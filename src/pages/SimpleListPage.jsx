@@ -67,6 +67,7 @@ export default function SimpleListPage({ table, title, singular }) {
         </p>
       )}
       <DataTable
+        tableId={table}
         columns={columns}
         rows={rows}
         loading={loading}

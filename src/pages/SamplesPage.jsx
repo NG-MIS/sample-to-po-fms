@@ -100,7 +100,8 @@ export default function SamplesPage() {
         key: 'reference',
         header: 'REFERENCE',
         value: (row) => reference.get(row.reference_option_id) ?? '',
-        render: (row) => (
+        render: (row) =>
+          (row.reference_image_path || reference.get(row.reference_option_id)) && (
           <span className="cell-with-image">
             {row.reference_image_path && (
               <ClickableImage
@@ -112,7 +113,7 @@ export default function SamplesPage() {
             )}
             {reference.get(row.reference_option_id) ?? ''}
           </span>
-        ),
+          ),
       },
       {
         key: 'remarks',
@@ -169,6 +170,7 @@ export default function SamplesPage() {
         </p>
       )}
       <DataTable
+        tableId="samples"
         columns={columns}
         rows={samples}
         loading={loading}

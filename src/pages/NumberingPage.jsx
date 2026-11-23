@@ -74,6 +74,7 @@ export default function NumberingPage() {
         </p>
       )}
       <DataTable
+        tableId="numbering"
         columns={columns}
         rows={rows}
         loading={loading}

@@ -30,6 +30,8 @@ The sign-in page opens. The first time, choose "First time here?" to set up your
 2. Every list has search, sort and a Google-Sheets-style filter.
 3. Every image is clickable and opens in a popup with full screen, copy link and close.
 4. Esc closes any popup or form. It asks "Discard changes?" only when there is unsaved work.
+5. Every list has a column selector.
+6. Everything works on a phone.
 
 ## Project notes
 

@@ -32,6 +32,7 @@ Next to discuss: what happens to a sample after it is created (the next sample s
 | 23 Nov 2026 | First sign-in set up by Nihal on the real database (sign-up and email confirmation worked) |
 | 23 Nov 2026 | Step 2 database: numbering master, references, samples, remarks, private file store (33 rule checks passed) |
 | 23 Nov 2026 | Step 2 screens: Numbering, References, Samples with new, view and edit; remarks with text, voice and pictures (37 screen checks passed with stand-in data) |
+| 23 Nov 2026 | Column selector on every list, and phone layout for every screen (38 more screen checks passed with stand-in data, at computer and phone size) |
 
 ## Next, in order
 

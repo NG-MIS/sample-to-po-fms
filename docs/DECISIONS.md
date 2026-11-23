@@ -5,6 +5,10 @@ Newest first. A changed decision is not deleted: a new entry is added that repla
 
 | Date | Decision | Reason |
 |---|---|---|
+| 23 Nov 2026 | On a phone, lists are shown as cards and popups fill the screen | A wide table is unusable on a phone; nothing should scroll sideways |
+| 23 Nov 2026 | Column choice is remembered per table in the person's own browser, not in the database | It is a personal convenience; another device simply starts with all columns |
+| 23 Nov 2026 | Column selector on every list, built into the shared table | Nihal's standing rule |
+| 23 Nov 2026 | The whole system must work on a phone | Nihal's standing rule |
 | 23 Nov 2026 | Samples are written only through one database routine, never directly by a screen | The sample number and the who-may-do-what rules cannot be bypassed |
 | 23 Nov 2026 | Department "Sample" and role "Designer" are created by the system and cannot be renamed or switched inactive | They decide who is a designer; renaming them would silently break the pick-list and the right to create |
 | 23 Nov 2026 | Sample files are private; a file can be viewed only by people who can see its sample | Concept images are design work and should not leak |
