@@ -1,0 +1,36 @@
+# Sample to PO FMS
+
+Tracks every sample from creation through CAD drawing and approval,
+purchase order, and receiving of materials.
+
+- **Screens:** React (Vite)
+- **Database:** Supabase project "SAMPLE TO PO FMS" (Mumbai)
+
+## Run it on your computer
+
+1. Install Node.js (version 20 or newer) if it is not already installed.
+2. Open a terminal in this folder and run `npm install` (first time only).
+3. Run `npm run dev` and open the address it prints.
+
+The page should say "Connected to the database".
+
+## Folder layout
+
+| Folder | What lives there |
+|---|---|
+| `src/components` | Reusable building blocks used by every screen |
+| `src/pages` | One file per screen |
+| `src/lib` | Shared helpers, including the database connection |
+| `supabase/migrations` | Every database structure change, in order |
+
+## Rules for every screen
+
+1. Every component is reusable: built once, used everywhere.
+2. Every list has search, sort and a Google-Sheets-style filter.
+3. Every image is clickable and opens in a popup with full screen, copy link and close.
+4. Esc closes any popup or form. It asks "Discard changes?" only when there is unsaved work.
+
+## Settings
+
+Connection settings live in `.env.local`, which is never uploaded to GitHub.
+`.env.example` shows which settings are needed.
