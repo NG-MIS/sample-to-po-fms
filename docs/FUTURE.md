@@ -27,3 +27,9 @@ Last updated: 23 Nov 2026
 ## Ideas
 
 Nothing recorded yet. Add ideas here as they come up, with the date.
+
+## Accessories list of a sample (next)
+
+Nihal: after fabrics, the same kind of list is needed for accessories, "slightly different". The
+differences are still to be given by Nihal. The fabric editor (`SampleFabrics.jsx`,
+`lib/sampleFabrics.js`) is the pattern to follow.

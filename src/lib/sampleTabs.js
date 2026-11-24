@@ -50,6 +50,18 @@ export function imageRows(data, profile) {
     .filter((sample) => LATER_STAGES.some((stage) => !stageImagePath(sample, stage.key)))
 }
 
+// Fabrics: every open sample the person may work on, one row per fabric line.
+// A sample with no fabric yet gets one row saying so.
+export function fabricRows(data, profile) {
+  return data.samples
+    .filter((sample) => canWorkOn(sample, data, profile) && !isClosed(sample))
+    .flatMap((sample) =>
+      sample.fabrics.length
+        ? sample.fabrics.map((line) => ({ id: `${sample.id}:${line.id}`, sample, line }))
+        : [{ id: `${sample.id}:none`, sample, line: null }],
+    )
+}
+
 // Approval: samples that have no final approval yet and are not closed.
 export function approvalRows(data) {
   if (!data.access.management) return []

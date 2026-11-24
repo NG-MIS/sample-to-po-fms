@@ -46,7 +46,9 @@ export function friendlyError(error) {
       ? 'That email is already in the user master.'
       : message.includes('prefix')
         ? 'That prefix already exists.'
-        : 'That name already exists.'
+        : message.includes('_code_key')
+          ? 'That code already exists.'
+          : 'That name already exists.'
   }
   if (error.code === '42501' || /row-level security/i.test(message)) {
     return 'You do not have permission to do this.'

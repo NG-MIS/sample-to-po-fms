@@ -15,6 +15,7 @@ import {
   stageImagePath,
 } from '../lib/sampleData.js'
 import { StageImageButton } from './SampleDetail.jsx'
+import { fabricLineColumns } from '../lib/sampleFabrics.js'
 
 // The work tabs of the Samples screen. Each lists only what is waiting for
 // that activity, and only items the signed-in person may act on.
@@ -274,6 +275,58 @@ export function ImagesTab({ rows, lookups, loading, onOpen, onSaved, onError }) 
 }
 
 // ---------- Approval tab: 1st and final together ----------
+
+export function FabricTab({ rows, lookups, loading, onOpen, onEdit }) {
+  const columns = useMemo(
+    () => [
+      ...sampleColumns(lookups, onOpen, (row) => row.sample),
+      ...fabricLineColumns(lookups).map((column) => ({
+        ...column,
+        value: (row) => (row.line ? column.value(row.line) : column.key === 'fabric' ? 'No fabric yet' : ''),
+        sortValue: column.sortValue ? (row) => (row.line ? column.sortValue(row.line) : -1) : undefined,
+        render:
+          column.key === 'fabric'
+            ? (row) =>
+                row.line ? column.value(row.line) : <span className="badge badge--pending">No fabric yet</span>
+            : undefined,
+      })),
+      ...contextColumns(lookups, (row) => row.sample),
+      {
+        key: 'actions',
+        header: '',
+        align: 'right',
+        render: (row) => (
+          <button
+            type="button"
+            className={`btn btn--small ${row.line ? '' : 'btn--primary'}`}
+            onClick={() => onEdit(row.sample)}
+          >
+            {row.line ? 'Change fabrics' : 'Add fabrics'}
+          </button>
+        ),
+      },
+    ],
+    [lookups, onOpen, onEdit],
+  )
+
+  return (
+    <>
+      <p className="tab-note">
+        The fabric list of every open sample you look after, one row per fabric. The number on the tab is how many
+        samples have no fabric yet.
+      </p>
+      <DataTable
+        tableId="samples-fabrics"
+        title="Sample fabrics"
+        columns={columns}
+        rows={rows}
+        loading={loading}
+        emptyText="There is no open sample to add fabrics to."
+        searchPlaceholder="Search fabrics…"
+      />
+    </>
+  )
+}
 
 export function ApprovalTab({ rows, lookups, loading, onOpen, onApprove }) {
   const columns = useMemo(

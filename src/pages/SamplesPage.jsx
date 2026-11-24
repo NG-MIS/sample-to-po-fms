@@ -29,10 +29,12 @@ import {
   sampleReferences,
   sampleTags,
 } from '../lib/sampleData.js'
-import { approvalRows, completeRows, imageRows, processRows } from '../lib/sampleTabs.js'
+import { checkFabricLines, fabricPayload, toFabricLines } from '../lib/sampleFabrics.js'
+import { approvalRows, completeRows, fabricRows, imageRows, processRows } from '../lib/sampleTabs.js'
 import { supabase } from '../lib/supabase.js'
 import SampleDetail, { ApprovalDialog, EntryDialog } from './SampleDetail.jsx'
-import { ApprovalTab, CompleteTab, ImagesTab, ProcessTab, ReceiveChooser } from './SampleWorkTabs.jsx'
+import { FabricDialog, FabricLinesEditor } from './SampleFabrics.jsx'
+import { ApprovalTab, CompleteTab, FabricTab, ImagesTab, ProcessTab, ReceiveChooser } from './SampleWorkTabs.jsx'
 
 // The references of a sample, each with its picture from Masters.
 function ReferenceList({ references, size, stacked = false }) {
@@ -96,6 +98,9 @@ export default function SamplesPage() {
       collection: nameMap(data?.collections),
       process: nameMap(data?.processes),
       vendor: nameMap(data?.vendors),
+      fabric: nameMap(data?.fabrics),
+      // A fabric vendor is shown by its code.
+      fabricVendor: new Map((data?.fabricVendors ?? []).map((vendor) => [vendor.id, vendor.code])),
     }),
     [data],
   )
@@ -108,9 +113,10 @@ export default function SamplesPage() {
             process: processRows(data, profile),
             complete: completeRows(data),
             images: imageRows(data, profile),
+            fabrics: fabricRows(data, profile),
             approval: approvalRows(data),
           }
-        : { process: [], complete: [], images: [], approval: [] },
+        : { process: [], complete: [], images: [], fabrics: [], approval: [] },
     [data, profile],
   )
   const worksOnSamples = Boolean(data?.access.manages || data?.designerIds.has(profile.id))
@@ -119,6 +125,11 @@ export default function SamplesPage() {
     (worksOnSamples || waiting.process.length > 0) && { key: 'process', label: 'Process', count: waiting.process.length },
     data?.access.manages && { key: 'complete', label: 'Mark completed', count: waiting.complete.length },
     (worksOnSamples || waiting.images.length > 0) && { key: 'images', label: 'Images', count: waiting.images.length },
+    (worksOnSamples || waiting.fabrics.length > 0) && {
+      key: 'fabrics',
+      label: 'Fabrics',
+      count: waiting.fabrics.filter((row) => !row.line).length,
+    },
     data?.access.management && { key: 'approval', label: 'Approval', count: waiting.approval.length },
   ].filter(Boolean)
   const wanted = params.get('tab') ?? 'all'
@@ -136,6 +147,7 @@ export default function SamplesPage() {
     [],
   )
   const completeFrom = useCallback((row) => setWork({ type: 'complete', sample: row.sample, piece: row.piece }), [])
+  const fabricsFrom = useCallback((sample) => setWork({ type: 'fabrics', sample }), [])
   const approveFrom = useCallback((sample, stage) => setWork({ type: 'approval', sample, stage }), [])
 
   const workSaved = useCallback(async () => {
@@ -254,6 +266,11 @@ export default function SamplesPage() {
         render: (row) => <TagList tags={sampleTags(row, data)} />,
       },
       {
+        key: 'fabrics',
+        header: 'FABRICS',
+        value: (row) => [...new Set(row.fabrics.map((line) => lookups.fabric.get(line.fabric_id)).filter(Boolean))].sort(),
+      },
+      {
         key: 'remarks',
         header: 'REMARKS',
         value: (row) => remarksSummary(row.remarks),
@@ -327,6 +344,9 @@ export default function SamplesPage() {
       {tab === 'images' && (
         <ImagesTab rows={waiting.images} lookups={lookups} loading={loading} onOpen={openSample} onSaved={workSaved} onError={setWorkError} />
       )}
+      {tab === 'fabrics' && (
+        <FabricTab rows={waiting.fabrics} lookups={lookups} loading={loading} onOpen={openSample} onEdit={fabricsFrom} />
+      )}
       {tab === 'approval' && (
         <ApprovalTab rows={waiting.approval} lookups={lookups} loading={loading} onOpen={openSample} onApprove={approveFrom} />
       )}
@@ -369,6 +389,9 @@ export default function SamplesPage() {
       )}
       {work?.type === 'receive' && (
         <EntryDialog mode="receive" sample={work.sample} data={data} entry={work.entry} onClose={() => setWork(null)} onSaved={workSaved} />
+      )}
+      {work?.type === 'fabrics' && (
+        <FabricDialog sample={work.sample} data={data} onClose={() => setWork(null)} onSaved={workSaved} />
       )}
       {work?.type === 'approval' && (
         <ApprovalDialog
@@ -442,6 +465,10 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
   const [form, setForm] = useState(initial)
   const [conceptFile, setConceptFile] = useState(null)
   const [newTags, setNewTags] = useState([]) // tag names typed here that are not in the list yet
+  // On a closed sample the fabric list can no longer be changed.
+  const fabricsLocked = !isNew && isClosed(sample)
+  const initialFabrics = useMemo(() => toFabricLines(sample), [sample])
+  const [fabricLines, setFabricLines] = useState(initialFabrics)
   const [remarks, setRemarks] = useState(initialRemarks)
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)
@@ -452,6 +479,7 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
   const dirty =
     conceptFile !== null ||
     newTags.length > 0 ||
+    JSON.stringify(fabricPayload(fabricLines)) !== JSON.stringify(fabricPayload(initialFabrics)) ||
     draft.trim() !== '' ||
     JSON.stringify(form) !== JSON.stringify(initial) ||
     remarks.length !== initialRemarks.length ||
@@ -488,6 +516,16 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
       .filter((option) => option.is_active || currentIds.includes(option.id))
       .map((option) => ({ value: option.id, label: option.is_active ? show(option.name) : `${show(option.name)} (inactive)` }))
       .sort((a, b) => a.label.localeCompare(b.label))
+
+  // A fabric line can only be for components chosen on this sample, so a
+  // component taken off the sample is taken off the fabric lines too.
+  const chosenComponentOptions = componentOptions.filter((option) => form.component_ids.includes(option.value))
+  const setComponents = (ids) => {
+    set('component_ids')(ids)
+    setFabricLines((previous) =>
+      previous.map((line) => ({ ...line, component_ids: line.component_ids.filter((id) => ids.includes(id)) })),
+    )
+  }
 
   const referenceOptions = manyOptions(lists.references, sample.reference_ids)
   const chosenReferences = sampleReferences(form, lists)
@@ -526,6 +564,8 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
     if (!form.product_type_id) return setError('Choose the product type.')
     if (!form.collection_id) return setError('Choose the collection.')
     if (!conceptFile && !form.concept_image_path) return setError('Add the concept image.')
+    const fabricProblem = fabricsLocked ? '' : checkFabricLines(fabricLines)
+    if (fabricProblem) return setError(fabricProblem)
 
     setBusy(true)
     setError('')
@@ -541,7 +581,7 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
         else payload.push({ kind: remark.kind, file_path: await uploadFile(BUCKET, remark.file, 'remarks') })
       }
 
-      const { data: sampleNo, error: failure } = await supabase.rpc('save_sample', {
+      const { data: sampleNo, error: failure } = await supabase.rpc('save_sample_with_fabrics', {
         p_id: sample.id ?? null,
         p_series_id: form.series_id,
         p_creation_date: form.creation_date,
@@ -555,6 +595,7 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
         p_collection_id: form.collection_id,
         p_tag_ids: form.tag_ids,
         p_new_tags: newTags,
+        p_fabrics: fabricsLocked ? null : fabricPayload(fabricLines),
       })
       if (failure) throw failure
       await onSaved(sampleNo)
@@ -657,7 +698,7 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
               multiple
               options={componentOptions}
               value={form.component_ids}
-              onChange={set('component_ids')}
+              onChange={setComponents}
             />
           </Field>
         </div>
@@ -744,6 +785,22 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
             )}
           </Field>
         </div>
+
+        {!fabricsLocked && (
+          <div className="form-wide">
+            <h3 className="section-title section-title--next">
+              Fabrics <span className="hint">optional, can also be added later from the Fabrics tab</span>
+            </h3>
+            <FabricLinesEditor
+              lines={fabricLines}
+              onChange={setFabricLines}
+              lists={lists}
+              componentOptions={chosenComponentOptions}
+              saved={sample.fabrics}
+              idPrefix="sample-fabric"
+            />
+          </div>
+        )}
 
         <div className="form-wide">
           <h3 className="section-title section-title--next">

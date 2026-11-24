@@ -25,7 +25,19 @@ const IMPORT_FIELDS = [
 //   singular - one item, e.g. "department"
 //   picture  - optional { bucket, folder }: every item also carries one picture
 //   hash     - optional: names are tags, shown with a # in front
-export default function SimpleListPage({ table, title, singular, picture, hash = false }) {
+//   extra    - optional { key, label, header, hint }: a second required text
+//              that must also be different on every item, such as a code
+//   nameLabel, nameHeader - optional other wording for the name
+export default function SimpleListPage({
+  table,
+  title,
+  singular,
+  picture,
+  hash = false,
+  extra,
+  nameLabel = 'Name',
+  nameHeader = 'NAME',
+}) {
   const { isAdmin } = useAuth()
   const { data, loading, error, reload } = useLoad(async () => {
     const [rows, people] = await Promise.all([fetchRows(table), fetchRows('app_users')])
@@ -37,8 +49,8 @@ export default function SimpleListPage({ table, title, singular, picture, hash =
   const people = data?.people
 
   const prepareImport = (cells, memo) => {
-    const name = hash ? cleanTagName(cells.NAME) : cells.NAME
-    if (!name) return { error: 'NAME is empty.' }
+    const name = hash ? cleanTagName(cells[nameHeader]) : cells[nameHeader]
+    if (!name) return { error: `${nameHeader} is empty.` }
     const key = name.toLowerCase()
     memo.seen ??= new Set()
     if (memo.seen.has(key)) return { error: 'This name is repeated in the file.' }
@@ -46,6 +58,18 @@ export default function SimpleListPage({ table, title, singular, picture, hash =
     if (rows.some((row) => row.name.trim().toLowerCase() === key)) return { skip: 'Already in the list.' }
     const isActive = readYesNo(cells.ACTIVE, true)
     if (isActive === null) return { error: 'ACTIVE must be Yes or No.' }
+    if (extra) {
+      const value = cells[extra.header]
+      if (!value) return { error: `${extra.header} is empty.` }
+      const valueKey = value.toLowerCase()
+      memo.extras ??= new Set()
+      if (memo.extras.has(valueKey)) return { error: `This ${extra.label.toLowerCase()} is repeated in the file.` }
+      memo.extras.add(valueKey)
+      if (rows.some((row) => (row[extra.key] || '').trim().toLowerCase() === valueKey)) {
+        return { error: `This ${extra.label.toLowerCase()} already exists.` }
+      }
+      return { record: { name, [extra.key]: value, is_active: isActive } }
+    }
     return { record: { name, is_active: isActive } }
   }
 
@@ -57,7 +81,8 @@ export default function SimpleListPage({ table, title, singular, picture, hash =
   const columns = useMemo(() => {
     const list = [
       { key: 'sl_no', header: 'SL NO', value: (row) => row.sl_no, width: 90 },
-      { key: 'name', header: 'NAME', value: (row) => (hash ? `#${row.name}` : row.name) },
+      { key: 'name', header: nameHeader, value: (row) => (hash ? `#${row.name}` : row.name) },
+      ...(extra ? [{ key: extra.key, header: extra.header, value: (row) => row[extra.key] ?? '' }] : []),
       ...(picture
         ? [
             {
@@ -101,15 +126,21 @@ export default function SimpleListPage({ table, title, singular, picture, hash =
       })
     }
     return list
-  }, [people, isAdmin, picture, hash])
+  }, [people, isAdmin, picture, hash, extra, nameHeader])
 
-  const importFields = picture
-    ? IMPORT_FIELDS.map((field) =>
-        field.header === 'NAME'
-          ? { ...field, hint: `${field.hint} The picture is added afterwards, by opening the ${singular}.` }
-          : field,
-      )
-    : IMPORT_FIELDS
+  // The import template follows the list: its own heading for the name, the
+  // extra text when there is one, and a note about pictures.
+  const importFields = IMPORT_FIELDS.flatMap((field) => {
+    if (field.header !== 'NAME') return [field]
+    const nameField = {
+      ...field,
+      header: nameHeader,
+      hint: picture ? `${field.hint} The picture is added afterwards, by opening the ${singular}.` : field.hint,
+    }
+    return extra
+      ? [nameField, { header: extra.header, required: true, hint: `${extra.hint ?? ''} Each one can be used once.`.trim() }]
+      : [nameField]
+  })
 
   return (
     <>
@@ -151,6 +182,8 @@ export default function SimpleListPage({ table, title, singular, picture, hash =
           singular={singular}
           picture={picture}
           hash={hash}
+          extra={extra}
+          nameLabel={nameLabel}
           row={editing}
           onClose={() => setEditing(null)}
           onSaved={() => {
@@ -163,9 +196,10 @@ export default function SimpleListPage({ table, title, singular, picture, hash =
   )
 }
 
-function SimpleListForm({ table, singular, picture, hash, row, onClose, onSaved }) {
+function SimpleListForm({ table, singular, picture, hash, extra, nameLabel, row, onClose, onSaved }) {
   const isNew = !row.id
   const [name, setName] = useState(row.name ?? '')
+  const [extraValue, setExtraValue] = useState((extra && row[extra.key]) ?? '')
   const [imagePath, setImagePath] = useState(row.image_path ?? null)
   const [imageFile, setImageFile] = useState(null)
   const [isActive, setIsActive] = useState(row.is_active ?? true)
@@ -174,6 +208,7 @@ function SimpleListForm({ table, singular, picture, hash, row, onClose, onSaved 
 
   const dirty =
     name !== (row.name ?? '') ||
+    extraValue !== ((extra && row[extra.key]) ?? '') ||
     isActive !== (row.is_active ?? true) ||
     imageFile !== null ||
     imagePath !== (row.image_path ?? null)
@@ -181,12 +216,14 @@ function SimpleListForm({ table, singular, picture, hash, row, onClose, onSaved 
   const save = async (event) => {
     event.preventDefault()
     const clean = hash ? cleanTagName(name) : name.trim()
-    if (!clean) return setError('Name is required.')
+    if (!clean) return setError(`${nameLabel} is required.`)
+    if (extra && !extraValue.trim()) return setError(`${extra.label} is required.`)
     if (picture && !imageFile && !imagePath) return setError('Add the picture.')
     setBusy(true)
     setError('')
     try {
       const values = { name: clean, is_active: isActive }
+      if (extra) values[extra.key] = extraValue.trim()
       if (picture) values.image_path = imageFile ? await uploadFile(picture.bucket, imageFile, picture.folder) : imagePath
       const { error: failure } = isNew
         ? await supabase.from(table).insert(values)
@@ -219,7 +256,7 @@ function SimpleListForm({ table, singular, picture, hash, row, onClose, onSaved 
       )}
     >
       <form id={formId} onSubmit={save}>
-        <Field label="Name" htmlFor={`${formId}-name`} required hint={hash ? 'With or without the # sign.' : null}>
+        <Field label={nameLabel} htmlFor={`${formId}-name`} required hint={hash ? 'With or without the # sign.' : null}>
           <input
             id={`${formId}-name`}
             className="input"
@@ -227,6 +264,16 @@ function SimpleListForm({ table, singular, picture, hash, row, onClose, onSaved 
             onChange={(event) => setName(event.target.value)}
           />
         </Field>
+        {extra && (
+          <Field label={extra.label} htmlFor={`${formId}-${extra.key}`} required hint={extra.hint}>
+            <input
+              id={`${formId}-${extra.key}`}
+              className="input"
+              value={extraValue}
+              onChange={(event) => setExtraValue(event.target.value)}
+            />
+          </Field>
+        )}
         {picture && (
           <Field label="Picture" required hint={`Shown wherever this ${singular} is picked.`}>
             <ImageUpload

@@ -69,6 +69,23 @@ automatically and cannot be renamed or switched inactive, because they decide wh
 Pick-list pattern for the whole system: each people pick-list is defined as "department X plus role Y".
 Adding a person to the user master with that department and role makes them appear automatically.
 
+### 2.1a Fabric list of a sample (built)
+
+Every sample has its own fabric list: any number of fabric lines, entered on the New sample
+form or later. Nothing here is needed to create a sample.
+
+| Field | Rule |
+|---|---|
+| FABRIC NAME | Picked from the Fabrics list (the names used before). A name that is not in the list can be typed and is added to the list when the line is saved. The only field a line must have |
+| FOR COMPONENTS | Optional. One or more, only from the components chosen on that sample. A component taken off the sample is taken off its fabric lines |
+| VENDOR CODE | Optional. Picked from the Fabric vendors master. Samples always show the vendor's code, never the name |
+| RATE | Optional. A number, 0 or more, up to 2 decimals |
+
+After creation the list is changed from the Fabrics tab of the Samples screen or from the
+opened sample, by the same people who update the sample's images: its designer, or a person
+with department authority over Sample. On a closed sample the fabric list cannot be changed.
+The same list for accessories comes next (see FUTURE).
+
 ### 2.2 After creation: pieces, process log, stage images, approval (built)
 
 These run side by side after a sample is created. None waits for another.
@@ -120,6 +137,7 @@ person with authority All changing that No.
 |---|---|
 | Send and receive process entries | The sample's designer, or Department(s) authority that includes Sample |
 | Upload stage images | Same as above |
+| Add or change the fabric list | Same as above |
 | Mark a piece completed | Department(s) authority that includes Sample, and only when the piece is not At vendor |
 | Give initial or final approval | Anyone in department Management |
 | Change an approval, correct a process entry, reopen a completed piece | Authority All only |
@@ -140,6 +158,7 @@ action is done.
 | Process | Every piece that is not completed, one row per piece, with what is out at which vendor. On a closed sample, only pieces still at a vendor | Send, Receive | The sample's designer for their own samples; Sample department authority for all |
 | Mark completed | Pieces that are Pending: nothing out at a vendor, not completed | Mark completed | Sample department authority |
 | Images | Samples still missing a 1st sample, 2nd sample or photoshoot image | Add (per missing image) | Same as Process |
+| Fabrics | Every open sample the person looks after, one row per fabric line; a sample with no fabric yet shows one row saying so. The number on the tab counts samples with no fabric yet | Add fabrics, Change fabrics | Same as Process |
 | Approval | Samples with no final approval yet that are not closed | Initial approval (while it is not Yes), Final approval | Department Management |
 
 Sending and receiving share the Process tab, and the initial and final approval share the
@@ -257,6 +276,10 @@ Created by `supabase/migrations/20261123113937_masters_and_sign_in.sql`.
 | `sample_references` | Which references each sample has |
 | `tags` | Tags list: name (kept without the # sign), active or inactive |
 | `sample_tags` | Which tags each sample has |
+| `fabric_vendors` | Fabric vendors master: vendor name, vendor code, active or inactive |
+| `fabrics` | Fabrics list: the fabric names, active or inactive |
+| `sample_fabrics` | The fabric lines of each sample: fabric, vendor, rate |
+| `sample_fabric_components` | Which components each fabric line is for |
 | `samples` | One row per sample: sample number, creation date, designer, concept image |
 | `sample_remarks` | Remarks of a sample: typed notes, voice notes, pictures |
 | `components` | Components master: name, active or inactive |
@@ -313,6 +336,8 @@ Rules the database enforces, whatever the screens do:
 | Numbering | List, add and edit series (series name, prefix and starting number) | Built |
 | References | List, add and edit, each with its picture (required when added by hand; an imported reference gets its picture afterwards) | Built |
 | Tags | List, add and edit. Shown with a # in front | Built |
+| Fabrics | List, add and edit the fabric names | Built |
+| Fabric vendors | List, add and edit: vendor name and vendor code (each code used once) | Built |
 | Components | List, add, edit and import | Built |
 | Product types | List, add, edit and import | Built |
 | Collections | List, add, edit and import | Built |
@@ -321,7 +346,7 @@ Rules the database enforces, whatever the screens do:
 | Processes | List, add, edit and import | Built |
 | Vendors | List, add, edit and import | Built |
 
-The simple lists (departments, designations, roles, references, tags, components, product types, collections, processes, vendors) share one screen file (`SimpleListPage`). The starter page from the
+The simple lists (departments, designations, roles, references, tags, fabrics, fabric vendors, components, product types, collections, processes, vendors) share one screen file (`SimpleListPage`). The starter page from the
 set-up has been replaced by these screens.
 
 ## 9. Reusable building blocks
@@ -389,6 +414,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 24 Nov 2026 | Fabric list added to samples (fabric name, for components, vendor code, rate), with a Fabrics tab, a Fabrics master and a Fabric vendors master. Added by `supabase/migrations/20261124131621_sample_fabrics_and_fabric_vendors.sql` |
 | 24 Nov 2026 | Numbering: every series has a name; the sample form lists series by name while sample numbers still use the prefix. Added by `supabase/migrations/20261124115500_series_name.sql` |
 | 24 Nov 2026 | References now carry their picture in Masters and a sample can have several of them (the separate reference picture on the sample is gone). Tags added: a Tags master, and optional #tags on every sample that can be added on the spot |
 | 24 Nov 2026 | Approval rules revised: "1st approval" renamed "initial approval" and can be repeated while it is Maybe, with the number of times changes were requested shown; an initial approval of No closes the sample and everything on it stops |

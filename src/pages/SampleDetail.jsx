@@ -5,6 +5,7 @@ import ImageEditor from '../components/ImageEditor.jsx'
 import Modal, { ConfirmDialog } from '../components/Modal.jsx'
 import PickList from '../components/PickList.jsx'
 import { RemarksView } from '../components/Remarks.jsx'
+import { FabricDialog, FabricTable } from './SampleFabrics.jsx'
 import { Field } from '../components/Field.jsx'
 import { useAuth } from '../lib/auth.jsx'
 import { nameMap } from '../lib/data.js'
@@ -56,6 +57,8 @@ export default function SampleDetail({ sample, data, onChanged, onEdit, onClose 
       component: nameMap(data.components),
       productType: nameMap(data.productTypes),
       collection: nameMap(data.collections),
+      fabric: nameMap(data.fabrics),
+      fabricVendor: new Map(data.fabricVendors.map((vendor) => [vendor.id, vendor.code])),
     }),
     [data],
   )
@@ -230,6 +233,16 @@ export default function SampleDetail({ sample, data, onChanged, onEdit, onClose 
         ))}
       </div>
 
+      <h3 className="section-title section-title--next section-title--action">
+        Fabrics
+        {canWork && (
+          <button type="button" className="btn btn--small" onClick={() => setDialog({ type: 'fabrics' })}>
+            {sample.fabrics.length ? 'Change fabrics' : 'Add fabrics'}
+          </button>
+        )}
+      </h3>
+      <FabricTable sample={sample} lookups={names} />
+
       <h3 className="section-title section-title--next">Pieces and process log</h3>
       <div className="piece-grid">
         {PIECES.map((piece) => {
@@ -369,6 +382,9 @@ export default function SampleDetail({ sample, data, onChanged, onEdit, onClose 
       )}
       {dialog?.type === 'correct' && (
         <EntryDialog mode="correct" sample={sample} data={data} entry={dialog.entry} pieces={PIECES} onClose={() => setDialog(null)} onSaved={saved} />
+      )}
+      {dialog?.type === 'fabrics' && (
+        <FabricDialog sample={sample} data={data} onClose={() => setDialog(null)} onSaved={saved} />
       )}
       {dialog?.type === 'approval' && (
         <ApprovalDialog sample={sample} stage={dialog.stage} correct={Boolean(dialog.correct)} onClose={() => setDialog(null)} onSaved={saved} />

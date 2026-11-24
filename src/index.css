@@ -1771,3 +1771,51 @@ button.side-group-title:hover {
   font-weight: 600;
   color: var(--primary, #047857);
 }
+
+/* ---------- Fabric list of a sample ---------- */
+
+.fabric-editor {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.fabric-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 0.7fr) auto;
+  gap: 10px;
+  align-items: end;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+.fabric-cell {
+  min-width: 0;
+}
+.fabric-cell .picklist,
+.fabric-cell .input {
+  width: 100%;
+}
+.fabric-intro {
+  margin-bottom: 10px;
+}
+.section-title--action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+@media (max-width: 720px) {
+  .fabric-line {
+    grid-template-columns: 1fr 1fr;
+  }
+  .fabric-line .fabric-cell:first-child {
+    grid-column: 1 / -1;
+  }
+  .fabric-remove {
+    justify-self: start;
+  }
+}

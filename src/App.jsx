@@ -8,6 +8,9 @@ import SamplesPage from './pages/SamplesPage.jsx'
 import SimpleListPage from './pages/SimpleListPage.jsx'
 import UsersPage from './pages/UsersPage.jsx'
 
+// A fabric vendor is a name plus a code; the sample screens show the code.
+const VENDOR_CODE = { key: 'code', label: 'Vendor code', header: 'VENDOR CODE', hint: 'Shown on samples in place of the vendor name.' }
+
 // Reference pictures live with the other sample pictures.
 const REFERENCE_PICTURE = { bucket: 'samples', folder: 'reference' }
 
@@ -56,6 +59,24 @@ export default function App() {
               title="References"
               singular="reference"
               picture={REFERENCE_PICTURE}
+            />
+          }
+        />
+        <Route
+          path="/fabrics"
+          element={<SimpleListPage key="fabrics" table="fabrics" title="Fabrics" singular="fabric" />}
+        />
+        <Route
+          path="/fabric-vendors"
+          element={
+            <SimpleListPage
+              key="fabric-vendors"
+              table="fabric_vendors"
+              title="Fabric vendors"
+              singular="fabric vendor"
+              nameLabel="Vendor name"
+              nameHeader="VENDOR NAME"
+              extra={VENDOR_CODE}
             />
           }
         />

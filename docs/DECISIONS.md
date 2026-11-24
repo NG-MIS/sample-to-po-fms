@@ -5,6 +5,12 @@ Newest first. A changed decision is not deleted: a new entry is added that repla
 
 | Date | Decision | Reason |
 |---|---|---|
+| 24 Nov 2026 | The fabric list of a closed sample cannot be changed, also not by authority All through the edit form | "Everything stops" on a closed sample |
+| 24 Nov 2026 | The Fabrics tab lists every open sample the person looks after, and its number counts samples with no fabric yet | Fabrics can be changed at any time, so no sample ever "leaves" this tab; the number still shows what is waiting |
+| 24 Nov 2026 | A fabric line needs only the fabric name; components, vendor code and rate may stay empty | Nihal: all are optional at creation and can be filled later |
+| 24 Nov 2026 | Fabric names are their own list (Fabrics master), filled as names are typed on samples | "Dropdown from previous, also add new instantly"; a list lets a wrong name be corrected or switched off in one place |
+| 24 Nov 2026 | Fabric vendors are a separate master from the process Vendors, and samples show only the vendor code | Nihal: vendor name and vendor code in a fabric vendor master, "we use vendor codes everywhere" |
+| 24 Nov 2026 | The fabric list is changed by the same people who update a sample's images | Nihal's answer |
 | 24 Nov 2026 | The existing series LB was given the name "LB" until it is renamed | Every series needs a name; Nihal can change it in Numbering at any time |
 | 24 Nov 2026 | A series name is required, used once, and stays editable after the series has given out numbers | The name is only a label on the sample form; the prefix and numbers are what must never change |
 | 24 Nov 2026 | The picture already uploaded on sample LB-3001 became the picture of its reference "MUMBAI SAMPLES" | Nothing is lost when the picture moves from the sample to the reference; it can be replaced in Masters |

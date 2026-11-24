@@ -37,7 +37,8 @@ export default function PickList({
   const createText = onCreate && typed ? createLabel(typed) : null
   const create = () => {
     onCreate(typed)
-    setQuery('')
+    if (multiple) setQuery('')
+    else close()
   }
 
   const summary = options.filter((option) => selected.has(option.value)).map((option) => option.label)
