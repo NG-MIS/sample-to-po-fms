@@ -38,6 +38,7 @@ Next to discuss: what happens to a sample after it is created (the next sample s
 | 24 Nov 2026 | Clicking a row in a master opens Edit (14 more screen checks passed; 205 in total) |
 | 24 Nov 2026 | Sample form tested by Nihal on the real database (prefix, designer and picture upload preview work); form rearranged into balanced sections |
 | 24 Nov 2026 | Picture editor on every upload: rotate, crop, compress (23 more screen checks passed; 228 in total) |
+| 24 Nov 2026 | Pictures fill the popup and the editor preview (9 more screen checks passed; 237 in total) |
 
 ## Next, in order
 

@@ -153,6 +153,9 @@ export default function ImageEditor({ file, square = false, onDone, onCancel }) 
   const startCrop = picture ? (square ? squareCrop(picture, rotation) : FULL_CROP) : FULL_CROP
   const changed = rotation !== 0 || preset !== DEFAULT_PRESET || !sameCrop(crop, startCrop)
   const percent = (value) => `${value * 100}%`
+  // The preview fills the space available, whatever the size of the picture.
+  const shape = picture ? turnedSize(picture, rotation) : { width: 4, height: 3 }
+  const stageWidth = `min(100%, calc(var(--editor-height) * ${shape.width / shape.height}))`
 
   return (
     <Modal
@@ -207,7 +210,7 @@ export default function ImageEditor({ file, square = false, onDone, onCancel }) 
         <div
           ref={stageRef}
           className="editor-stage"
-          style={{ visibility: picture ? 'visible' : 'hidden' }}
+          style={{ visibility: picture ? 'visible' : 'hidden', width: stageWidth }}
           onPointerMove={moveDrag}
           onPointerUp={endDrag}
           onPointerCancel={endDrag}

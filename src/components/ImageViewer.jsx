@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom'
 import { useEscape } from '../lib/escape.js'
 
 // The one picture popup used everywhere: full screen, copy link, open in new tab, close.
+// The picture always fills the space available (it is enlarged if it is small),
+// without being cut or stretched.
 //   src     - the picture to show
 //   getLink - optional function that gives a shareable link (defaults to src)
 export default function ImageViewer({ src, alt = '', title, getLink, onClose }) {
@@ -37,6 +39,21 @@ export default function ImageViewer({ src, alt = '', title, getLink, onClose }) 
     } catch {
       setNote('Could not copy the link')
     }
+  }
+
+  // The picture element covers the whole stage; the picture itself is drawn inside it.
+  // A click on the empty space beside the picture closes the popup, like a click outside.
+  const clickPicture = (event) => {
+    event.stopPropagation()
+    const image = event.currentTarget
+    const box = image.getBoundingClientRect()
+    if (!image.naturalWidth || !image.naturalHeight) return
+    const scale = Math.min(box.width / image.naturalWidth, box.height / image.naturalHeight)
+    const shownWidth = image.naturalWidth * scale
+    const shownHeight = image.naturalHeight * scale
+    const insideX = Math.abs(event.clientX - (box.left + box.width / 2)) <= shownWidth / 2
+    const insideY = Math.abs(event.clientY - (box.top + box.height / 2)) <= shownHeight / 2
+    if (!insideX || !insideY) onClose()
   }
 
   const openInTab = async () => {
@@ -80,7 +97,7 @@ export default function ImageViewer({ src, alt = '', title, getLink, onClose }) 
           </button>
         </header>
         <div className="viewer-stage" onMouseDown={onClose}>
-          <img src={src} alt={alt} onMouseDown={(event) => event.stopPropagation()} />
+          <img src={src} alt={alt} onMouseDown={clickPicture} />
         </div>
       </div>
     </div>,
