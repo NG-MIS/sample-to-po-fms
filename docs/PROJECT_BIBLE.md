@@ -123,6 +123,9 @@ from the Supabase dashboard, but only if another project is paused first.
     (Excel or CSV), and sees every row checked before anything is saved. Import only ADDS
     rows: rows that already exist are skipped and reported, rows with a problem are left out
     with the reason shown, and nothing existing is ever changed. Only authority All can import.
+11. **In every master, clicking a row opens Edit.** It works for people who may edit
+    (authority All); for everyone else a row click does nothing. Pictures, buttons and group
+    headings inside the row keep their own job. The Edit button stays as well.
 
 ### Look and feel
 
@@ -252,6 +255,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 24 Nov 2026 | Standing rule 11 added and built: clicking a row in a master opens Edit |
 | 24 Nov 2026 | Standing rules 9 and 10 added and built: export to PDF, Excel and CSV on every list; import with template on every master (user master, departments, designations, roles, numbering, references) |
 | 24 Nov 2026 | Standing rules 7 and 8 added and built: group by two levels on every list, folding side menu. Theme changed to soft emerald, inspired by Lycra Tracker |
 | 23 Nov 2026 | Two standing rules added and built into the shared blocks: column selector on every list, and phone layout everywhere |

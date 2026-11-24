@@ -36,6 +36,7 @@ The sign-in page opens. The first time, choose "First time here?" to set up your
 8. The side menu groups fold.
 9. Every list exports to PDF, Excel and CSV.
 10. Every master has Import with a downloadable template.
+11. In every master, clicking a row opens Edit.
 
 ## Project notes
 

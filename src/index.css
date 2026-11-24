@@ -1360,3 +1360,13 @@ button.side-group-title:hover {
     flex: 1;
   }
 }
+
+/* ---------- Rows that open when clicked ---------- */
+
+.row--click,
+.card--click {
+  cursor: pointer;
+}
+.card--click:active {
+  background: var(--primary-soft);
+}

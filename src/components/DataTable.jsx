@@ -16,6 +16,8 @@ import { useIsPhone } from '../lib/screen.js'
 // tableId - a short name for this table, used to remember which columns
 //           the person chose to show (in their own browser).
 // title   - the name of the list, used as the heading and file name of exports.
+// onRowClick(row) - optional. When given, clicking anywhere on a row (or card) calls it.
+//           Clicks on buttons, links and pictures inside the row keep their own job.
 // columns: [{
 //   key, header,
 //   value(row)      - text, number, or a list of texts. Drives search, sort and filter.
@@ -415,6 +417,7 @@ export default function DataTable({
   columns,
   rows,
   rowKey = 'id',
+  onRowClick,
   toolbar,
   loading = false,
   emptyText = 'Nothing here yet.',
@@ -570,6 +573,16 @@ export default function DataTable({
     setFoldedGroups(new Set(visible.map((row) => `/${asText(column.value(row)) || BLANK}`)))
   }
 
+  const rowClick = (row) =>
+    onRowClick
+      ? (event) => {
+          // Buttons, links and pictures in the row do their own thing; so does selecting text.
+          if (event.target.closest('button, a, input, select, label, audio')) return
+          if (window.getSelection()?.toString()) return
+          onRowClick(row)
+        }
+      : undefined
+
   const changeSort = (key, dir) => setSort(dir ? { key, dir } : null)
   const changeFilter = (key, allowed) =>
     setFilters((previous) => {
@@ -705,7 +718,11 @@ export default function DataTable({
                 <GroupHead item={item} onToggle={toggleGroup} />
               </li>
             ) : (
-              <li key={item.row[rowKey]} className="card">
+              <li
+                key={item.row[rowKey]}
+                className={`card ${onRowClick ? 'card--click' : ''}`}
+                onClick={rowClick(item.row)}
+              >
                 {shownColumns.map((column) => {
                   const content = column.render ? column.render(item.row) : asText(column.value?.(item.row))
                   if (content === null || content === undefined || content === '' || content === false) return null
@@ -752,7 +769,11 @@ export default function DataTable({
                     </td>
                   </tr>
                 ) : (
-                  <tr key={item.row[rowKey]}>
+                  <tr
+                    key={item.row[rowKey]}
+                    className={onRowClick ? 'row--click' : undefined}
+                    onClick={rowClick(item.row)}
+                  >
                     {shownColumns.map((column) => (
                       <td key={column.key} style={{ textAlign: column.align }}>
                         {column.render ? column.render(item.row) : asText(column.value?.(item.row))}

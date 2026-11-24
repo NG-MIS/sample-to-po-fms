@@ -35,6 +35,7 @@ Next to discuss: what happens to a sample after it is created (the next sample s
 | 23 Nov 2026 | Column selector on every list, and phone layout for every screen (38 more screen checks passed with stand-in data, at computer and phone size) |
 | 24 Nov 2026 | Group by two levels on every list, folding side menu, emerald theme (31 more screen checks passed; all 151 screen checks pass with the new theme) |
 | 24 Nov 2026 | Export to PDF, Excel and CSV on every list; import with template on every master (40 more screen checks passed with stand-in data; 191 in total) |
+| 24 Nov 2026 | Clicking a row in a master opens Edit (14 more screen checks passed; 205 in total) |
 
 ## Next, in order
 

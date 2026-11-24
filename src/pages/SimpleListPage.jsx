@@ -93,6 +93,7 @@ export default function SimpleListPage({ table, title, singular }) {
       )}
       <DataTable
         tableId={table}
+        onRowClick={isAdmin ? setEditing : undefined}
         title={title}
         columns={columns}
         rows={rows}

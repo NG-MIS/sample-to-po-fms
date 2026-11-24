@@ -104,6 +104,7 @@ export default function NumberingPage() {
       )}
       <DataTable
         tableId="numbering"
+        onRowClick={isAdmin ? setEditing : undefined}
         title="Numbering"
         columns={columns}
         rows={rows}

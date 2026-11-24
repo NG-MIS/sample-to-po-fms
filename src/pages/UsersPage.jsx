@@ -251,6 +251,7 @@ export default function UsersPage() {
       )}
       <DataTable
         tableId="users"
+        onRowClick={isAdmin ? setEditing : undefined}
         title="User master"
         columns={columns}
         rows={people}
