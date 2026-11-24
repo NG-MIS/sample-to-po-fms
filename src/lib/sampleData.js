@@ -1,5 +1,6 @@
 import { fetchRows } from './data.js'
 import { todayLocal } from './format.js'
+import { supabase } from './supabase.js'
 
 // Everything the sample screens need, loaded once and shared by the
 // Samples screen and the Process log screen.
@@ -164,4 +165,10 @@ export async function loadSampleData(profile) {
 // May update the process log and stage images of this sample.
 export function canWorkOn(sample, data, profile) {
   return data.access.manages || sample.designer_id === profile.id
+}
+
+// Runs one of the sample database routines; a refusal comes back as an error.
+export async function callSampleAction(name, args) {
+  const { error } = await supabase.rpc(name, args)
+  if (error) throw error
 }

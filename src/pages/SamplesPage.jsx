@@ -1,10 +1,12 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import ClickableImage from '../components/ClickableImage.jsx'
 import DataTable from '../components/DataTable.jsx'
 import ImageUpload from '../components/ImageUpload.jsx'
-import Modal from '../components/Modal.jsx'
+import Modal, { ConfirmDialog } from '../components/Modal.jsx'
 import PickList from '../components/PickList.jsx'
 import { RemarksEditor } from '../components/Remarks.jsx'
+import Tabs from '../components/Tabs.jsx'
 import { Field } from '../components/Field.jsx'
 import { PageHead } from '../components/Layout.jsx'
 import { useAuth } from '../lib/auth.jsx'
@@ -16,13 +18,18 @@ import { remarksSummary } from '../lib/remarks.js'
 import {
   BUCKET,
   DECISION_LABEL,
+  PIECES,
+  PIECE_LABEL,
   PIECE_STATUS_LABEL,
+  callSampleAction,
   latestImage,
   loadSampleData,
   pieceStatus,
 } from '../lib/sampleData.js'
+import { approvalRows, completeRows, imageRows, processRows } from '../lib/sampleTabs.js'
 import { supabase } from '../lib/supabase.js'
-import SampleDetail from './SampleDetail.jsx'
+import SampleDetail, { ApprovalDialog, EntryDialog } from './SampleDetail.jsx'
+import { ApprovalTab, CompleteTab, ImagesTab, ProcessTab, ReceiveChooser } from './SampleWorkTabs.jsx'
 
 const DENIM_OPTIONS = [
   { value: 'denim', label: 'Denim' },
@@ -38,6 +45,9 @@ export default function SamplesPage() {
   const [editing, setEditing] = useState(null) // null = closed, {} = new, sample = edit
   const [viewingId, setViewingId] = useState(null)
   const [notice, setNotice] = useState('')
+  const [work, setWork] = useState(null) // the action open from a work tab
+  const [workError, setWorkError] = useState('')
+  const [params, setParams] = useSearchParams()
 
   const samples = useMemo(() => data?.samples ?? [], [data])
   const viewing = samples.find((sample) => sample.id === viewingId)
@@ -50,9 +60,67 @@ export default function SamplesPage() {
       component: nameMap(data?.components),
       productType: nameMap(data?.productTypes),
       collection: nameMap(data?.collections),
+      process: nameMap(data?.processes),
+      vendor: nameMap(data?.vendors),
     }),
     [data],
   )
+
+  // ----- work tabs: what is waiting, for this person -----
+  const waiting = useMemo(
+    () =>
+      data
+        ? {
+            process: processRows(data, profile),
+            complete: completeRows(data),
+            images: imageRows(data, profile),
+            approval: approvalRows(data),
+          }
+        : { process: [], complete: [], images: [], approval: [] },
+    [data, profile],
+  )
+  const worksOnSamples = Boolean(data?.access.manages || data?.designerIds.has(profile.id))
+  const tabs = [
+    { key: 'all', label: 'All samples', count: samples.length },
+    (worksOnSamples || waiting.process.length > 0) && { key: 'process', label: 'Process', count: waiting.process.length },
+    data?.access.manages && { key: 'complete', label: 'Mark completed', count: waiting.complete.length },
+    (worksOnSamples || waiting.images.length > 0) && { key: 'images', label: 'Images', count: waiting.images.length },
+    data?.access.management && { key: 'approval', label: 'Approval', count: waiting.approval.length },
+  ].filter(Boolean)
+  const wanted = params.get('tab') ?? 'all'
+  const tab = tabs.some((item) => item.key === wanted) ? wanted : 'all'
+
+  const openSample = useCallback((sample) => setViewingId(sample.id), [])
+  const sendFrom = useCallback((row) => setWork({ type: 'send', sample: row.sample, piece: row.piece }), [])
+  const receiveFrom = useCallback(
+    (row) =>
+      setWork(
+        row.open.length === 1
+          ? { type: 'receive', sample: row.sample, entry: row.open[0] }
+          : { type: 'choose', row },
+      ),
+    [],
+  )
+  const completeFrom = useCallback((row) => setWork({ type: 'complete', sample: row.sample, piece: row.piece }), [])
+  const approveFrom = useCallback((sample, stage) => setWork({ type: 'approval', sample, stage }), [])
+
+  const workSaved = useCallback(async () => {
+    setWork(null)
+    setWorkError('')
+    await reload()
+  }, [reload])
+
+  const confirmComplete = async () => {
+    const { sample, piece } = work
+    setWork(null)
+    try {
+      await callSampleAction('complete_sample_piece', { p_sample_id: sample.id, p_piece: piece })
+      setWorkError('')
+      await reload()
+    } catch (failure) {
+      setWorkError(friendlyError(failure))
+    }
+  }
 
   const columns = useMemo(() => {
     const { person, reference, component, productType, collection } = lookups
@@ -193,6 +261,30 @@ export default function SamplesPage() {
           {notice}
         </p>
       )}
+      {workError && (
+        <p className="alert alert--error" role="alert">
+          {workError}
+        </p>
+      )}
+      <Tabs
+        tabs={tabs}
+        value={tab}
+        label="Sample views"
+        onChange={(key) => setParams(key === 'all' ? {} : { tab: key }, { replace: true })}
+      />
+      {tab === 'process' && (
+        <ProcessTab rows={waiting.process} lookups={lookups} loading={loading} onOpen={openSample} onSend={sendFrom} onReceive={receiveFrom} />
+      )}
+      {tab === 'complete' && (
+        <CompleteTab rows={waiting.complete} lookups={lookups} loading={loading} onOpen={openSample} onComplete={completeFrom} />
+      )}
+      {tab === 'images' && (
+        <ImagesTab rows={waiting.images} lookups={lookups} loading={loading} onOpen={openSample} onSaved={workSaved} onError={setWorkError} />
+      )}
+      {tab === 'approval' && (
+        <ApprovalTab rows={waiting.approval} lookups={lookups} loading={loading} onOpen={openSample} onApprove={approveFrom} />
+      )}
+      {tab === 'all' && (
       <DataTable
         tableId="samples"
         title="Samples"
@@ -209,6 +301,48 @@ export default function SamplesPage() {
           )
         }
       />
+      )}
+      {work?.type === 'send' && (
+        <EntryDialog
+          mode="send"
+          sample={work.sample}
+          data={data}
+          piece={work.piece}
+          pieces={PIECES.filter((piece) => pieceStatus(work.sample, piece.value) !== 'completed')}
+          onClose={() => setWork(null)}
+          onSaved={workSaved}
+        />
+      )}
+      {work?.type === 'choose' && (
+        <ReceiveChooser
+          row={work.row}
+          lookups={lookups}
+          onClose={() => setWork(null)}
+          onPick={(entry) => setWork({ type: 'receive', sample: work.row.sample, entry })}
+        />
+      )}
+      {work?.type === 'receive' && (
+        <EntryDialog mode="receive" sample={work.sample} data={data} entry={work.entry} onClose={() => setWork(null)} onSaved={workSaved} />
+      )}
+      {work?.type === 'approval' && (
+        <ApprovalDialog
+          sample={work.sample}
+          stage={work.stage}
+          current={work.sample.approvals[work.stage]}
+          onClose={() => setWork(null)}
+          onSaved={workSaved}
+        />
+      )}
+      {work?.type === 'complete' && (
+        <ConfirmDialog
+          title={`Mark the ${PIECE_LABEL[work.piece]} piece of ${work.sample.sample_no} completed?`}
+          message="After this, nothing more can be sent to a process for this piece. Only a person with authority All can reopen it."
+          confirmLabel="Mark completed"
+          cancelLabel="Not yet"
+          onCancel={() => setWork(null)}
+          onConfirm={confirmComplete}
+        />
+      )}
       {viewing && (
         <SampleDetail
           sample={viewing}

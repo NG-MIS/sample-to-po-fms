@@ -114,6 +114,23 @@ the ticked departments. Authority All can do everything in this table.
 
 **Names the system depends on** now also include the department "Management".
 
+**Tabs on the Samples screen.** Each activity has its own tab, and a tab lists only what is
+waiting for that activity. Each tab shows a count, and a row leaves its tab as soon as the
+action is done.
+
+| Tab | What it lists | Actions on a row | Who sees the tab |
+|---|---|---|---|
+| All samples | Every sample the person can see | Open, Edit (authority All) | Everyone |
+| Process | Every piece that is not completed, one row per piece, with what is out at which vendor | Send, Receive | The sample's designer for their own samples; Sample department authority for all |
+| Mark completed | Pieces that are Pending: nothing out at a vendor, not completed | Mark completed | Sample department authority |
+| Images | Samples still missing a 1st sample, 2nd sample or photoshoot image | Add (per missing image) | Same as Process |
+| Approval | Samples with no final approval yet | 1st approval, Final approval | Department Management |
+
+Sending and receiving share the Process tab, and the 1st and final approval share the Approval
+tab. A work tab lists only items the signed-in person may act on, and a tab the person can
+never use is not shown to them. The chosen tab is kept in the page address, so a refresh or a
+shared link opens the same tab. Opening a sample still shows its full picture and history.
+
 ## 3. How it is built
 
 | Part | Choice | Why |
@@ -304,6 +321,7 @@ All in `src/components`. A screen never builds its own version of these.
 | `VoiceRecorder`, `VoiceNote` | Record a voice note from the microphone; play one back |
 | `Popover` | Floating panel under a button, used by pick-lists and column filters |
 | `Field`, `Tick`, `Badge` | Labelled form row, tick box, coloured yes/no label |
+| `Tabs` | A row of tabs, each with a count of what is waiting |
 | `Layout`, `PageHead` | Menu on the left with folding groups (a drawer on a phone), signed-in person on top, screen heading |
 
 Shared helpers in `src/lib`: database connection, sign-in state, Esc handling, picture links
@@ -349,6 +367,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 24 Nov 2026 | Samples screen given a tab per activity (All samples, Process, Mark completed, Images, Approval), each listing only what is waiting |
 | 24 Nov 2026 | Step 3 built: process log for the two pieces, piece completion, stage images, 1st and final approval, Process log screen, Processes and Vendors masters |
 | 24 Nov 2026 | Category details added to samples: PCS type (automatic), denim type, product type and collection, with Product types and Collections masters |
 | 24 Nov 2026 | Components added: a Components master, and a required multi-pick COMPONENTS field on every sample |

@@ -5,6 +5,9 @@ Newest first. A changed decision is not deleted: a new entry is added that repla
 
 | Date | Decision | Reason |
 |---|---|---|
+| 24 Nov 2026 | A work tab lists only items the signed-in person may act on, and is hidden from people who can never use it | Nobody sees a list of work that is not theirs |
+| 24 Nov 2026 | The Process tab has one row per piece that is not completed; when a piece is out in two processes, Receive asks which one came back | Send and receive in one place, as Nihal asked |
+| 24 Nov 2026 | Samples screen has a tab per activity; send and receive share one tab, 1st and final approval share one tab; each tab shows only eligible items | Nihal's instruction |
 | 24 Nov 2026 | Every approval given or changed is kept in a history | An approval can be changed by authority All, and the earlier decision must not be lost |
 | 24 Nov 2026 | Department "Management" is created by the system and cannot be renamed or switched inactive | The approval rule and "sees every sample" depend on it |
 | 24 Nov 2026 | People in Management can see every sample | They approve any sample |

@@ -18,21 +18,15 @@ import {
   PIECE_LABEL,
   PIECE_STATUS_LABEL,
   STAGES,
+  callSampleAction as call,
   canWorkOn,
   daysOut,
   latestImage,
   pieceStatus,
   stageImagePath,
 } from '../lib/sampleData.js'
-import { supabase } from '../lib/supabase.js'
 
 const DENIM_LABEL = { denim: 'Denim', non_denim: 'Non denim' }
-
-// Runs a database action and turns a failure into a readable message.
-async function call(name, args) {
-  const { error } = await supabase.rpc(name, args)
-  if (error) throw error
-}
 
 // Everything about one sample after it is created: details, stage images,
 // the two pieces and their process log, approval and remarks.
@@ -311,7 +305,7 @@ export default function SampleDetail({ sample, data, onChanged, onEdit, onClose 
         <EntryDialog mode="send" sample={sample} data={data} piece={dialog.piece} pieces={openPieces} onClose={() => setDialog(null)} onSaved={saved} />
       )}
       {dialog?.type === 'receive' && (
-        <EntryDialog mode="receive" sample={sample} data={data} entry={dialog.entry} names={names} onClose={() => setDialog(null)} onSaved={saved} />
+        <EntryDialog mode="receive" sample={sample} data={data} entry={dialog.entry} onClose={() => setDialog(null)} onSaved={saved} />
       )}
       {dialog?.type === 'correct' && (
         <EntryDialog mode="correct" sample={sample} data={data} entry={dialog.entry} pieces={PIECES} onClose={() => setDialog(null)} onSaved={saved} />
@@ -355,13 +349,36 @@ function Detail({ label, children }) {
 
 // One of the four stage images, with its upload button.
 function StageTile({ sample, stage, canWork, people, onSaved, onError }) {
-  const fileRef = useRef(null)
-  const [editing, setEditing] = useState(null)
-  const [busy, setBusy] = useState(false)
   const path = stageImagePath(sample, stage.key)
   const record = sample.stageImages[stage.key]
   const isMain = latestImage(sample)?.key === stage.key
   const canUpload = canWork && stage.key !== 'concept'
+
+  return (
+    <div className={`stage-tile ${isMain ? 'stage-tile--main' : ''}`} data-stage={stage.key}>
+      <div className="stage-name">
+        <strong>{stage.label}</strong>
+        {isMain && <span className="badge badge--on">Main picture</span>}
+      </div>
+      <ClickableImage bucket={BUCKET} path={path} alt={`${sample.sample_no} ${stage.label.toLowerCase()} image`} size={132} />
+      {record && (
+        <p className="hint">
+          {people.get(record.created_by)}, {formatDateTime(record.created_at)}
+        </p>
+      )}
+      {!path && !canUpload && <p className="hint">Not added yet</p>}
+      {canUpload && <StageImageButton sample={sample} stage={stage} onSaved={onSaved} onError={onError} />}
+    </div>
+  )
+}
+
+// The button that adds or replaces one stage image: choose a picture, edit it,
+// upload it and save it against the sample. Used in the opened sample and in the Images tab.
+export function StageImageButton({ sample, stage, onSaved, onError, label }) {
+  const fileRef = useRef(null)
+  const [editing, setEditing] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const path = stageImagePath(sample, stage.key)
 
   const choose = (event) => {
     const chosen = event.target.files?.[0]
@@ -386,34 +403,20 @@ function StageTile({ sample, stage, canWork, people, onSaved, onError }) {
   }
 
   return (
-    <div className={`stage-tile ${isMain ? 'stage-tile--main' : ''}`} data-stage={stage.key}>
-      <div className="stage-name">
-        <strong>{stage.label}</strong>
-        {isMain && <span className="badge badge--on">Main picture</span>}
-      </div>
-      <ClickableImage bucket={BUCKET} path={path} alt={`${sample.sample_no} ${stage.label.toLowerCase()} image`} size={132} />
-      {record && (
-        <p className="hint">
-          {people.get(record.created_by)}, {formatDateTime(record.created_at)}
-        </p>
-      )}
-      {!path && !canUpload && <p className="hint">Not added yet</p>}
-      {canUpload && (
-        <>
-          <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={choose} />
-          <button type="button" className="btn btn--small" disabled={busy} onClick={() => fileRef.current?.click()}>
-            {busy ? 'Uploading…' : path ? 'Replace picture' : 'Add picture'}
-          </button>
-        </>
-      )}
+    <>
+      <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={choose} />
+      <button type="button" className="btn btn--small" disabled={busy} onClick={() => fileRef.current?.click()}>
+        {busy ? 'Uploading…' : (label ?? (path ? 'Replace picture' : 'Add picture'))}
+      </button>
       {editing && <ImageEditor file={editing} onCancel={() => setEditing(null)} onDone={upload} />}
-    </div>
+    </>
   )
 }
 
 // Send a piece to a process, receive it back, or (authority All) correct an entry.
-function EntryDialog({ mode, sample, data, entry, piece, pieces, names, onClose, onSaved }) {
+export function EntryDialog({ mode, sample, data, entry, piece, pieces, onClose, onSaved }) {
   const today = todayLocal()
+  const names = useMemo(() => ({ process: nameMap(data.processes), vendor: nameMap(data.vendors) }), [data])
   const initial = useMemo(
     () => ({
       piece: entry?.piece ?? piece ?? pieces?.[0]?.value ?? null,
@@ -579,7 +582,7 @@ function EntryDialog({ mode, sample, data, entry, piece, pieces, names, onClose,
   )
 }
 
-function ApprovalDialog({ sample, stage, current, onClose, onSaved }) {
+export function ApprovalDialog({ sample, stage, current, onClose, onSaved }) {
   const info = APPROVAL_STAGES[stage]
   const [decision, setDecision] = useState(current?.decision ?? null)
   const [remarks, setRemarks] = useState(current?.remarks ?? '')
