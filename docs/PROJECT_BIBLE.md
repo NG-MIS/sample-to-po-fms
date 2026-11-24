@@ -135,6 +135,8 @@ from the Supabase dashboard, but only if another project is paused first.
 13. **Every picture view fits its space.** In the picture popup and in the picture editor,
     the picture is enlarged or reduced to fill the space available, with the whole picture
     visible and its shape kept. A small picture is never shown small in a large popup.
+    Thumbnails in lists and forms also show the whole picture, with empty space at the sides
+    when the picture is not square; nothing is trimmed.
 
 ### Look and feel
 
@@ -265,6 +267,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 24 Nov 2026 | Thumbnails changed to show the whole picture instead of trimming the edges |
 | 24 Nov 2026 | Standing rule 13 added and built: pictures fill the popup and the editor preview |
 | 24 Nov 2026 | Standing rule 12 added and built: picture editor (rotate, crop, compress) on every picture upload |
 | 24 Nov 2026 | Sample form laid out in three sections: Sample details (prefix, creation date, designer, reference), Pictures (concept image, reference image), Remarks |

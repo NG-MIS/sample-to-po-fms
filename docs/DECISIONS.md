@@ -5,6 +5,7 @@ Newest first. A changed decision is not deleted: a new entry is added that repla
 
 | Date | Decision | Reason |
 |---|---|---|
+| 24 Nov 2026 | Thumbnails show the whole picture with empty space at the sides, never trimmed | Nihal's choice: a garment picture should not lose its edges |
 | 24 Nov 2026 | Edited pictures are saved as JPG, with "Balanced" (longest side 1600) as the default compression | Small files that still look sharp; phone photos of 5 to 10 MB come down to a few hundred KB |
 | 24 Nov 2026 | Several pictures added at once are compressed automatically without opening the editor for each | Adding ten remark pictures should not mean ten popups; each can still be edited |
 | 24 Nov 2026 | Picture editor (rotate, crop, compress) on every picture upload | Nihal's standing rule |

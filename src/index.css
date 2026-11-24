@@ -456,7 +456,11 @@ textarea {
 .thumb img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  /* The whole picture is shown; any spare room is left empty at the sides. */
+  object-fit: contain;
+}
+.thumb--button {
+  background: var(--surface);
 }
 .upload {
   display: flex;
