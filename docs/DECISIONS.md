@@ -5,6 +5,8 @@ Newest first. A changed decision is not deleted: a new entry is added that repla
 
 | Date | Decision | Reason |
 |---|---|---|
+| 24 Nov 2026 | The existing series LB was given the name "LB" until it is renamed | Every series needs a name; Nihal can change it in Numbering at any time |
+| 24 Nov 2026 | A series name is required, used once, and stays editable after the series has given out numbers | The name is only a label on the sample form; the prefix and numbers are what must never change |
 | 24 Nov 2026 | The picture already uploaded on sample LB-3001 became the picture of its reference "MUMBAI SAMPLES" | Nothing is lost when the picture moves from the sample to the reference; it can be replaced in Masters |
 | 24 Nov 2026 | A tag typed on the sample form is added to the Tags list only when the sample is saved, by whoever may save the sample | No stray tags from forms that were cancelled; Nihal: tags "can be added instantly" |
 | 24 Nov 2026 | Tags are kept without the # sign and compared ignoring capitals; the screens show the # | "#Summer", "summer" and "SUMMER" are one tag |

@@ -12,6 +12,7 @@ import { nextSampleNo } from '../lib/numbering.js'
 import { supabase } from '../lib/supabase.js'
 
 const IMPORT_FIELDS = [
+  { header: 'SERIES NAME', required: true, hint: 'The name shown on the sample form. Each name can be used once.' },
   { header: 'PREFIX', required: true, hint: '1 to 10 letters or digits, no spaces. Stored in capitals. Each prefix can be used once.' },
   { header: 'STARTING NUMBER', required: true, hint: 'A whole number, 1 or more. The first sample of the series gets this number.' },
   { header: 'ACTIVE', required: false, hint: 'Yes or No. Leave blank for Yes.' },
@@ -36,13 +37,20 @@ export default function NumberingPage() {
     if (memo.seen.has(prefix)) return { error: 'This prefix is repeated in the file.' }
     memo.seen.add(prefix)
     if (rows.some((row) => row.prefix === prefix)) return { skip: 'This prefix already exists.' }
+    const name = cells['SERIES NAME']
+    if (!name) return { error: 'SERIES NAME is empty.' }
+    const nameKey = name.toLowerCase()
+    memo.names ??= new Set()
+    if (memo.names.has(nameKey)) return { error: 'This series name is repeated in the file.' }
+    memo.names.add(nameKey)
+    if (rows.some((row) => row.name.trim().toLowerCase() === nameKey)) return { error: 'This series name already exists.' }
     const start = Number(cells['STARTING NUMBER'])
     if (!/^\d+$/.test(cells['STARTING NUMBER']) || start < 1) {
       return { error: 'STARTING NUMBER must be a whole number, 1 or more.' }
     }
     const isActive = readYesNo(cells.ACTIVE, true)
     if (isActive === null) return { error: 'ACTIVE must be Yes or No.' }
-    return { record: { prefix, start_number: start, is_active: isActive } }
+    return { record: { name, prefix, start_number: start, is_active: isActive } }
   }
 
   const saveImported = async (record) => {
@@ -53,6 +61,7 @@ export default function NumberingPage() {
   const columns = useMemo(() => {
     const list = [
       { key: 'sl_no', header: 'SL NO', value: (row) => row.sl_no, width: 90 },
+      { key: 'name', header: 'SERIES NAME', value: (row) => row.name },
       { key: 'prefix', header: 'PREFIX', value: (row) => row.prefix },
       { key: 'start_number', header: 'STARTING NUMBER', value: (row) => row.start_number },
       { key: 'last_number', header: 'LAST NUMBER USED', value: (row) => row.last_number ?? '' },
@@ -93,7 +102,7 @@ export default function NumberingPage() {
         title="Numbering"
         note={
           isAdmin
-            ? 'Each prefix is its own series. A sample number is the prefix, a dash, then the next number.'
+            ? 'Each prefix is its own series. The sample form shows the series name; a sample number is the prefix, a dash, then the next number.'
             : 'Only people with authority All can add or change a series.'
         }
       />
@@ -145,6 +154,7 @@ export default function NumberingPage() {
 function SeriesForm({ row, onClose, onSaved }) {
   const isNew = !row.id
   const used = row.last_number !== null && row.last_number !== undefined
+  const [name, setName] = useState(row.name ?? '')
   const [prefix, setPrefix] = useState(row.prefix ?? '')
   const [start, setStart] = useState(row.start_number ? String(row.start_number) : '')
   const [isActive, setIsActive] = useState(row.is_active ?? true)
@@ -152,6 +162,7 @@ function SeriesForm({ row, onClose, onSaved }) {
   const [error, setError] = useState('')
 
   const dirty =
+    name !== (row.name ?? '') ||
     prefix !== (row.prefix ?? '') ||
     start !== (row.start_number ? String(row.start_number) : '') ||
     isActive !== (row.is_active ?? true)
@@ -161,11 +172,15 @@ function SeriesForm({ row, onClose, onSaved }) {
 
   const save = async (event) => {
     event.preventDefault()
+    const cleanName = name.trim()
+    if (!cleanName) return setError('Series name is required.')
     if (!/^[A-Z0-9]{1,10}$/.test(prefix)) return setError('Prefix must be 1 to 10 letters or digits, with no spaces.')
     if (!Number.isInteger(startNumber) || startNumber < 1) return setError('Starting number must be a whole number, 1 or more.')
     setBusy(true)
     setError('')
-    const values = used ? { is_active: isActive } : { prefix, start_number: startNumber, is_active: isActive }
+    const values = used
+      ? { name: cleanName, is_active: isActive }
+      : { name: cleanName, prefix, start_number: startNumber, is_active: isActive }
     const { error: failure } = isNew
       ? await supabase.from('sample_series').insert(values)
       : await supabase.from('sample_series').update(values).eq('id', row.id)
@@ -176,7 +191,7 @@ function SeriesForm({ row, onClose, onSaved }) {
 
   return (
     <Modal
-      title={isNew ? 'Add series' : `Edit series ${row.prefix}`}
+      title={isNew ? 'Add series' : `Edit series ${row.name}`}
       onClose={onClose}
       dirty={dirty}
       width={440}
@@ -194,9 +209,13 @@ function SeriesForm({ row, onClose, onSaved }) {
       <form id="series-form" onSubmit={save}>
         {used && (
           <p className="alert alert--ok">
-            This series has already given out numbers, so its prefix and starting number are locked.
+            This series has already given out numbers, so its prefix and starting number are locked. The name can
+            still be changed.
           </p>
         )}
+        <Field label="Series name" htmlFor="series-name" required hint="Shown on the sample form when choosing the series.">
+          <input id="series-name" className="input" value={name} onChange={(event) => setName(event.target.value)} />
+        </Field>
         <Field label="Prefix" htmlFor="series-prefix" required hint="Letters and digits only. Stored in capitals.">
           <input
             id="series-prefix"
@@ -227,7 +246,7 @@ function SeriesForm({ row, onClose, onSaved }) {
           label="Active"
           checked={isActive}
           onChange={setIsActive}
-          hint="An inactive prefix no longer appears on the sample form."
+          hint="An inactive series no longer appears on the sample form."
         />
         {error && (
           <p className="alert alert--error" role="alert">

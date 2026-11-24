@@ -459,7 +459,7 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
 
   const seriesOptions = lists.series
     .filter((series) => series.is_active)
-    .map((series) => ({ value: series.id, label: series.prefix }))
+    .map((series) => ({ value: series.id, label: series.name }))
     .sort((a, b) => a.label.localeCompare(b.label))
   const chosenSeries = lists.series.find((series) => series.id === form.series_id)
 
@@ -517,7 +517,7 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
 
   const save = async (event) => {
     event.preventDefault()
-    if (isNew && !form.series_id) return setError('Choose a prefix.')
+    if (isNew && !form.series_id) return setError('Choose a series.')
     if (!form.creation_date) return setError('Creation date is required.')
     if (form.creation_date > todayLocal()) return setError('Creation date cannot be in the future.')
     if (!form.designer_id) return setError('Choose a designer.')
@@ -585,13 +585,13 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
         <h3 className="section-title form-wide">Sample details</h3>
         {isNew ? (
           <Field
-            label="Prefix"
+            label="Series"
             htmlFor="sample-prefix"
             required
             hint={
               chosenSeries
                 ? `Next number: ${nextSampleNo(chosenSeries)}`
-                : 'The sample number is made from the prefix.'
+                : 'The sample number is made from the prefix of the series.'
             }
           >
             <PickList
@@ -599,7 +599,7 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
               options={seriesOptions}
               value={form.series_id}
               onChange={set('series_id')}
-              placeholder={seriesOptions.length ? 'Select…' : 'No active prefix in the Numbering master'}
+              placeholder={seriesOptions.length ? 'Select…' : 'No active series in the Numbering master'}
             />
           </Field>
         ) : (

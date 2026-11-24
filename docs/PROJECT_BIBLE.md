@@ -34,7 +34,7 @@ Each stage is filled in here as it is discussed and agreed, one step at a time.
 | SL NO | Automatic running number |
 | TIMESTAMP | Automatic, the moment of saving |
 | ENTERED BY | Automatic, the signed-in person |
-| SAMPLE NO | Automatic. The person picks a PREFIX; the system adds the next number of that series |
+| SAMPLE NO | Automatic. The person picks a series by its NAME; the system makes the number from that series' prefix and its next number |
 | CREATION DATE | Chosen by the person, defaulting to today. Earlier dates allowed, future dates not |
 | DESIGNER | Required. Picked from active people whose department is "Sample" and who hold the role "Designer" |
 | COMPONENTS | Required, at least one. Several can be picked from the Components master |
@@ -50,7 +50,9 @@ Each stage is filled in here as it is discussed and agreed, one step at a time.
 **Sample number.** Prefix, a dash, then the number with no padding: `LB-2323`, `VM-511`,
 `ABC-100023`. Each prefix is its own series in the Numbering master, with its own starting
 number. A number is given out exactly once, with no gaps, and never changes afterwards.
-Once a series has been used, its prefix and starting number are locked.
+Once a series has been used, its prefix and starting number are locked. Every series also has
+a name, which is what the sample form shows when choosing the series; the name can be changed
+at any time and each name is used once.
 
 **Who can do what with a sample.**
 
@@ -250,7 +252,7 @@ Created by `supabase/migrations/20261123113937_masters_and_sign_in.sql`.
 | `user_roles` | Which roles each person holds (a person can hold several) |
 | `user_authority_departments` | Which departments a person works with when their authority is Department(s) |
 | `avatars` (picture store) | Avatar pictures. Private: only signed-in people can view them |
-| `sample_series` | Numbering master: prefix, starting number, last number used, active or inactive |
+| `sample_series` | Numbering master: series name, prefix, starting number, last number used, active or inactive |
 | `sample_reference_options` | References list: name, picture, active or inactive |
 | `sample_references` | Which references each sample has |
 | `tags` | Tags list: name (kept without the # sign), active or inactive |
@@ -308,7 +310,7 @@ Rules the database enforces, whatever the screens do:
 | Departments | List, add and edit | Built |
 | Designations | List, add and edit | Built |
 | Roles | List, add and edit | Built |
-| Numbering | List, add and edit series (prefix and starting number) | Built |
+| Numbering | List, add and edit series (series name, prefix and starting number) | Built |
 | References | List, add and edit, each with its picture (required when added by hand; an imported reference gets its picture afterwards) | Built |
 | Tags | List, add and edit. Shown with a # in front | Built |
 | Components | List, add, edit and import | Built |
@@ -387,6 +389,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 24 Nov 2026 | Numbering: every series has a name; the sample form lists series by name while sample numbers still use the prefix. Added by `supabase/migrations/20261124115500_series_name.sql` |
 | 24 Nov 2026 | References now carry their picture in Masters and a sample can have several of them (the separate reference picture on the sample is gone). Tags added: a Tags master, and optional #tags on every sample that can be added on the spot |
 | 24 Nov 2026 | Approval rules revised: "1st approval" renamed "initial approval" and can be repeated while it is Maybe, with the number of times changes were requested shown; an initial approval of No closes the sample and everything on it stops |
 | 24 Nov 2026 | Samples screen given a tab per activity (All samples, Process, Mark completed, Images, Approval), each listing only what is waiting |
