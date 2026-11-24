@@ -56,6 +56,7 @@ Next to discuss: the CAD stage (CAD drawing and its approval).
 | 24 Nov 2026 | Reference pictures in Masters, several references per sample, Tags master and #tags on samples (26 database rule checks; 10 new screen checks, 379 pass in total) |
 | 24 Nov 2026 | Series name in Numbering, shown on the sample form in place of the prefix (380 screen checks pass in total) |
 | 24 Nov 2026 | Fabric list of a sample, Fabrics tab, Fabrics and Fabric vendors masters (24 database rule checks; 42 new screen checks, 424 pass in total) |
+| 25 Nov 2026 | Fabrics tab: one row per sample with fabric status Pending, Incomplete, Completed (426 screen checks pass in total) |
 
 ## Next, in order
 

@@ -24,6 +24,9 @@ import {
   daysOut,
   isClosed,
   latestImage,
+  FABRIC_STATUS_BADGE,
+  FABRIC_STATUS_LABEL,
+  fabricStatus,
   pieceStatus,
   sampleReferences,
   sampleTags,
@@ -234,7 +237,12 @@ export default function SampleDetail({ sample, data, onChanged, onEdit, onClose 
       </div>
 
       <h3 className="section-title section-title--next section-title--action">
-        Fabrics
+        <span>
+          Fabrics{' '}
+          <span className={`badge badge--${FABRIC_STATUS_BADGE[fabricStatus(sample)]}`}>
+            {FABRIC_STATUS_LABEL[fabricStatus(sample)]}
+          </span>
+        </span>
         {canWork && (
           <button type="button" className="btn btn--small" onClick={() => setDialog({ type: 'fabrics' })}>
             {sample.fabrics.length ? 'Change fabrics' : 'Add fabrics'}

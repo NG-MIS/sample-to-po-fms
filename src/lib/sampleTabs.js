@@ -1,4 +1,13 @@
-import { PIECES, STAGES, canWorkOn, isClosed, pieceStatus, stageImagePath } from './sampleData.js'
+import {
+  PIECES,
+  STAGES,
+  canWorkOn,
+  componentsWithoutFabric,
+  fabricStatus,
+  isClosed,
+  pieceStatus,
+  stageImagePath,
+} from './sampleData.js'
 
 // Which rows belong in which work tab of the Samples screen. Each tab lists only
 // what is waiting for that activity, and only items the signed-in person may act on.
@@ -50,16 +59,17 @@ export function imageRows(data, profile) {
     .filter((sample) => LATER_STAGES.some((stage) => !stageImagePath(sample, stage.key)))
 }
 
-// Fabrics: every open sample the person may work on, one row per fabric line.
-// A sample with no fabric yet gets one row saying so.
+// Fabrics: every open sample the person may work on, one row per sample, with
+// its fabric status (pending, incomplete or completed).
 export function fabricRows(data, profile) {
   return data.samples
     .filter((sample) => canWorkOn(sample, data, profile) && !isClosed(sample))
-    .flatMap((sample) =>
-      sample.fabrics.length
-        ? sample.fabrics.map((line) => ({ id: `${sample.id}:${line.id}`, sample, line }))
-        : [{ id: `${sample.id}:none`, sample, line: null }],
-    )
+    .map((sample) => ({
+      id: sample.id,
+      sample,
+      status: fabricStatus(sample),
+      missing: componentsWithoutFabric(sample),
+    }))
 }
 
 // Approval: samples that have no final approval yet and are not closed.

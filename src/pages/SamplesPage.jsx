@@ -20,7 +20,10 @@ import {
   DECISION_LABEL,
   PIECES,
   PIECE_LABEL,
+  FABRIC_STATUS_BADGE,
+  FABRIC_STATUS_LABEL,
   PIECE_STATUS_LABEL,
+  fabricStatus,
   callSampleAction,
   isClosed,
   latestImage,
@@ -128,7 +131,7 @@ export default function SamplesPage() {
     (worksOnSamples || waiting.fabrics.length > 0) && {
       key: 'fabrics',
       label: 'Fabrics',
-      count: waiting.fabrics.filter((row) => !row.line).length,
+      count: waiting.fabrics.filter((row) => row.status !== 'completed').length,
     },
     data?.access.management && { key: 'approval', label: 'Approval', count: waiting.approval.length },
   ].filter(Boolean)
@@ -269,6 +272,16 @@ export default function SamplesPage() {
         key: 'fabrics',
         header: 'FABRICS',
         value: (row) => [...new Set(row.fabrics.map((line) => lookups.fabric.get(line.fabric_id)).filter(Boolean))].sort(),
+      },
+      {
+        key: 'fabric_status',
+        header: 'FABRIC STATUS',
+        value: (row) => FABRIC_STATUS_LABEL[fabricStatus(row)],
+        render: (row) => (
+          <span className={`badge badge--${FABRIC_STATUS_BADGE[fabricStatus(row)]}`}>
+            {FABRIC_STATUS_LABEL[fabricStatus(row)]}
+          </span>
+        ),
       },
       {
         key: 'remarks',

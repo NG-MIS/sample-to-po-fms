@@ -6,6 +6,8 @@ import { formatDate } from '../lib/format.js'
 import {
   BUCKET,
   DECISION_LABEL,
+  FABRIC_STATUS_BADGE,
+  FABRIC_STATUS_LABEL,
   PIECE_LABEL,
   PIECE_STATUS_LABEL,
   STAGES,
@@ -15,7 +17,6 @@ import {
   stageImagePath,
 } from '../lib/sampleData.js'
 import { StageImageButton } from './SampleDetail.jsx'
-import { fabricLineColumns } from '../lib/sampleFabrics.js'
 
 // The work tabs of the Samples screen. Each lists only what is waiting for
 // that activity, and only items the signed-in person may act on.
@@ -276,20 +277,35 @@ export function ImagesTab({ rows, lookups, loading, onOpen, onSaved, onError }) 
 
 // ---------- Approval tab: 1st and final together ----------
 
+const uniqueSorted = (values) => [...new Set(values.filter(Boolean))].sort()
+
 export function FabricTab({ rows, lookups, loading, onOpen, onEdit }) {
   const columns = useMemo(
     () => [
       ...sampleColumns(lookups, onOpen, (row) => row.sample),
-      ...fabricLineColumns(lookups).map((column) => ({
-        ...column,
-        value: (row) => (row.line ? column.value(row.line) : column.key === 'fabric' ? 'No fabric yet' : ''),
-        sortValue: column.sortValue ? (row) => (row.line ? column.sortValue(row.line) : -1) : undefined,
-        render:
-          column.key === 'fabric'
-            ? (row) =>
-                row.line ? column.value(row.line) : <span className="badge badge--pending">No fabric yet</span>
-            : undefined,
-      })),
+      {
+        key: 'fabric_status',
+        header: 'FABRIC STATUS',
+        value: (row) => FABRIC_STATUS_LABEL[row.status],
+        render: (row) => (
+          <span className={`badge badge--${FABRIC_STATUS_BADGE[row.status]}`}>{FABRIC_STATUS_LABEL[row.status]}</span>
+        ),
+      },
+      {
+        key: 'fabrics',
+        header: 'FABRICS',
+        value: (row) => uniqueSorted(row.sample.fabrics.map((line) => lookups.fabric.get(line.fabric_id))),
+      },
+      {
+        key: 'without_fabric',
+        header: 'COMPONENTS WITHOUT FABRIC',
+        value: (row) => uniqueSorted(row.missing.map((id) => lookups.component.get(id))),
+      },
+      {
+        key: 'vendor_codes',
+        header: 'VENDOR CODES',
+        value: (row) => uniqueSorted(row.sample.fabrics.map((line) => lookups.fabricVendor.get(line.vendor_id))),
+      },
       ...contextColumns(lookups, (row) => row.sample),
       {
         key: 'actions',
@@ -298,10 +314,10 @@ export function FabricTab({ rows, lookups, loading, onOpen, onEdit }) {
         render: (row) => (
           <button
             type="button"
-            className={`btn btn--small ${row.line ? '' : 'btn--primary'}`}
+            className={`btn btn--small ${row.status === 'completed' ? '' : 'btn--primary'}`}
             onClick={() => onEdit(row.sample)}
           >
-            {row.line ? 'Change fabrics' : 'Add fabrics'}
+            {row.status === 'pending' ? 'Add fabrics' : 'Change fabrics'}
           </button>
         ),
       },
@@ -312,17 +328,17 @@ export function FabricTab({ rows, lookups, loading, onOpen, onEdit }) {
   return (
     <>
       <p className="tab-note">
-        The fabric list of every open sample you look after, one row per fabric. The number on the tab is how many
-        samples have no fabric yet.
+        One row per open sample you look after. Pending: no fabric yet. Incomplete: some components have no fabric.
+        Completed: every component has a fabric. The number on the tab counts the samples that are not completed.
       </p>
       <DataTable
-        tableId="samples-fabrics"
+        tableId="samples-fabric-status"
         title="Sample fabrics"
         columns={columns}
         rows={rows}
         loading={loading}
         emptyText="There is no open sample to add fabrics to."
-        searchPlaceholder="Search fabrics…"
+        searchPlaceholder="Search samples…"
       />
     </>
   )

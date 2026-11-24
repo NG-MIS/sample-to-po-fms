@@ -13,6 +13,22 @@ export const PIECES = [
 ]
 export const PIECE_LABEL = { 1: '1st sample', 2: '2nd sample' }
 export const PIECE_STATUS_LABEL = { pending: 'Pending', at_vendor: 'At vendor', completed: 'Completed' }
+export const FABRIC_STATUS_LABEL = { pending: 'Pending', incomplete: 'Incomplete', completed: 'Completed' }
+// The colour of each fabric status badge.
+export const FABRIC_STATUS_BADGE = { pending: 'pending', incomplete: 'maybe', completed: 'completed' }
+
+// The components of a sample that no fabric line is for yet.
+export const componentsWithoutFabric = (sample) => {
+  const covered = new Set(sample.fabrics.flatMap((line) => line.component_ids))
+  return sample.component_ids.filter((id) => !covered.has(id))
+}
+
+// Fabric status of a sample:
+//   pending    - no fabric at all
+//   incomplete - some fabric, but at least one component has none
+//   completed  - every component of the sample has a fabric
+export const fabricStatus = (sample) =>
+  sample.fabrics.length === 0 ? 'pending' : componentsWithoutFabric(sample).length > 0 ? 'incomplete' : 'completed'
 
 // The four stage images, lowest priority first. The picture shown for a
 // sample is always the highest one that exists.

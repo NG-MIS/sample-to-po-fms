@@ -6,7 +6,8 @@ Newest first. A changed decision is not deleted: a new entry is added that repla
 | Date | Decision | Reason |
 |---|---|---|
 | 24 Nov 2026 | The fabric list of a closed sample cannot be changed, also not by authority All through the edit form | "Everything stops" on a closed sample |
-| 24 Nov 2026 | The Fabrics tab lists every open sample the person looks after, and its number counts samples with no fabric yet | Fabrics can be changed at any time, so no sample ever "leaves" this tab; the number still shows what is waiting |
+| 25 Nov 2026 | Fabrics tab shows one row per sample with a status: Pending (no fabric), Incomplete (a component has no fabric), Completed (every component has one). Completed samples stay listed; the tab's number counts those not Completed. Replaces the one-row-per-fabric layout of 24 Nov | Nihal's instruction |
+| 25 Nov 2026 | A fabric line with no component picked does not count for any component | The status asks whether each component has a fabric, so the line must say which component it is for |
 | 24 Nov 2026 | A fabric line needs only the fabric name; components, vendor code and rate may stay empty | Nihal: all are optional at creation and can be filled later |
 | 24 Nov 2026 | Fabric names are their own list (Fabrics master), filled as names are typed on samples | "Dropdown from previous, also add new instantly"; a list lets a wrong name be corrected or switched off in one place |
 | 24 Nov 2026 | Fabric vendors are a separate master from the process Vendors, and samples show only the vendor code | Nihal: vendor name and vendor code in a fabric vendor master, "we use vendor codes everywhere" |

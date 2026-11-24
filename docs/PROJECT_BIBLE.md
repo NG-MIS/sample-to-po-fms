@@ -86,6 +86,16 @@ opened sample, by the same people who update the sample's images: its designer, 
 with department authority over Sample. On a closed sample the fabric list cannot be changed.
 The same list for accessories comes next (see FUTURE).
 
+**Fabric status** of a sample, worked out from its fabric lines:
+
+| Status | When |
+|---|---|
+| Pending | The sample has no fabric line |
+| Incomplete | It has fabric, but at least one of its components is not on any fabric line |
+| Completed | Every component of the sample is on a fabric line |
+
+The status shows in the Fabrics tab, in All samples and on the opened sample.
+
 ### 2.2 After creation: pieces, process log, stage images, approval (built)
 
 These run side by side after a sample is created. None waits for another.
@@ -158,7 +168,7 @@ action is done.
 | Process | Every piece that is not completed, one row per piece, with what is out at which vendor. On a closed sample, only pieces still at a vendor | Send, Receive | The sample's designer for their own samples; Sample department authority for all |
 | Mark completed | Pieces that are Pending: nothing out at a vendor, not completed | Mark completed | Sample department authority |
 | Images | Samples still missing a 1st sample, 2nd sample or photoshoot image | Add (per missing image) | Same as Process |
-| Fabrics | Every open sample the person looks after, one row per fabric line; a sample with no fabric yet shows one row saying so. The number on the tab counts samples with no fabric yet | Add fabrics, Change fabrics | Same as Process |
+| Fabrics | Every open sample the person looks after, one row per sample, with its fabric status, its fabrics, the components still without fabric and the vendor codes. The number on the tab counts samples that are not Completed | Add fabrics, Change fabrics | Same as Process |
 | Approval | Samples with no final approval yet that are not closed | Initial approval (while it is not Yes), Final approval | Department Management |
 
 Sending and receiving share the Process tab, and the initial and final approval share the
@@ -414,6 +424,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 25 Nov 2026 | Fabrics tab changed to one row per sample, with a fabric status: Pending, Incomplete or Completed |
 | 24 Nov 2026 | Fabric list added to samples (fabric name, for components, vendor code, rate), with a Fabrics tab, a Fabrics master and a Fabric vendors master. Added by `supabase/migrations/20261124131621_sample_fabrics_and_fabric_vendors.sql` |
 | 24 Nov 2026 | Numbering: every series has a name; the sample form lists series by name while sample numbers still use the prefix. Added by `supabase/migrations/20261124115500_series_name.sql` |
 | 24 Nov 2026 | References now carry their picture in Masters and a sample can have several of them (the separate reference picture on the sample is gone). Tags added: a Tags master, and optional #tags on every sample that can be added on the spot |
