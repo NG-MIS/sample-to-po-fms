@@ -5,6 +5,11 @@ Newest first. A changed decision is not deleted: a new entry is added that repla
 
 | Date | Decision | Reason |
 |---|---|---|
+| 24 Nov 2026 | The picture already uploaded on sample LB-3001 became the picture of its reference "MUMBAI SAMPLES" | Nothing is lost when the picture moves from the sample to the reference; it can be replaced in Masters |
+| 24 Nov 2026 | A tag typed on the sample form is added to the Tags list only when the sample is saved, by whoever may save the sample | No stray tags from forms that were cancelled; Nihal: tags "can be added instantly" |
+| 24 Nov 2026 | Tags are kept without the # sign and compared ignoring capitals; the screens show the # | "#Summer", "summer" and "SUMMER" are one tag |
+| 24 Nov 2026 | References are added only in Masters (authority All), never from the sample form | Nihal: "can't add reference" |
+| 24 Nov 2026 | A reference's picture lives in Masters; a sample can have several references and has no reference picture of its own | Nihal: the picture should be fetched directly while creating a sample |
 | 24 Nov 2026 | On a closed sample, a piece that is already at a vendor can still be received back | Otherwise the piece would show "At vendor" for ever. Everything else stops, as Nihal asked |
 | 24 Nov 2026 | A closed sample stops everything for everyone, authority All included; it is reopened only by authority All changing the No | One clear way to reopen, and it leaves a record in the approval history |
 | 24 Nov 2026 | An initial approval of No closes the sample: no final approval, and all further work stops | Nihal: "everything stops" |

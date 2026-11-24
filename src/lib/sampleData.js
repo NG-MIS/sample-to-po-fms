@@ -88,6 +88,8 @@ export async function loadSampleData(profile) {
     samples,
     remarks,
     sampleComponents,
+    sampleReferences,
+    sampleTags,
     entries,
     completions,
     stageImages,
@@ -97,6 +99,7 @@ export async function loadSampleData(profile) {
     collections,
     series,
     references,
+    tags,
     processes,
     vendors,
     people,
@@ -108,6 +111,8 @@ export async function loadSampleData(profile) {
     fetchRows('samples'),
     fetchRows('sample_remarks', 'created_at'),
     fetchRows('sample_components', null),
+    fetchRows('sample_references', null),
+    fetchRows('sample_tags', null),
     fetchRows('sample_process_entries'),
     fetchRows('sample_piece_completions', null),
     fetchRows('sample_stage_images', null),
@@ -117,6 +122,7 @@ export async function loadSampleData(profile) {
     fetchRows('collections'),
     fetchRows('sample_series'),
     fetchRows('sample_reference_options'),
+    fetchRows('tags'),
     fetchRows('processes'),
     fetchRows('vendors'),
     fetchRows('app_users'),
@@ -128,6 +134,8 @@ export async function loadSampleData(profile) {
 
   const remarksBySample = groupBy(remarks, 'sample_id')
   const componentsBySample = groupBy(sampleComponents, 'sample_id')
+  const referencesBySample = groupBy(sampleReferences, 'sample_id')
+  const tagsBySample = groupBy(sampleTags, 'sample_id')
   const entriesBySample = groupBy(entries, 'sample_id')
   const completionsBySample = groupBy(completions, 'sample_id')
   const imagesBySample = groupBy(stageImages, 'sample_id')
@@ -151,6 +159,8 @@ export async function loadSampleData(profile) {
       ...sample,
       remarks: remarksBySample.get(sample.id) ?? [],
       component_ids: (componentsBySample.get(sample.id) ?? []).map((link) => link.component_id),
+      reference_ids: (referencesBySample.get(sample.id) ?? []).map((link) => link.reference_id),
+      tag_ids: (tagsBySample.get(sample.id) ?? []).map((link) => link.tag_id),
       entries: entriesBySample.get(sample.id) ?? [],
       completions: keyed(completionsBySample.get(sample.id), 'piece'),
       stageImages: keyed(imagesBySample.get(sample.id), 'stage'),
@@ -161,6 +171,7 @@ export async function loadSampleData(profile) {
     collections,
     series,
     references,
+    tags,
     processes,
     vendors,
     people,
@@ -175,6 +186,23 @@ export async function loadSampleData(profile) {
       management: isAll || (Boolean(managementDepartment) && profile.department_id === managementDepartment),
     },
   }
+}
+
+// The references of a sample, by name: [{ id, name, image_path }].
+export function sampleReferences(sample, data) {
+  return sample.reference_ids
+    .map((id) => data.references.find((reference) => reference.id === id))
+    .filter(Boolean)
+    .sort((a, b) => a.name.localeCompare(b.name))
+}
+
+// The tags of a sample as shown on screen: ["#Party wear", "#Summer"].
+export function sampleTags(sample, data) {
+  return sample.tag_ids
+    .map((id) => data.tags.find((tag) => tag.id === id)?.name)
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b))
+    .map((name) => `#${name}`)
 }
 
 // May update the process log and stage images of this sample.

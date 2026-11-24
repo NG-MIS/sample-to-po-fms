@@ -56,3 +56,6 @@ export function friendlyError(error) {
   }
   return message
 }
+
+// A tag is kept without its # sign: "#Party  wear" is saved as "Party wear".
+export const cleanTagName = (text) => (text || '').trim().replace(/^#+/, '').replace(/\s+/g, ' ').trim()

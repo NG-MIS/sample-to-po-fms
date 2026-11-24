@@ -28,6 +28,7 @@ const MENU = [
       { to: '/processes', label: 'Processes' },
       { to: '/vendors', label: 'Vendors' },
       { to: '/references', label: 'References' },
+      { to: '/tags', label: 'Tags' },
     ],
   },
 ]

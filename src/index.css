@@ -1722,3 +1722,52 @@ button.side-group-title:hover {
   vertical-align: top;
   max-width: calc(100% - 80px);
 }
+
+/* ---------- References and tags on a sample ---------- */
+
+.reference-list {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+}
+.reference-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.reference-list--stacked {
+  display: flex;
+  gap: 12px;
+  padding-bottom: 12px;
+}
+.reference-list--stacked .reference-item {
+  flex-direction: column;
+  max-width: 110px;
+  text-align: center;
+  font-size: 12px;
+}
+.reference-no-picture {
+  font-size: 11px !important;
+  color: var(--text-muted, #6b7280);
+}
+.reference-none {
+  padding-bottom: 12px;
+}
+.tag-list {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.tag-chip {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.option--create {
+  font-weight: 600;
+  color: var(--primary, #047857);
+}

@@ -11,7 +11,7 @@ import { Field } from '../components/Field.jsx'
 import { PageHead } from '../components/Layout.jsx'
 import { useAuth } from '../lib/auth.jsx'
 import { nameMap, useLoad } from '../lib/data.js'
-import { formatDate, formatDateTime, friendlyError, todayLocal } from '../lib/format.js'
+import { cleanTagName, formatDate, formatDateTime, friendlyError, todayLocal } from '../lib/format.js'
 import { uploadFile } from '../lib/images.js'
 import { nextSampleNo } from '../lib/numbering.js'
 import { remarksSummary } from '../lib/remarks.js'
@@ -26,11 +26,45 @@ import {
   latestImage,
   loadSampleData,
   pieceStatus,
+  sampleReferences,
+  sampleTags,
 } from '../lib/sampleData.js'
 import { approvalRows, completeRows, imageRows, processRows } from '../lib/sampleTabs.js'
 import { supabase } from '../lib/supabase.js'
 import SampleDetail, { ApprovalDialog, EntryDialog } from './SampleDetail.jsx'
 import { ApprovalTab, CompleteTab, ImagesTab, ProcessTab, ReceiveChooser } from './SampleWorkTabs.jsx'
+
+// The references of a sample, each with its picture from Masters.
+function ReferenceList({ references, size, stacked = false }) {
+  if (!references.length) return null
+  return (
+    <span className={`reference-list ${stacked ? 'reference-list--stacked' : ''}`}>
+      {references.map((reference) => (
+        <span key={reference.id} className="reference-item">
+          {reference.image_path ? (
+            <ClickableImage bucket={BUCKET} path={reference.image_path} alt={`Reference ${reference.name}`} size={size} />
+          ) : (
+            stacked && <span className="thumb thumb--empty reference-no-picture" style={{ width: size, height: size }}>No picture</span>
+          )}
+          <span className="reference-name">{reference.name}</span>
+        </span>
+      ))}
+    </span>
+  )
+}
+
+function TagList({ tags }) {
+  if (!tags.length) return null
+  return (
+    <span className="tag-list">
+      {tags.map((tag) => (
+        <span key={tag} className="tag-chip">
+          {tag}
+        </span>
+      ))}
+    </span>
+  )
+}
 
 const DENIM_OPTIONS = [
   { value: 'denim', label: 'Denim' },
@@ -57,7 +91,6 @@ export default function SamplesPage() {
   const lookups = useMemo(
     () => ({
       person: nameMap(data?.people),
-      reference: nameMap(data?.references),
       component: nameMap(data?.components),
       productType: nameMap(data?.productTypes),
       collection: nameMap(data?.collections),
@@ -124,7 +157,7 @@ export default function SamplesPage() {
   }
 
   const columns = useMemo(() => {
-    const { person, reference, component, productType, collection } = lookups
+    const { person, component, productType, collection } = lookups
     const componentNames = (row) => row.component_ids.map((id) => component.get(id)).filter(Boolean).sort()
     return [
       { key: 'sl_no', header: 'SL NO', value: (row) => row.sl_no, width: 80 },
@@ -211,21 +244,14 @@ export default function SamplesPage() {
       {
         key: 'reference',
         header: 'REFERENCE',
-        value: (row) => reference.get(row.reference_option_id) ?? '',
-        render: (row) =>
-          (row.reference_image_path || reference.get(row.reference_option_id)) && (
-          <span className="cell-with-image">
-            {row.reference_image_path && (
-              <ClickableImage
-                bucket={BUCKET}
-                path={row.reference_image_path}
-                alt={`${row.sample_no} reference`}
-                size={44}
-              />
-            )}
-            {reference.get(row.reference_option_id) ?? ''}
-          </span>
-          ),
+        value: (row) => sampleReferences(row, data).map((reference) => reference.name),
+        render: (row) => <ReferenceList references={sampleReferences(row, data)} size={44} />,
+      },
+      {
+        key: 'tags',
+        header: 'TAGS',
+        value: (row) => sampleTags(row, data),
+        render: (row) => <TagList tags={sampleTags(row, data)} />,
       },
       {
         key: 'remarks',
@@ -263,7 +289,7 @@ export default function SamplesPage() {
         ),
       },
     ]
-  }, [lookups, isAdmin])
+  }, [lookups, isAdmin, data])
 
   return (
     <>
@@ -403,8 +429,8 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
       product_type_id: sample.product_type_id ?? null,
       collection_id: sample.collection_id ?? null,
       concept_image_path: sample.concept_image_path ?? null,
-      reference_option_id: sample.reference_option_id ?? null,
-      reference_image_path: sample.reference_image_path ?? null,
+      reference_ids: sample.reference_ids ?? [],
+      tag_ids: sample.tag_ids ?? [],
     }),
     [sample],
   )
@@ -415,7 +441,7 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
 
   const [form, setForm] = useState(initial)
   const [conceptFile, setConceptFile] = useState(null)
-  const [referenceFile, setReferenceFile] = useState(null)
+  const [newTags, setNewTags] = useState([]) // tag names typed here that are not in the list yet
   const [remarks, setRemarks] = useState(initialRemarks)
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)
@@ -425,7 +451,7 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
 
   const dirty =
     conceptFile !== null ||
-    referenceFile !== null ||
+    newTags.length > 0 ||
     draft.trim() !== '' ||
     JSON.stringify(form) !== JSON.stringify(initial) ||
     remarks.length !== initialRemarks.length ||
@@ -456,7 +482,36 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
       .map((option) => ({ value: option.id, label: option.is_active ? option.name : `${option.name} (inactive)` }))
       .sort((a, b) => a.label.localeCompare(b.label))
 
-  const referenceOptions = listOptions(lists.references, sample.reference_option_id)
+  // Active entries of a list, plus the ones already on this sample even if now inactive.
+  const manyOptions = (items, currentIds = [], show = (name) => name) =>
+    items
+      .filter((option) => option.is_active || currentIds.includes(option.id))
+      .map((option) => ({ value: option.id, label: option.is_active ? show(option.name) : `${show(option.name)} (inactive)` }))
+      .sort((a, b) => a.label.localeCompare(b.label))
+
+  const referenceOptions = manyOptions(lists.references, sample.reference_ids)
+  const chosenReferences = sampleReferences(form, lists)
+
+  // Tags: the list from Masters, plus the ones typed here. A typed tag is
+  // added to the list when the sample is saved.
+  const NEW = 'new:'
+  const tagOptions = [
+    ...manyOptions(lists.tags, sample.tag_ids, (name) => `#${name}`),
+    ...newTags.map((name) => ({ value: NEW + name, label: `#${name} (new)` })),
+  ]
+  const tagValue = [...form.tag_ids, ...newTags.map((name) => NEW + name)]
+  const setTags = (values) => {
+    set('tag_ids')(values.filter((value) => !value.startsWith(NEW)))
+    setNewTags(values.filter((value) => value.startsWith(NEW)).map((value) => value.slice(NEW.length)))
+  }
+  const sameTag = (a, b) => a.toLowerCase() === b.toLowerCase()
+  const addTagLabel = (text) => {
+    const name = cleanTagName(text)
+    if (!name || name.length > 40) return null
+    const known = lists.tags.some((tag) => tag.is_active && sameTag(tag.name, name)) || newTags.some((tag) => sameTag(tag, name))
+    return known ? null : `Add #${name}`
+  }
+  const addTag = (text) => setNewTags((previous) => [...previous, cleanTagName(text)])
   const productTypeOptions = listOptions(lists.productTypes, sample.product_type_id)
   const collectionOptions = listOptions(lists.collections, sample.collection_id)
 
@@ -476,9 +531,6 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
     setError('')
     try {
       const conceptPath = conceptFile ? await uploadFile(BUCKET, conceptFile, 'concept') : form.concept_image_path
-      const referencePath = referenceFile
-        ? await uploadFile(BUCKET, referenceFile, 'reference')
-        : form.reference_image_path
 
       // A note that was typed but not added yet still counts.
       const all = draft.trim() ? [...remarks, { kind: 'text', body: draft.trim() }] : remarks
@@ -495,13 +547,14 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
         p_creation_date: form.creation_date,
         p_designer_id: form.designer_id,
         p_concept_image_path: conceptPath,
-        p_reference_option_id: form.reference_option_id,
-        p_reference_image_path: referencePath,
+        p_reference_ids: form.reference_ids,
         p_remarks: payload,
         p_component_ids: form.component_ids,
         p_denim_type: form.denim_type,
         p_product_type_id: form.product_type_id,
         p_collection_id: form.collection_id,
+        p_tag_ids: form.tag_ids,
+        p_new_tags: newTags,
       })
       if (failure) throw failure
       await onSaved(sampleNo)
@@ -578,12 +631,17 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
             onChange={set('designer_id')}
           />
         </Field>
-        <Field label="Reference (optional)" htmlFor="sample-reference">
+        <Field
+          label="References (optional)"
+          htmlFor="sample-reference"
+          hint={referenceOptions.length ? 'Pick one or more. Their pictures come from Masters.' : 'No active reference yet. They are added in Masters, under References.'}
+        >
           <PickList
             id="sample-reference"
+            multiple
             options={referenceOptions}
-            value={form.reference_option_id}
-            onChange={set('reference_option_id')}
+            value={form.reference_ids}
+            onChange={set('reference_ids')}
           />
         </Field>
 
@@ -600,6 +658,24 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
               options={componentOptions}
               value={form.component_ids}
               onChange={set('component_ids')}
+            />
+          </Field>
+        </div>
+
+        <div className="form-wide">
+          <Field
+            label="Tags (optional)"
+            htmlFor="sample-tags"
+            hint="Pick one or more. If a tag is not in the list, type it in the search box and add it."
+          >
+            <PickList
+              id="sample-tags"
+              multiple
+              options={tagOptions}
+              value={tagValue}
+              onChange={setTags}
+              onCreate={addTag}
+              createLabel={addTagLabel}
             />
           </Field>
         </div>
@@ -660,19 +736,12 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
           </Field>
         </div>
         <div className="picture-box">
-          <Field label="Reference image (optional)">
-            <ImageUpload
-              bucket={BUCKET}
-              path={form.reference_image_path}
-              file={referenceFile}
-              alt="Reference image"
-              size={96}
-              onFileChange={setReferenceFile}
-              onRemove={() => {
-                setReferenceFile(null)
-                set('reference_image_path')(null)
-              }}
-            />
+          <Field label="Reference pictures">
+            {chosenReferences.length ? (
+              <ReferenceList references={chosenReferences} size={96} stacked />
+            ) : (
+              <p className="hint reference-none">Pick a reference above to see its picture here.</p>
+            )}
           </Field>
         </div>
 

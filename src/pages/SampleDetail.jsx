@@ -24,6 +24,8 @@ import {
   isClosed,
   latestImage,
   pieceStatus,
+  sampleReferences,
+  sampleTags,
   stageImagePath,
 } from '../lib/sampleData.js'
 
@@ -54,7 +56,6 @@ export default function SampleDetail({ sample, data, onChanged, onEdit, onClose 
       component: nameMap(data.components),
       productType: nameMap(data.productTypes),
       collection: nameMap(data.collections),
-      reference: nameMap(data.references),
     }),
     [data],
   )
@@ -132,7 +133,8 @@ export default function SampleDetail({ sample, data, onChanged, onEdit, onClose 
     .map((id) => names.component.get(id))
     .filter(Boolean)
     .sort()
-  const referenceName = names.reference.get(sample.reference_option_id)
+  const references = sampleReferences(sample, data)
+  const tags = sampleTags(sample, data)
   const openPieces = PIECES.filter((piece) => pieceStatus(sample, piece.value) !== 'completed')
 
   return (
@@ -179,18 +181,33 @@ export default function SampleDetail({ sample, data, onChanged, onEdit, onClose 
         <Detail label="Entered by">
           {names.person.get(sample.created_by)}, {formatDateTime(sample.created_at)}
         </Detail>
-        <Detail label="Reference">
-          {(referenceName || sample.reference_image_path) && (
-            <span className="cell-with-image">
-              {sample.reference_image_path && (
-                <ClickableImage
-                  bucket={BUCKET}
-                  path={sample.reference_image_path}
-                  alt={`${sample.sample_no} reference`}
-                  size={56}
-                />
-              )}
-              {referenceName}
+        <Detail label="Tags">
+          {tags.length > 0 && (
+            <span className="tag-list">
+              {tags.map((tag) => (
+                <span key={tag} className="tag-chip">
+                  {tag}
+                </span>
+              ))}
+            </span>
+          )}
+        </Detail>
+        <Detail label="References">
+          {references.length > 0 && (
+            <span className="reference-list">
+              {references.map((reference) => (
+                <span key={reference.id} className="reference-item">
+                  {reference.image_path && (
+                    <ClickableImage
+                      bucket={BUCKET}
+                      path={reference.image_path}
+                      alt={`Reference ${reference.name}`}
+                      size={56}
+                    />
+                  )}
+                  <span className="reference-name">{reference.name}</span>
+                </span>
+              ))}
             </span>
           )}
         </Detail>

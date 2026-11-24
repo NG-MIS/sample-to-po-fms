@@ -43,7 +43,8 @@ Each stage is filled in here as it is discussed and agreed, one step at a time.
 | PRODUCT TYPE | Required. Picked from the Product types master |
 | COLLECTION | Required. Picked from the Collections master |
 | CONCEPT IMAGE | Required. Uploaded picture, clickable |
-| REFERENCE | Optional. One choice from the References list, and one picture |
+| REFERENCE | Optional. One or more choices from the References list. Each reference carries its own picture, uploaded once in Masters, so the picture appears on the sample by itself. A reference cannot be added from the sample form |
+| TAGS | Optional. One or more #tags from the Tags list. A tag that is not in the list yet can be typed on the sample form and is added to the list when the sample is saved |
 | REMARKS | Optional. Any number of typed notes, voice notes and pictures |
 
 **Sample number.** Prefix, a dash, then the number with no padding: `LB-2323`, `VM-511`,
@@ -250,8 +251,11 @@ Created by `supabase/migrations/20261123113937_masters_and_sign_in.sql`.
 | `user_authority_departments` | Which departments a person works with when their authority is Department(s) |
 | `avatars` (picture store) | Avatar pictures. Private: only signed-in people can view them |
 | `sample_series` | Numbering master: prefix, starting number, last number used, active or inactive |
-| `sample_reference_options` | References list: name, active or inactive |
-| `samples` | One row per sample: sample number, creation date, designer, concept image, reference |
+| `sample_reference_options` | References list: name, picture, active or inactive |
+| `sample_references` | Which references each sample has |
+| `tags` | Tags list: name (kept without the # sign), active or inactive |
+| `sample_tags` | Which tags each sample has |
+| `samples` | One row per sample: sample number, creation date, designer, concept image |
 | `sample_remarks` | Remarks of a sample: typed notes, voice notes, pictures |
 | `components` | Components master: name, active or inactive |
 | `sample_components` | Which components each sample has |
@@ -260,7 +264,7 @@ Created by `supabase/migrations/20261123113937_masters_and_sign_in.sql`.
 
 Denim type, product type and collection are stored on the sample itself. They are empty on
 samples created before 24 Nov 2026 and required on every sample saved from then on.
-| `samples` (file store) | Concept images, reference images, remark pictures and voice notes. Private: a file can be viewed only by people who can see its sample |
+| `samples` (file store) | Concept images, reference pictures, remark pictures and voice notes. Private: a file can be viewed only by people who can see its sample; reference pictures can be viewed by every signed-in person |
 
 Step 2 was created by `supabase/migrations/20261123130147_numbering_references_samples.sql`.
 Components were added by `supabase/migrations/20261124071841_sample_components.sql`,
@@ -305,7 +309,8 @@ Rules the database enforces, whatever the screens do:
 | Designations | List, add and edit | Built |
 | Roles | List, add and edit | Built |
 | Numbering | List, add and edit series (prefix and starting number) | Built |
-| References | List, add and edit | Built |
+| References | List, add and edit, each with its picture (required when added by hand; an imported reference gets its picture afterwards) | Built |
+| Tags | List, add and edit. Shown with a # in front | Built |
 | Components | List, add, edit and import | Built |
 | Product types | List, add, edit and import | Built |
 | Collections | List, add, edit and import | Built |
@@ -314,7 +319,7 @@ Rules the database enforces, whatever the screens do:
 | Processes | List, add, edit and import | Built |
 | Vendors | List, add, edit and import | Built |
 
-The simple lists (departments, designations, roles, references, components, product types, collections, processes, vendors) share one screen file (`SimpleListPage`). The starter page from the
+The simple lists (departments, designations, roles, references, tags, components, product types, collections, processes, vendors) share one screen file (`SimpleListPage`). The starter page from the
 set-up has been replaced by these screens.
 
 ## 9. Reusable building blocks
@@ -382,6 +387,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 24 Nov 2026 | References now carry their picture in Masters and a sample can have several of them (the separate reference picture on the sample is gone). Tags added: a Tags master, and optional #tags on every sample that can be added on the spot |
 | 24 Nov 2026 | Approval rules revised: "1st approval" renamed "initial approval" and can be repeated while it is Maybe, with the number of times changes were requested shown; an initial approval of No closes the sample and everything on it stops |
 | 24 Nov 2026 | Samples screen given a tab per activity (All samples, Process, Mark completed, Images, Approval), each listing only what is waiting |
 | 24 Nov 2026 | Step 3 built: process log for the two pieces, piece completion, stage images, 1st and final approval, Process log screen, Processes and Vendors masters |

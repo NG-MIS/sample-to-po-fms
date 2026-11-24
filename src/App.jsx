@@ -8,6 +8,9 @@ import SamplesPage from './pages/SamplesPage.jsx'
 import SimpleListPage from './pages/SimpleListPage.jsx'
 import UsersPage from './pages/UsersPage.jsx'
 
+// Reference pictures live with the other sample pictures.
+const REFERENCE_PICTURE = { bucket: 'samples', folder: 'reference' }
+
 export default function App() {
   const { session, profile, loading, recovery, finishRecovery, signOut } = useAuth()
 
@@ -47,9 +50,16 @@ export default function App() {
         <Route
           path="/references"
           element={
-            <SimpleListPage key="references" table="sample_reference_options" title="References" singular="reference" />
+            <SimpleListPage
+              key="references"
+              table="sample_reference_options"
+              title="References"
+              singular="reference"
+              picture={REFERENCE_PICTURE}
+            />
           }
         />
+        <Route path="/tags" element={<SimpleListPage key="tags" table="tags" title="Tags" singular="tag" hash />} />
         <Route path="/users" element={<UsersPage />} />
         <Route
           path="/departments"

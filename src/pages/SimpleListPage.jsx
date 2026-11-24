@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+import ClickableImage from '../components/ClickableImage.jsx'
+import ImageUpload from '../components/ImageUpload.jsx'
 import DataTable from '../components/DataTable.jsx'
 import ImportButton from '../components/ImportButton.jsx'
 import Modal from '../components/Modal.jsx'
@@ -7,7 +9,8 @@ import { PageHead } from '../components/Layout.jsx'
 import { useAuth } from '../lib/auth.jsx'
 import { fetchRows, nameMap, useLoad } from '../lib/data.js'
 import { readYesNo } from '../lib/exportFiles.js'
-import { formatDateTime, friendlyError } from '../lib/format.js'
+import { cleanTagName, formatDateTime, friendlyError } from '../lib/format.js'
+import { uploadFile } from '../lib/images.js'
 import { supabase } from '../lib/supabase.js'
 
 const IMPORT_FIELDS = [
@@ -20,7 +23,9 @@ const IMPORT_FIELDS = [
 //   table    - where the list is stored
 //   title    - heading, e.g. "Departments"
 //   singular - one item, e.g. "department"
-export default function SimpleListPage({ table, title, singular }) {
+//   picture  - optional { bucket, folder }: every item also carries one picture
+//   hash     - optional: names are tags, shown with a # in front
+export default function SimpleListPage({ table, title, singular, picture, hash = false }) {
   const { isAdmin } = useAuth()
   const { data, loading, error, reload } = useLoad(async () => {
     const [rows, people] = await Promise.all([fetchRows(table), fetchRows('app_users')])
@@ -32,7 +37,7 @@ export default function SimpleListPage({ table, title, singular }) {
   const people = data?.people
 
   const prepareImport = (cells, memo) => {
-    const name = cells.NAME
+    const name = hash ? cleanTagName(cells.NAME) : cells.NAME
     if (!name) return { error: 'NAME is empty.' }
     const key = name.toLowerCase()
     memo.seen ??= new Set()
@@ -52,7 +57,22 @@ export default function SimpleListPage({ table, title, singular }) {
   const columns = useMemo(() => {
     const list = [
       { key: 'sl_no', header: 'SL NO', value: (row) => row.sl_no, width: 90 },
-      { key: 'name', header: 'NAME', value: (row) => row.name },
+      { key: 'name', header: 'NAME', value: (row) => (hash ? `#${row.name}` : row.name) },
+      ...(picture
+        ? [
+            {
+              key: 'picture',
+              header: 'PICTURE',
+              value: (row) => (row.image_path ? 'Yes' : 'No picture'),
+              render: (row) =>
+                row.image_path ? (
+                  <ClickableImage bucket={picture.bucket} path={row.image_path} alt={row.name} size={44} />
+                ) : (
+                  <span className="hint">No picture</span>
+                ),
+            },
+          ]
+        : []),
       {
         key: 'status',
         header: 'STATUS',
@@ -81,7 +101,15 @@ export default function SimpleListPage({ table, title, singular }) {
       })
     }
     return list
-  }, [people, isAdmin])
+  }, [people, isAdmin, picture, hash])
+
+  const importFields = picture
+    ? IMPORT_FIELDS.map((field) =>
+        field.header === 'NAME'
+          ? { ...field, hint: `${field.hint} The picture is added afterwards, by opening the ${singular}.` }
+          : field,
+      )
+    : IMPORT_FIELDS
 
   return (
     <>
@@ -105,7 +133,7 @@ export default function SimpleListPage({ table, title, singular }) {
               <ImportButton
                 title={`Import ${title.toLowerCase()}`}
                 templateTitle={title}
-                fields={IMPORT_FIELDS}
+                fields={importFields}
                 prepare={prepareImport}
                 saveRecord={saveImported}
                 onDone={reload}
@@ -121,6 +149,8 @@ export default function SimpleListPage({ table, title, singular }) {
         <SimpleListForm
           table={table}
           singular={singular}
+          picture={picture}
+          hash={hash}
           row={editing}
           onClose={() => setEditing(null)}
           onSaved={() => {
@@ -133,28 +163,40 @@ export default function SimpleListPage({ table, title, singular }) {
   )
 }
 
-function SimpleListForm({ table, singular, row, onClose, onSaved }) {
+function SimpleListForm({ table, singular, picture, hash, row, onClose, onSaved }) {
   const isNew = !row.id
   const [name, setName] = useState(row.name ?? '')
+  const [imagePath, setImagePath] = useState(row.image_path ?? null)
+  const [imageFile, setImageFile] = useState(null)
   const [isActive, setIsActive] = useState(row.is_active ?? true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
-  const dirty = name !== (row.name ?? '') || isActive !== (row.is_active ?? true)
+  const dirty =
+    name !== (row.name ?? '') ||
+    isActive !== (row.is_active ?? true) ||
+    imageFile !== null ||
+    imagePath !== (row.image_path ?? null)
 
   const save = async (event) => {
     event.preventDefault()
-    const clean = name.trim()
+    const clean = hash ? cleanTagName(name) : name.trim()
     if (!clean) return setError('Name is required.')
+    if (picture && !imageFile && !imagePath) return setError('Add the picture.')
     setBusy(true)
     setError('')
-    const values = { name: clean, is_active: isActive }
-    const { error: failure } = isNew
-      ? await supabase.from(table).insert(values)
-      : await supabase.from(table).update(values).eq('id', row.id)
-    setBusy(false)
-    if (failure) setError(friendlyError(failure))
-    else onSaved()
+    try {
+      const values = { name: clean, is_active: isActive }
+      if (picture) values.image_path = imageFile ? await uploadFile(picture.bucket, imageFile, picture.folder) : imagePath
+      const { error: failure } = isNew
+        ? await supabase.from(table).insert(values)
+        : await supabase.from(table).update(values).eq('id', row.id)
+      if (failure) throw failure
+      onSaved()
+    } catch (failure) {
+      setError(friendlyError(failure))
+      setBusy(false)
+    }
   }
 
   const formId = `${table}-form`
@@ -177,7 +219,7 @@ function SimpleListForm({ table, singular, row, onClose, onSaved }) {
       )}
     >
       <form id={formId} onSubmit={save}>
-        <Field label="Name" htmlFor={`${formId}-name`} required>
+        <Field label="Name" htmlFor={`${formId}-name`} required hint={hash ? 'With or without the # sign.' : null}>
           <input
             id={`${formId}-name`}
             className="input"
@@ -185,6 +227,22 @@ function SimpleListForm({ table, singular, row, onClose, onSaved }) {
             onChange={(event) => setName(event.target.value)}
           />
         </Field>
+        {picture && (
+          <Field label="Picture" required hint={`Shown wherever this ${singular} is picked.`}>
+            <ImageUpload
+              bucket={picture.bucket}
+              path={imagePath}
+              file={imageFile}
+              alt={name || 'Picture'}
+              size={96}
+              onFileChange={setImageFile}
+              onRemove={() => {
+                setImageFile(null)
+                setImagePath(null)
+              }}
+            />
+          </Field>
+        )}
         <Tick
           id={`${formId}-active`}
           label="Active"

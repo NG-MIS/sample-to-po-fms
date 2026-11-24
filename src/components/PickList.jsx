@@ -4,6 +4,10 @@ import Popover from './Popover.jsx'
 // The one pick-list used everywhere. Values are picked, never typed.
 //   options  - [{ value, label }]
 //   multiple - false: `value` is one value or null. true: `value` is a list (tick boxes).
+//   onCreate - optional. Lets a value that is not in the list be added on the spot:
+//              `createLabel(text)` gives the wording of the "add" row for what was
+//              typed in the search box (or null when it cannot be added), and
+//              `onCreate(text)` is called when that row is picked.
 export default function PickList({
   id,
   options,
@@ -13,6 +17,8 @@ export default function PickList({
   placeholder = 'Select…',
   disabled = false,
   clearable = true,
+  onCreate,
+  createLabel = (text) => `Add "${text}"`,
 }) {
   const buttonRef = useRef(null)
   const [open, setOpen] = useState(false)
@@ -26,6 +32,13 @@ export default function PickList({
     const q = query.trim().toLowerCase()
     return q ? options.filter((option) => option.label.toLowerCase().includes(q)) : options
   }, [options, query])
+
+  const typed = query.trim()
+  const createText = onCreate && typed ? createLabel(typed) : null
+  const create = () => {
+    onCreate(typed)
+    setQuery('')
+  }
 
   const summary = options.filter((option) => selected.has(option.value)).map((option) => option.label)
 
@@ -68,13 +81,18 @@ export default function PickList({
         <Popover anchorRef={buttonRef} onClose={close} matchAnchorWidth className="popover--list">
           <input
             className="input popover-search"
-            placeholder="Search…"
+            placeholder={onCreate ? 'Search, or type a new one…' : 'Search…'}
             value={query}
             autoFocus
             onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key !== 'Enter') return
+              event.preventDefault()
+              if (createText && shown.length === 0) create()
+            }}
           />
           <ul className="option-list" role="listbox" aria-multiselectable={multiple}>
-            {shown.length === 0 && <li className="option-empty">Nothing matches</li>}
+            {shown.length === 0 && !createText && <li className="option-empty">Nothing matches</li>}
             {shown.map((option) => {
               const isOn = selected.has(option.value)
               return (
@@ -91,6 +109,13 @@ export default function PickList({
                 </li>
               )
             })}
+            {createText && (
+              <li>
+                <button type="button" className="option option--create" onClick={create}>
+                  <span>{createText}</span>
+                </button>
+              </li>
+            )}
           </ul>
           <div className="popover-foot">
             {clearable && selected.size > 0 && (
