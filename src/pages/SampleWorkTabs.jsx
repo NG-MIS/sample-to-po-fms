@@ -66,7 +66,18 @@ const contextColumns = (lookups, getSample) => [
 ]
 
 const describeEntry = (entry, lookups) =>
-  `${lookups.process.get(entry.process_id) ?? ''} @ ${lookups.vendor.get(entry.vendor_id) ?? ''}`
+  `${PIECE_LABEL[entry.piece]}: ${lookups.process.get(entry.process_id) ?? ''} @ ${lookups.vendor.get(entry.vendor_id) ?? ''}`
+
+// The status of the 1st and of the 2nd piece, one column each.
+const pieceColumns = () =>
+  [1, 2].map((piece) => ({
+    key: `piece_${piece}`,
+    header: piece === 1 ? '1ST PIECE' : '2ND PIECE',
+    value: (row) => PIECE_STATUS_LABEL[row.statuses[piece]],
+    render: (row) => (
+      <span className={`badge badge--${row.statuses[piece]}`}>{PIECE_STATUS_LABEL[row.statuses[piece]]}</span>
+    ),
+  }))
 
 // ---------- Process tab: send and receive ----------
 
@@ -74,13 +85,7 @@ export function ProcessTab({ rows, lookups, loading, onOpen, onSend, onReceive }
   const columns = useMemo(
     () => [
       ...sampleColumns(lookups, onOpen, (row) => row.sample),
-      { key: 'piece', header: 'PIECE', value: (row) => PIECE_LABEL[row.piece] },
-      {
-        key: 'status',
-        header: 'STATUS',
-        value: (row) => PIECE_STATUS_LABEL[row.status],
-        render: (row) => <span className={`badge badge--${row.status}`}>{PIECE_STATUS_LABEL[row.status]}</span>,
-      },
+      ...pieceColumns(),
       {
         key: 'out_at',
         header: 'OUT AT',
@@ -108,7 +113,7 @@ export function ProcessTab({ rows, lookups, loading, onOpen, onSend, onReceive }
         align: 'right',
         render: (row) => (
           <span className="row-actions">
-            {!row.closed && (
+            {row.sendPieces.length > 0 && (
               <button type="button" className="btn btn--small" onClick={() => onSend(row)}>
                 Send
               </button>
@@ -128,29 +133,29 @@ export function ProcessTab({ rows, lookups, loading, onOpen, onSend, onReceive }
   return (
     <>
       <p className="tab-note">
-        Every piece that is not completed. Send it to a process, and receive it here when it comes back. On a
-        closed sample, only pieces still at a vendor are listed, to be received.
+        One row per sample that still has a piece which is not completed. Send a piece to a process, and receive it
+        here when it comes back. A closed sample is listed only while a piece is still at a vendor, to be received.
       </p>
       <DataTable
-        tableId="samples-process"
+        tableId="samples-process-by-sample"
         title="Samples in process"
         columns={columns}
         rows={rows}
         loading={loading}
-        emptyText="No piece is waiting to be sent or received."
-        searchPlaceholder="Search pieces…"
+        emptyText="No sample is waiting to be sent or received."
+        searchPlaceholder="Search samples…"
       />
     </>
   )
 }
 
-// Shown when a piece is out in more than one process: pick which one came back.
+// Shown when more than one process is out for a sample: pick which one came back.
 export function ReceiveChooser({ row, lookups, onPick, onClose }) {
   return (
     <Modal
-      title={`${row.sample.sample_no}, ${PIECE_LABEL[row.piece]}: which one came back?`}
+      title={`${row.sample.sample_no}: which one came back?`}
       onClose={onClose}
-      width={520}
+      width={560}
       footer={() => (
         <button type="button" className="btn" onClick={onClose}>
           Cancel
@@ -179,7 +184,7 @@ export function CompleteTab({ rows, lookups, loading, onOpen, onComplete }) {
   const columns = useMemo(
     () => [
       ...sampleColumns(lookups, onOpen, (row) => row.sample),
-      { key: 'piece', header: 'PIECE', value: (row) => PIECE_LABEL[row.piece] },
+      ...pieceColumns(),
       { key: 'process_count', header: 'PROCESSES DONE', value: (row) => row.processCount },
       {
         key: 'last_received',
@@ -193,9 +198,18 @@ export function CompleteTab({ rows, lookups, loading, onOpen, onComplete }) {
         header: '',
         align: 'right',
         render: (row) => (
-          <button type="button" className="btn btn--small btn--primary" onClick={() => onComplete(row)}>
-            Mark completed
-          </button>
+          <span className="row-actions">
+            {row.pending.map((piece) => (
+              <button
+                key={piece}
+                type="button"
+                className="btn btn--small btn--primary"
+                onClick={() => onComplete({ sample: row.sample, piece })}
+              >
+                Complete {piece === 1 ? '1st' : '2nd'}
+              </button>
+            ))}
+          </span>
         ),
       },
     ],
@@ -205,16 +219,17 @@ export function CompleteTab({ rows, lookups, loading, onOpen, onComplete }) {
   return (
     <>
       <p className="tab-note">
-        Pieces that are in-house and not yet completed. A piece that is at a vendor appears here once it is received.
+        One row per sample with a piece that is in-house and not yet completed. A piece that is at a vendor can be
+        completed once it is received.
       </p>
       <DataTable
-        tableId="samples-complete"
-        title="Pieces to mark completed"
+        tableId="samples-complete-by-sample"
+        title="Samples to mark completed"
         columns={columns}
         rows={rows}
         loading={loading}
-        emptyText="No piece is waiting to be marked completed."
-        searchPlaceholder="Search pieces…"
+        emptyText="No sample is waiting to be marked completed."
+        searchPlaceholder="Search samples…"
       />
     </>
   )

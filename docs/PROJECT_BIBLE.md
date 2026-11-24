@@ -165,8 +165,8 @@ action is done.
 | Tab | What it lists | Actions on a row | Who sees the tab |
 |---|---|---|---|
 | All samples | Every sample the person can see | Open, Edit (authority All) | Everyone |
-| Process | Every piece that is not completed, one row per piece, with what is out at which vendor. On a closed sample, only pieces still at a vendor | Send, Receive | The sample's designer for their own samples; Sample department authority for all |
-| Mark completed | Pieces that are Pending: nothing out at a vendor, not completed | Mark completed | Sample department authority |
+| Process | One row per sample that still has a piece which is not completed, with the status of both pieces and what is out at which vendor. A closed sample is listed only while a piece is still at a vendor. Send asks which piece; Receive asks which one came back when more than one is out | Send, Receive | The sample's designer for their own samples; Sample department authority for all |
+| Mark completed | One row per sample with a piece that is Pending (nothing out at a vendor, not completed), with the status of both pieces | Complete 1st, Complete 2nd (only for a Pending piece) | Sample department authority |
 | Images | Samples still missing a 1st sample, 2nd sample or photoshoot image | Add (per missing image) | Same as Process |
 | Fabrics | Every open sample the person looks after, one row per sample, with its fabric status, its fabrics, the components still without fabric and the vendor codes. The number on the tab counts samples that are not Completed | Add fabrics, Change fabrics | Same as Process |
 | Approval | Samples with no final approval yet that are not closed | Initial approval (while it is not Yes), Final approval | Department Management |
@@ -424,6 +424,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 25 Nov 2026 | Process and Mark completed tabs changed to one row per sample, showing both pieces |
 | 25 Nov 2026 | Fabrics tab changed to one row per sample, with a fabric status: Pending, Incomplete or Completed |
 | 24 Nov 2026 | Fabric list added to samples (fabric name, for components, vendor code, rate), with a Fabrics tab, a Fabrics master and a Fabric vendors master. Added by `supabase/migrations/20261124131621_sample_fabrics_and_fabric_vendors.sql` |
 | 24 Nov 2026 | Numbering: every series has a name; the sample form lists series by name while sample numbers still use the prefix. Added by `supabase/migrations/20261124115500_series_name.sql` |

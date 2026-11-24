@@ -14,42 +14,53 @@ import {
 
 const LATER_STAGES = STAGES.filter((stage) => stage.key !== 'concept')
 
-// Send and receive: every piece that is not completed, on samples the person may work on.
-// On a closed sample nothing more can be sent, so only pieces still out at a vendor
-// are listed, to be received back.
+// The status of both pieces of a sample: { 1: 'pending', 2: 'at_vendor' }.
+const pieceStatuses = (sample) => Object.fromEntries(PIECES.map((piece) => [piece.value, pieceStatus(sample, piece.value)]))
+
+// Send and receive: one row per sample that still has a piece which is not
+// completed, on samples the person may work on. On a closed sample nothing more
+// can be sent, so it is listed only while a piece is still out at a vendor,
+// to be received back.
 export function processRows(data, profile) {
   return data.samples
     .filter((sample) => canWorkOn(sample, data, profile))
-    .flatMap((sample) => {
+    .map((sample) => {
       const closed = isClosed(sample)
-      return PIECES.filter((piece) => pieceStatus(sample, piece.value) !== 'completed')
-        .map((piece) => ({
-          id: `${sample.id}:${piece.value}`,
-          sample,
-          piece: piece.value,
-          closed,
-          status: pieceStatus(sample, piece.value),
-          open: sample.entries.filter((entry) => entry.piece === piece.value && !entry.received_date),
-        }))
-        .filter((row) => !closed || row.open.length > 0)
+      const statuses = pieceStatuses(sample)
+      return {
+        id: sample.id,
+        sample,
+        closed,
+        statuses,
+        // pieces something can still be sent for
+        sendPieces: closed ? [] : PIECES.filter((piece) => statuses[piece.value] !== 'completed'),
+        // what is out at a vendor right now, 1st piece first
+        open: sample.entries
+          .filter((entry) => !entry.received_date)
+          .sort((x, y) => x.piece - y.piece || x.sent_date.localeCompare(y.sent_date)),
+      }
     })
+    .filter((row) => row.sendPieces.length > 0 || row.open.length > 0)
 }
 
-// Mark completed: pieces that are Pending (nothing out at a vendor, not completed).
+// Mark completed: one row per sample with a piece that is Pending (nothing out
+// at a vendor, not completed).
 export function completeRows(data) {
   if (!data.access.manages) return []
-  return data.samples.filter((sample) => !isClosed(sample)).flatMap((sample) =>
-    PIECES.filter((piece) => pieceStatus(sample, piece.value) === 'pending').map((piece) => {
-      const done = sample.entries.filter((entry) => entry.piece === piece.value)
+  return data.samples
+    .filter((sample) => !isClosed(sample))
+    .map((sample) => {
+      const statuses = pieceStatuses(sample)
       return {
-        id: `${sample.id}:${piece.value}`,
+        id: sample.id,
         sample,
-        piece: piece.value,
-        processCount: done.length,
-        lastReceived: done.map((entry) => entry.received_date).sort().pop() ?? '',
+        statuses,
+        pending: PIECES.filter((piece) => statuses[piece.value] === 'pending').map((piece) => piece.value),
+        processCount: sample.entries.length,
+        lastReceived: sample.entries.map((entry) => entry.received_date).filter(Boolean).sort().pop() ?? '',
       }
-    }),
-  )
+    })
+    .filter((row) => row.pending.length > 0)
 }
 
 // Images: samples still missing a 1st sample, 2nd sample or photoshoot image.

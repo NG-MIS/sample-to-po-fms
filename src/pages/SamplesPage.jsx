@@ -18,7 +18,6 @@ import { remarksSummary } from '../lib/remarks.js'
 import {
   BUCKET,
   DECISION_LABEL,
-  PIECES,
   PIECE_LABEL,
   FABRIC_STATUS_BADGE,
   FABRIC_STATUS_LABEL,
@@ -139,7 +138,7 @@ export default function SamplesPage() {
   const tab = tabs.some((item) => item.key === wanted) ? wanted : 'all'
 
   const openSample = useCallback((sample) => setViewingId(sample.id), [])
-  const sendFrom = useCallback((row) => setWork({ type: 'send', sample: row.sample, piece: row.piece }), [])
+  const sendFrom = useCallback((row) => setWork({ type: 'send', sample: row.sample, pieces: row.sendPieces }), [])
   const receiveFrom = useCallback(
     (row) =>
       setWork(
@@ -386,8 +385,7 @@ export default function SamplesPage() {
           mode="send"
           sample={work.sample}
           data={data}
-          piece={work.piece}
-          pieces={PIECES.filter((piece) => pieceStatus(work.sample, piece.value) !== 'completed')}
+          pieces={work.pieces}
           onClose={() => setWork(null)}
           onSaved={workSaved}
         />

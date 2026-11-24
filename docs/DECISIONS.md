@@ -5,6 +5,7 @@ Newest first. A changed decision is not deleted: a new entry is added that repla
 
 | Date | Decision | Reason |
 |---|---|---|
+| 25 Nov 2026 | Every work tab of the Samples screen shows one row per sample. Process and Mark completed show both pieces on that row; the piece is chosen when sending, and by its own button when completing | Nihal's instruction; replaces the one-row-per-piece layout of 24 Nov |
 | 24 Nov 2026 | The fabric list of a closed sample cannot be changed, also not by authority All through the edit form | "Everything stops" on a closed sample |
 | 25 Nov 2026 | Fabrics tab shows one row per sample with a status: Pending (no fabric), Incomplete (a component has no fabric), Completed (every component has one). Completed samples stay listed; the tab's number counts those not Completed. Replaces the one-row-per-fabric layout of 24 Nov | Nihal's instruction |
 | 25 Nov 2026 | A fabric line with no component picked does not count for any component | The status asks whether each component has a fabric, so the line must say which component it is for |
