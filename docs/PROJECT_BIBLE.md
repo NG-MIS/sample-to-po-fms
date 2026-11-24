@@ -255,6 +255,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 24 Nov 2026 | Sample form laid out in three sections: Sample details (prefix, creation date, designer, reference), Pictures (concept image, reference image), Remarks |
 | 24 Nov 2026 | Standing rule 11 added and built: clicking a row in a master opens Edit |
 | 24 Nov 2026 | Standing rules 9 and 10 added and built: export to PDF, Excel and CSV on every list; import with template on every master (user master, departments, designations, roles, numbering, references) |
 | 24 Nov 2026 | Standing rules 7 and 8 added and built: group by two levels on every list, folding side menu. Theme changed to soft emerald, inspired by Lycra Tracker |

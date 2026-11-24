@@ -5,7 +5,7 @@ import { checkImageFile, useObjectUrl } from '../lib/images.js'
 // Picture field for forms. Shows the current picture (clickable), lets the
 // person choose a new one or remove it. The new file is handed back through
 // `onFileChange`; the form uploads it when it is saved.
-export default function ImageUpload({ bucket, path, file, onFileChange, onRemove, alt, round = false, fallbackName }) {
+export default function ImageUpload({ bucket, path, file, onFileChange, onRemove, alt, round = false, fallbackName, size = 72 }) {
   const inputRef = useRef(null)
   const [error, setError] = useState('')
   const previewUrl = useObjectUrl(file)
@@ -28,7 +28,7 @@ export default function ImageUpload({ bucket, path, file, onFileChange, onRemove
         path={file ? null : path}
         src={previewUrl}
         alt={alt}
-        size={72}
+        size={size}
         round={round}
         fallbackName={fallbackName}
       />

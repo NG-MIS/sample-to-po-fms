@@ -400,6 +400,7 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
       )}
     >
       <form id="sample-form" className="form-grid" onSubmit={save}>
+        <h3 className="section-title form-wide">Sample details</h3>
         {isNew ? (
           <Field
             label="Prefix"
@@ -407,8 +408,8 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
             required
             hint={
               chosenSeries
-                ? `Next number in this series: ${nextSampleNo(chosenSeries)}. The number is fixed when you save.`
-                : 'The sample number is made automatically from the prefix.'
+                ? `Next number: ${nextSampleNo(chosenSeries)}`
+                : 'The sample number is made from the prefix.'
             }
           >
             <PickList
@@ -420,7 +421,7 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
             />
           </Field>
         ) : (
-          <Field label="Sample no" htmlFor="sample-no" hint="The sample number never changes.">
+          <Field label="Sample no" htmlFor="sample-no" hint="Never changes.">
             <input id="sample-no" className="input" value={sample.sample_no} disabled readOnly />
           </Field>
         )}
@@ -438,7 +439,7 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
           label="Designer"
           htmlFor="sample-designer"
           required
-          hint={designerOptions.length ? null : 'Nobody qualifies yet: a designer is an active person in department Sample with the role Designer.'}
+          hint={designerOptions.length ? null : 'Nobody qualifies yet. A designer is an active person in department Sample with the role Designer.'}
         >
           <PickList
             id="sample-designer"
@@ -448,36 +449,40 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
             onChange={set('designer_id')}
           />
         </Field>
-        <div />
-
-        <Field label="Concept image" required>
-          <ImageUpload
-            bucket={BUCKET}
-            path={form.concept_image_path}
-            file={conceptFile}
-            alt="Concept image"
-            onFileChange={setConceptFile}
-            onRemove={() => {
-              setConceptFile(null)
-              set('concept_image_path')(null)
-            }}
+        <Field label="Reference (optional)" htmlFor="sample-reference">
+          <PickList
+            id="sample-reference"
+            options={referenceOptions}
+            value={form.reference_option_id}
+            onChange={set('reference_option_id')}
           />
         </Field>
-        <div>
-          <Field label="Reference" htmlFor="sample-reference" hint="Optional.">
-            <PickList
-              id="sample-reference"
-              options={referenceOptions}
-              value={form.reference_option_id}
-              onChange={set('reference_option_id')}
+
+        <h3 className="section-title section-title--next form-wide">Pictures</h3>
+        <div className="picture-box">
+          <Field label="Concept image" required>
+            <ImageUpload
+              bucket={BUCKET}
+              path={form.concept_image_path}
+              file={conceptFile}
+              alt="Concept image"
+              size={96}
+              onFileChange={setConceptFile}
+              onRemove={() => {
+                setConceptFile(null)
+                set('concept_image_path')(null)
+              }}
             />
           </Field>
-          <Field label="Reference image" hint={null}>
+        </div>
+        <div className="picture-box">
+          <Field label="Reference image (optional)">
             <ImageUpload
               bucket={BUCKET}
               path={form.reference_image_path}
               file={referenceFile}
               alt="Reference image"
+              size={96}
               onFileChange={setReferenceFile}
               onRemove={() => {
                 setReferenceFile(null)
@@ -488,7 +493,7 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
         </div>
 
         <div className="form-wide">
-          <h3 className="section-title">
+          <h3 className="section-title section-title--next">
             Remarks <span className="hint">optional, add as many as you need</span>
           </h3>
           <RemarksEditor bucket={BUCKET} items={remarks} onChange={setRemarks} draft={draft} onDraftChange={setDraft} />
