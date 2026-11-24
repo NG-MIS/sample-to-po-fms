@@ -25,6 +25,16 @@ export default function App() {
           element={<SimpleListPage key="components" table="components" title="Components" singular="component" />}
         />
         <Route
+          path="/product-types"
+          element={
+            <SimpleListPage key="product-types" table="product_types" title="Product types" singular="product type" />
+          }
+        />
+        <Route
+          path="/collections"
+          element={<SimpleListPage key="collections" table="collections" title="Collections" singular="collection" />}
+        />
+        <Route
           path="/references"
           element={
             <SimpleListPage key="references" table="sample_reference_options" title="References" singular="reference" />

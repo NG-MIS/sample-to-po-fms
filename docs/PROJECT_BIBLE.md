@@ -38,6 +38,10 @@ Each stage is filled in here as it is discussed and agreed, one step at a time.
 | CREATION DATE | Chosen by the person, defaulting to today. Earlier dates allowed, future dates not |
 | DESIGNER | Required. Picked from active people whose department is "Sample" and who hold the role "Designer" |
 | COMPONENTS | Required, at least one. Several can be picked from the Components master |
+| PCS TYPE | Automatic. The number of components: 1PCS, 2PCS, 3PCS and so on. Not stored, always worked out |
+| DENIM TYPE | Required. Denim or Non denim (a fixed choice, not a master) |
+| PRODUCT TYPE | Required. Picked from the Product types master |
+| COLLECTION | Required. Picked from the Collections master |
 | CONCEPT IMAGE | Required. Uploaded picture, clickable |
 | REFERENCE | Optional. One choice from the References list, and one picture |
 | REMARKS | Optional. Any number of typed notes, voice notes and pictures |
@@ -173,10 +177,16 @@ Created by `supabase/migrations/20261123113937_masters_and_sign_in.sql`.
 | `sample_remarks` | Remarks of a sample: typed notes, voice notes, pictures |
 | `components` | Components master: name, active or inactive |
 | `sample_components` | Which components each sample has |
+| `product_types` | Product types master (started with CAPRI SET, PLAZZO SET, FULL PANT SET, HOT PANT SET, SKIRT TOP, FROCK, KURTI SET) |
+| `collections` | Collections master (started with EID 2027, SUMMER 2027) |
+
+Denim type, product type and collection are stored on the sample itself. They are empty on
+samples created before 24 Nov 2026 and required on every sample saved from then on.
 | `samples` (file store) | Concept images, reference images, remark pictures and voice notes. Private: a file can be viewed only by people who can see its sample |
 
 Step 2 was created by `supabase/migrations/20261123130147_numbering_references_samples.sql`.
-Components were added by `supabase/migrations/20261124071841_sample_components.sql`.
+Components were added by `supabase/migrations/20261124071841_sample_components.sql`,
+and category details by `supabase/migrations/20261124073301_sample_category_details.sql`.
 Samples are created and changed only through one database routine (`save_sample`), which
 checks who is asking and gives out the sample number. Screens cannot write to samples directly.
 
@@ -203,9 +213,11 @@ Rules the database enforces, whatever the screens do:
 | Numbering | List, add and edit series (prefix and starting number) | Built |
 | References | List, add and edit | Built |
 | Components | List, add, edit and import | Built |
+| Product types | List, add, edit and import | Built |
+| Collections | List, add, edit and import | Built |
 | Samples | List with search, sort and filter; new sample form; view; edit (authority All) | Built |
 
-The simple lists (departments, designations, roles, references, components) share one screen file (`SimpleListPage`). The starter page from the
+The simple lists (departments, designations, roles, references, components, product types, collections) share one screen file (`SimpleListPage`). The starter page from the
 set-up has been replaced by these screens.
 
 ## 9. Reusable building blocks
@@ -272,6 +284,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 24 Nov 2026 | Category details added to samples: PCS type (automatic), denim type, product type and collection, with Product types and Collections masters |
 | 24 Nov 2026 | Components added: a Components master, and a required multi-pick COMPONENTS field on every sample |
 | 24 Nov 2026 | First real sample created by Nihal on the live database |
 | 24 Nov 2026 | Thumbnails changed to show the whole picture instead of trimming the edges |

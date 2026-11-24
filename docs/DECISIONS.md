@@ -5,6 +5,10 @@ Newest first. A changed decision is not deleted: a new entry is added that repla
 
 | Date | Decision | Reason |
 |---|---|---|
+| 24 Nov 2026 | Collection is its own master, like product type | New collections arrive every season, so the list must be editable without a code change |
+| 24 Nov 2026 | Denim type is a fixed choice (Denim, Non denim), not a master | There are only ever two values |
+| 24 Nov 2026 | PCS type is worked out from the number of components and never stored | It can then never disagree with the components |
+| 24 Nov 2026 | Denim type, product type and collection are required on every sample | Nihal: "every sample has its category details" |
 | 24 Nov 2026 | A component that is switched inactive stays on samples that already have it, but cannot be newly picked | Old samples keep their record; the list stays clean for new ones |
 | 24 Nov 2026 | COMPONENTS on a sample: required, one or more, picked from a Components master | Nihal's request; he chose Required |
 | 24 Nov 2026 | Thumbnails show the whole picture with empty space at the sides, never trimmed | Nihal's choice: a garment picture should not lose its edges |

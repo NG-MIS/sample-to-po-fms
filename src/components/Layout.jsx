@@ -20,6 +20,8 @@ const MENU = [
       { to: '/roles', label: 'Roles' },
       { to: '/numbering', label: 'Numbering' },
       { to: '/components', label: 'Components' },
+      { to: '/product-types', label: 'Product types' },
+      { to: '/collections', label: 'Collections' },
       { to: '/references', label: 'References' },
     ],
   },

@@ -16,15 +16,36 @@ import { remarksSummary } from '../lib/remarks.js'
 import { supabase } from '../lib/supabase.js'
 
 const BUCKET = 'samples'
+const DENIM_OPTIONS = [
+  { value: 'denim', label: 'Denim' },
+  { value: 'non_denim', label: 'Non denim' },
+]
+const DENIM_LABEL = { denim: 'Denim', non_denim: 'Non denim' }
+// PCS type is worked out from the number of components: 2 components = 2PCS.
+const pcsType = (componentIds) => (componentIds.length ? `${componentIds.length}PCS` : '')
 const sameName = (value, name) => (value || '').trim().toLowerCase() === name
 
 async function loadEverything() {
-  const [samples, remarks, sampleComponents, components, series, references, people, departments, roles, userRoles] =
-    await Promise.all([
+  const [
+    samples,
+    remarks,
+    sampleComponents,
+    components,
+    productTypes,
+    collections,
+    series,
+    references,
+    people,
+    departments,
+    roles,
+    userRoles,
+  ] = await Promise.all([
       fetchRows('samples'),
       fetchRows('sample_remarks', 'created_at'),
       fetchRows('sample_components', null),
       fetchRows('components'),
+      fetchRows('product_types'),
+      fetchRows('collections'),
       fetchRows('sample_series'),
       fetchRows('sample_reference_options'),
       fetchRows('app_users'),
@@ -57,6 +78,8 @@ async function loadEverything() {
       component_ids: componentsBySample.get(sample.id) ?? [],
     })),
     components,
+    productTypes,
+    collections,
     series,
     references,
     people,
@@ -82,12 +105,14 @@ export default function SamplesPage() {
       person: nameMap(data?.people),
       reference: nameMap(data?.references),
       component: nameMap(data?.components),
+      productType: nameMap(data?.productTypes),
+      collection: nameMap(data?.collections),
     }),
     [data],
   )
 
   const columns = useMemo(() => {
-    const { person, reference, component } = lookups
+    const { person, reference, component, productType, collection } = lookups
     const componentNames = (row) => row.component_ids.map((id) => component.get(id)).filter(Boolean).sort()
     return [
       { key: 'sl_no', header: 'SL NO', value: (row) => row.sl_no, width: 80 },
@@ -109,6 +134,10 @@ export default function SamplesPage() {
       },
       { key: 'designer', header: 'DESIGNER', value: (row) => person.get(row.designer_id) ?? '' },
       { key: 'components', header: 'COMPONENTS', value: componentNames },
+      { key: 'pcs_type', header: 'PCS TYPE', value: (row) => pcsType(row.component_ids) },
+      { key: 'denim_type', header: 'DENIM TYPE', value: (row) => DENIM_LABEL[row.denim_type] ?? '' },
+      { key: 'product_type', header: 'PRODUCT TYPE', value: (row) => productType.get(row.product_type_id) ?? '' },
+      { key: 'collection', header: 'COLLECTION', value: (row) => collection.get(row.collection_id) ?? '' },
       {
         key: 'concept_image',
         header: 'CONCEPT IMAGE',
@@ -278,6 +307,22 @@ function SampleView({ sample, lookups, canEdit, onEdit, onClose }) {
           </dd>
         </div>
         <div>
+          <dt>PCS type</dt>
+          <dd>{pcsType(sample.component_ids) || <span className="hint">None</span>}</dd>
+        </div>
+        <div>
+          <dt>Denim type</dt>
+          <dd>{DENIM_LABEL[sample.denim_type] ?? <span className="hint">Not set</span>}</dd>
+        </div>
+        <div>
+          <dt>Product type</dt>
+          <dd>{lookups.productType.get(sample.product_type_id) ?? <span className="hint">Not set</span>}</dd>
+        </div>
+        <div>
+          <dt>Collection</dt>
+          <dd>{lookups.collection.get(sample.collection_id) ?? <span className="hint">Not set</span>}</dd>
+        </div>
+        <div>
           <dt>Entered by</dt>
           <dd>
             {lookups.person.get(sample.created_by)}, {formatDateTime(sample.created_at)}
@@ -324,6 +369,9 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
       creation_date: sample.creation_date ?? todayLocal(),
       designer_id: sample.designer_id ?? null,
       component_ids: sample.component_ids ?? [],
+      denim_type: sample.denim_type ?? null,
+      product_type_id: sample.product_type_id ?? null,
+      collection_id: sample.collection_id ?? null,
       concept_image_path: sample.concept_image_path ?? null,
       reference_option_id: sample.reference_option_id ?? null,
       reference_image_path: sample.reference_image_path ?? null,
@@ -371,10 +419,16 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
     .map((item) => ({ value: item.id, label: item.is_active ? item.name : `${item.name} (inactive)` }))
     .sort((a, b) => a.label.localeCompare(b.label))
 
-  const referenceOptions = lists.references
-    .filter((option) => option.is_active || option.id === sample.reference_option_id)
-    .map((option) => ({ value: option.id, label: option.name }))
-    .sort((a, b) => a.label.localeCompare(b.label))
+  // Active entries of a list, plus the one already on this sample even if now inactive.
+  const listOptions = (items, currentId) =>
+    items
+      .filter((option) => option.is_active || option.id === currentId)
+      .map((option) => ({ value: option.id, label: option.is_active ? option.name : `${option.name} (inactive)` }))
+      .sort((a, b) => a.label.localeCompare(b.label))
+
+  const referenceOptions = listOptions(lists.references, sample.reference_option_id)
+  const productTypeOptions = listOptions(lists.productTypes, sample.product_type_id)
+  const collectionOptions = listOptions(lists.collections, sample.collection_id)
 
   const save = async (event) => {
     event.preventDefault()
@@ -383,6 +437,9 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
     if (form.creation_date > todayLocal()) return setError('Creation date cannot be in the future.')
     if (!form.designer_id) return setError('Choose a designer.')
     if (form.component_ids.length === 0) return setError('Choose at least one component.')
+    if (!form.denim_type) return setError('Choose the denim type.')
+    if (!form.product_type_id) return setError('Choose the product type.')
+    if (!form.collection_id) return setError('Choose the collection.')
     if (!conceptFile && !form.concept_image_path) return setError('Add the concept image.')
 
     setBusy(true)
@@ -412,6 +469,9 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
         p_reference_image_path: referencePath,
         p_remarks: payload,
         p_component_ids: form.component_ids,
+        p_denim_type: form.denim_type,
+        p_product_type_id: form.product_type_id,
+        p_collection_id: form.collection_id,
       })
       if (failure) throw failure
       await onSaved(sampleNo)
@@ -513,6 +573,44 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
             />
           </Field>
         </div>
+
+        <h3 className="section-title section-title--next form-wide">Category details</h3>
+        <Field label="PCS type" htmlFor="sample-pcs" hint="Worked out from the number of components.">
+          <input
+            id="sample-pcs"
+            className="input"
+            value={pcsType(form.component_ids) || 'Pick components first'}
+            disabled
+            readOnly
+          />
+        </Field>
+        <Field label="Denim type" htmlFor="sample-denim" required>
+          <PickList
+            id="sample-denim"
+            clearable={false}
+            options={DENIM_OPTIONS}
+            value={form.denim_type}
+            onChange={set('denim_type')}
+          />
+        </Field>
+        <Field label="Product type" htmlFor="sample-product-type" required>
+          <PickList
+            id="sample-product-type"
+            clearable={false}
+            options={productTypeOptions}
+            value={form.product_type_id}
+            onChange={set('product_type_id')}
+          />
+        </Field>
+        <Field label="Collection" htmlFor="sample-collection" required>
+          <PickList
+            id="sample-collection"
+            clearable={false}
+            options={collectionOptions}
+            value={form.collection_id}
+            onChange={set('collection_id')}
+          />
+        </Field>
 
         <h3 className="section-title section-title--next form-wide">Pictures</h3>
         <div className="picture-box">
