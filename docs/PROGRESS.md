@@ -53,7 +53,7 @@ Next to discuss: the CAD stage (CAD drawing and its approval).
 | 24 Nov 2026 | Step 3 screens: sample detail with all actions, Process log, two masters (49 new screen checks, as five different kinds of person; 308 screen checks pass in total) |
 | 24 Nov 2026 | Work tabs on the Samples screen: Process, Mark completed, Images, Approval (37 new screen checks; 345 pass in total) |
 | 24 Nov 2026 | Approval rules revised: repeatable initial approval, changes-requested count, No closes the sample (35 database rule checks; 22 new screen checks, 369 pass in total) |
-| 24 Nov 2026 | Reference pictures in Masters, several references per sample, Tags master and #tags on samples (26 database rule checks; 9 new screen checks, 400 pass in total) |
+| 24 Nov 2026 | Reference pictures in Masters, several references per sample, Tags master and #tags on samples (26 database rule checks; 10 new screen checks, 379 pass in total) |
 
 ## Next, in order
 
