@@ -37,6 +37,7 @@ The sign-in page opens. The first time, choose "First time here?" to set up your
 9. Every list exports to PDF, Excel and CSV.
 10. Every master has Import with a downloadable template.
 11. In every master, clicking a row opens Edit.
+12. Every picture can be rotated, cropped and compressed while uploading.
 
 ## Project notes
 

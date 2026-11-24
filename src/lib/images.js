@@ -5,7 +5,8 @@ import { supabase } from './supabase.js'
 // temporary link that only signed-in people can ask for.
 const VIEW_SECONDS = 60 * 60
 const SHARE_SECONDS = 60 * 60 * 24 * 7
-const MAX_BYTES = 5 * 1024 * 1024
+// A chosen picture may be large (a phone photo); it is made smaller before upload.
+const MAX_BYTES = 25 * 1024 * 1024
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 
 const cache = new Map()
@@ -47,7 +48,7 @@ export function useImageUrl(bucket, path) {
 
 export function checkImageFile(file) {
   if (!ALLOWED_TYPES.includes(file.type)) return 'Choose a JPG, PNG or WEBP picture.'
-  if (file.size > MAX_BYTES) return 'The picture must be 5 MB or smaller.'
+  if (file.size > MAX_BYTES) return 'The picture must be 25 MB or smaller.'
   return ''
 }
 

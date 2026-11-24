@@ -37,6 +37,7 @@ Next to discuss: what happens to a sample after it is created (the next sample s
 | 24 Nov 2026 | Export to PDF, Excel and CSV on every list; import with template on every master (40 more screen checks passed with stand-in data; 191 in total) |
 | 24 Nov 2026 | Clicking a row in a master opens Edit (14 more screen checks passed; 205 in total) |
 | 24 Nov 2026 | Sample form tested by Nihal on the real database (prefix, designer and picture upload preview work); form rearranged into balanced sections |
+| 24 Nov 2026 | Picture editor on every upload: rotate, crop, compress (23 more screen checks passed; 228 in total) |
 
 ## Next, in order
 

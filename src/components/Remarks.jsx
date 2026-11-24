@@ -1,8 +1,10 @@
 import { useRef, useState } from 'react'
 import ClickableImage from './ClickableImage.jsx'
+import ImageEditor from './ImageEditor.jsx'
 import VoiceRecorder from './VoiceRecorder.jsx'
 import { checkImageFile, useImageUrl, useObjectUrl } from '../lib/images.js'
-import { formatDateTime } from '../lib/format.js'
+import { formatDateTime, friendlyError } from '../lib/format.js'
+import { quickCompress } from '../lib/imageEdit.js'
 
 // Remarks = any number of typed notes, voice notes and pictures.
 // A remark looks like { key, id?, kind: 'text' | 'voice' | 'image', body?, file_path?, file? }
@@ -40,6 +42,8 @@ const newKey = () => `new-${++nextKey}`
 export function RemarksEditor({ bucket, items, onChange, draft, onDraftChange }) {
   const fileRef = useRef(null)
   const [error, setError] = useState('')
+  const [preparing, setPreparing] = useState(false)
+  const [editing, setEditing] = useState(null) // the picture remark open in the editor
 
   const texts = items.filter((item) => item.kind === 'text')
   const voices = items.filter((item) => item.kind === 'voice')
@@ -55,12 +59,23 @@ export function RemarksEditor({ bucket, items, onChange, draft, onDraftChange })
     onDraftChange('')
   }
 
-  const addPictures = (event) => {
+  // Pictures added here are compressed straight away, so several can be added in
+  // one go. Each one can then be opened in the editor to rotate or crop it.
+  const addPictures = async (event) => {
     const chosen = [...(event.target.files || [])]
     event.target.value = ''
     const problem = chosen.map(checkImageFile).find(Boolean)
     setError(problem || '')
-    add(chosen.filter((file) => !checkImageFile(file)).map((file) => ({ key: newKey(), kind: 'image', file })))
+    const good = chosen.filter((file) => !checkImageFile(file))
+    if (good.length === 0) return
+    setPreparing(true)
+    try {
+      const ready = await Promise.all(good.map(quickCompress))
+      add(ready.map((file) => ({ key: newKey(), kind: 'image', file })))
+    } catch (failure) {
+      setError(friendlyError(failure))
+    }
+    setPreparing(false)
   }
 
   return (
@@ -118,6 +133,17 @@ export function RemarksEditor({ bucket, items, onChange, draft, onDraftChange })
             {pictures.map((item) => (
               <li key={item.key} className="remark-picture">
                 <RemarkPicture bucket={bucket} remark={item} size={72} />
+                {item.file && (
+                  <button
+                    type="button"
+                    className="remark-picture-edit"
+                    aria-label="Edit picture"
+                    title="Rotate, crop or compress"
+                    onClick={() => setEditing(item)}
+                  >
+                    ✎
+                  </button>
+                )}
                 <button
                   type="button"
                   className="remark-picture-remove"
@@ -132,10 +158,20 @@ export function RemarksEditor({ bucket, items, onChange, draft, onDraftChange })
           </ul>
         )}
         <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" multiple hidden onChange={addPictures} />
-        <button type="button" className="btn" onClick={() => fileRef.current?.click()}>
-          Add pictures
+        <button type="button" className="btn" disabled={preparing} onClick={() => fileRef.current?.click()}>
+          {preparing ? 'Preparing pictures…' : 'Add pictures'}
         </button>
         {error && <span className="hint error-text"> {error}</span>}
+        {editing && (
+          <ImageEditor
+            file={editing.file}
+            onCancel={() => setEditing(null)}
+            onDone={(edited) => {
+              onChange(items.map((item) => (item.key === editing.key ? { ...item, file: edited } : item)))
+              setEditing(null)
+            }}
+          />
+        )}
       </div>
     </div>
   )

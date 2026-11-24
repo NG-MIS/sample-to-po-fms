@@ -126,6 +126,12 @@ from the Supabase dashboard, but only if another project is paused first.
 11. **In every master, clicking a row opens Edit.** It works for people who may edit
     (authority All); for everyone else a row click does nothing. Pictures, buttons and group
     headings inside the row keep their own job. The Edit button stays as well.
+12. **Every picture can be edited while uploading.** Choosing a picture opens the picture
+    editor: rotate left or right, crop (drag the box or its corners, or pick a square), and
+    compress (Best quality, Balanced, Smallest file), with the original and finished file
+    size shown. The finished picture is saved as a JPG. Where several pictures are added at
+    once (remarks), they are compressed automatically and each can be opened in the editor.
+    A chosen picture may be up to 25 MB; the finished one must be 5 MB or less.
 
 ### Look and feel
 
@@ -203,7 +209,8 @@ All in `src/components`. A screen never builds its own version of these.
 | `ConfirmDialog` | Yes/no question on top of everything (inside `Modal.jsx`) |
 | `ImageViewer` | Picture popup: full screen, copy link, open in new tab, close |
 | `ClickableImage` | Thumbnail that opens the picture popup. Shows initials when there is no picture |
-| `ImageUpload` | Picture field for forms: choose, preview, change, remove |
+| `ImageUpload` | Picture field for forms: choose, edit, preview, change, remove |
+| `ImageEditor` | Picture editor shown on upload: rotate, crop, compress |
 | `PickList` | Pick-list, single or multi-tick, with search |
 | `ImportButton` | Import for a master: template download, file check with a preview of every row, then import |
 | `RemarksEditor`, `RemarksView` | Remarks in a form (text, voice, pictures, any number of each) and their read-only display |
@@ -255,6 +262,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 24 Nov 2026 | Standing rule 12 added and built: picture editor (rotate, crop, compress) on every picture upload |
 | 24 Nov 2026 | Sample form laid out in three sections: Sample details (prefix, creation date, designer, reference), Pictures (concept image, reference image), Remarks |
 | 24 Nov 2026 | Standing rule 11 added and built: clicking a row in a master opens Edit |
 | 24 Nov 2026 | Standing rules 9 and 10 added and built: export to PDF, Excel and CSV on every list; import with template on every master (user master, departments, designations, roles, numbering, references) |

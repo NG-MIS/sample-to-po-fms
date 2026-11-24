@@ -5,6 +5,9 @@ Newest first. A changed decision is not deleted: a new entry is added that repla
 
 | Date | Decision | Reason |
 |---|---|---|
+| 24 Nov 2026 | Edited pictures are saved as JPG, with "Balanced" (longest side 1600) as the default compression | Small files that still look sharp; phone photos of 5 to 10 MB come down to a few hundred KB |
+| 24 Nov 2026 | Several pictures added at once are compressed automatically without opening the editor for each | Adding ten remark pictures should not mean ten popups; each can still be edited |
+| 24 Nov 2026 | Picture editor (rotate, crop, compress) on every picture upload | Nihal's standing rule |
 | 24 Nov 2026 | Import only adds rows; it never changes or removes existing ones. Existing rows are skipped and reported | A wrong file can then never damage a master. Corrections are made on screen |
 | 24 Nov 2026 | Import shows a check of every row first, and imports the good rows even if others have problems | The person sees exactly what will happen before anything is saved |
 | 24 Nov 2026 | Export gives what is on screen (shown columns, filtered rows, shown order) | "What you see is what you get" is the easiest rule to trust |
