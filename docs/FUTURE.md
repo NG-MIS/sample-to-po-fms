@@ -13,6 +13,10 @@ Last updated: 23 Nov 2026
   per hour. Before the whole team sets up sign-in, connect a proper email sender
 - Phone use needs the app hosted on the web (or the computer's address opened from the phone
   on the same network); a phone cannot open `localhost` on the computer
+- PDF export uses standard fonts, which cover English letters and numbers only. Text in Hindi
+  or other scripts, and the rupee sign, will not print correctly in a PDF until a wider font is
+  added (Excel and CSV exports are not affected). Needed before purchase orders with amounts
+- Import for the user master cannot set pictures; avatars are added on screen
 - Supabase can refuse passwords that are known to have leaked. It is switched off; consider
   switching it on in the Supabase dashboard (sign-in settings) before the whole team joins
 - Pictures and voice notes that were uploaded for a form that was then cancelled, or removed

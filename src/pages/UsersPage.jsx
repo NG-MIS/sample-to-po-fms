@@ -2,12 +2,14 @@ import { useMemo, useState } from 'react'
 import ClickableImage from '../components/ClickableImage.jsx'
 import DataTable from '../components/DataTable.jsx'
 import ImageUpload from '../components/ImageUpload.jsx'
+import ImportButton from '../components/ImportButton.jsx'
 import Modal from '../components/Modal.jsx'
 import PickList from '../components/PickList.jsx'
 import { Badge, Field, Tick } from '../components/Field.jsx'
 import { PageHead } from '../components/Layout.jsx'
 import { useAuth } from '../lib/auth.jsx'
 import { fetchRows, nameMap, useLoad } from '../lib/data.js'
+import { readYesNo, splitList } from '../lib/exportFiles.js'
 import { formatDateTime, friendlyError } from '../lib/format.js'
 import { uploadImage } from '../lib/images.js'
 import { supabase } from '../lib/supabase.js'
@@ -18,6 +20,31 @@ const AUTHORITY_OPTIONS = [
   { value: 'all', label: 'All' },
 ]
 const AUTHORITY_LABEL = Object.fromEntries(AUTHORITY_OPTIONS.map((option) => [option.value, option.label]))
+const AUTHORITY_FROM_TEXT = {
+  '': 'self',
+  self: 'self',
+  all: 'all',
+  department: 'departments',
+  departments: 'departments',
+  'department(s)': 'departments',
+}
+
+const IMPORT_FIELDS = [
+  { header: 'NAME', required: true, hint: 'The person\u2019s full name.' },
+  { header: 'EMAIL', required: false, hint: 'Needed if the person will sign in. Each email can be used once.' },
+  { header: 'PHONE', required: false, hint: 'Phone number.' },
+  { header: 'DEPARTMENT', required: false, hint: 'Must match a name in the Departments list.' },
+  { header: 'DESIGNATION', required: false, hint: 'Must match a name in the Designations list.' },
+  { header: 'ROLES', required: false, hint: 'One or more names from the Roles list, separated by commas. Example: Designer, Merchandiser' },
+  { header: 'AUTHORITY', required: false, hint: 'Self, Department(s) or All. Leave blank for Self.' },
+  { header: 'AUTHORITY DEPARTMENTS', required: false, hint: 'Only when AUTHORITY is Department(s): department names separated by commas.' },
+  { header: 'CAN SIGN IN', required: false, hint: 'Yes or No. Leave blank for No. Yes needs an EMAIL.' },
+  { header: 'ACTIVE', required: false, hint: 'Yes or No. Leave blank for Yes.' },
+]
+
+// Lookup of lower-case name -> id, for active items only.
+const idsByName = (items) =>
+  new Map((items || []).filter((item) => item.is_active).map((item) => [item.name.trim().toLowerCase(), item.id]))
 
 async function loadEverything() {
   const [people, departments, designations, roles, userRoles, authorityDepartments] = await Promise.all([
@@ -58,6 +85,85 @@ export default function UsersPage() {
   const [editing, setEditing] = useState(null) // null = closed, {} = new, person = edit
 
   const people = useMemo(() => data?.people ?? [], [data])
+
+  const prepareImport = (cells, memo) => {
+    memo.departments ??= idsByName(data.departments)
+    memo.designations ??= idsByName(data.designations)
+    memo.roles ??= idsByName(data.roles)
+    memo.emails ??= new Set()
+
+    const name = cells.NAME
+    if (!name) return { error: 'NAME is empty.' }
+
+    const email = (cells.EMAIL || '').toLowerCase()
+    if (email) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: 'EMAIL does not look like an email address.' }
+      if (memo.emails.has(email)) return { error: 'This email is repeated in the file.' }
+      memo.emails.add(email)
+      if (people.some((person) => person.email === email)) return { skip: 'A person with this email already exists.' }
+    } else if (people.some((person) => !person.email && person.name.trim().toLowerCase() === name.toLowerCase())) {
+      return { skip: 'A person with this name and no email already exists.' }
+    }
+
+    const find = (lookup, text, listName) => {
+      if (!text) return { id: null }
+      const id = lookup.get(text.toLowerCase())
+      return id ? { id } : { problem: `"${text}" is not an active entry in ${listName}.` }
+    }
+    const department = find(memo.departments, cells.DEPARTMENT, 'Departments')
+    if (department.problem) return { error: department.problem }
+    const designation = find(memo.designations, cells.DESIGNATION, 'Designations')
+    if (designation.problem) return { error: designation.problem }
+
+    const roleIds = []
+    for (const roleName of splitList(cells.ROLES)) {
+      const role = find(memo.roles, roleName, 'Roles')
+      if (role.problem) return { error: role.problem }
+      if (!roleIds.includes(role.id)) roleIds.push(role.id)
+    }
+
+    const authority = AUTHORITY_FROM_TEXT[(cells.AUTHORITY || '').toLowerCase()]
+    if (!authority) return { error: 'AUTHORITY must be Self, Department(s) or All.' }
+    const authorityDepartmentIds = []
+    if (authority === 'departments') {
+      for (const departmentName of splitList(cells['AUTHORITY DEPARTMENTS'])) {
+        const found = find(memo.departments, departmentName, 'Departments')
+        if (found.problem) return { error: found.problem }
+        if (!authorityDepartmentIds.includes(found.id)) authorityDepartmentIds.push(found.id)
+      }
+      if (authorityDepartmentIds.length === 0) {
+        return { error: 'AUTHORITY DEPARTMENTS is needed when AUTHORITY is Department(s).' }
+      }
+    }
+
+    const canSignIn = readYesNo(cells['CAN SIGN IN'], false)
+    if (canSignIn === null) return { error: 'CAN SIGN IN must be Yes or No.' }
+    if (canSignIn && !email) return { error: 'EMAIL is needed when CAN SIGN IN is Yes.' }
+    const isActive = readYesNo(cells.ACTIVE, true)
+    if (isActive === null) return { error: 'ACTIVE must be Yes or No.' }
+
+    return {
+      record: {
+        p_id: null,
+        p_name: name,
+        p_email: email,
+        p_phone: cells.PHONE || '',
+        p_department_id: department.id,
+        p_designation_id: designation.id,
+        p_authority: authority,
+        p_avatar_path: null,
+        p_can_sign_in: canSignIn,
+        p_is_active: isActive,
+        p_role_ids: roleIds,
+        p_authority_department_ids: authorityDepartmentIds,
+      },
+    }
+  }
+
+  const saveImported = async (record) => {
+    const { error: failure } = await supabase.rpc('save_app_user', record)
+    if (failure) throw failure
+  }
 
   const columns = useMemo(() => {
     const departmentName = nameMap(data?.departments)
@@ -145,15 +251,26 @@ export default function UsersPage() {
       )}
       <DataTable
         tableId="users"
+        title="User master"
         columns={columns}
         rows={people}
         loading={loading}
         emptyText="No person has been added yet."
         toolbar={
           isAdmin && (
-            <button type="button" className="btn btn--primary" onClick={() => setEditing({})}>
-              Add person
-            </button>
+            <div className="toolbar-actions">
+              <ImportButton
+                title="Import people"
+                templateTitle="User master"
+                fields={IMPORT_FIELDS}
+                prepare={prepareImport}
+                saveRecord={saveImported}
+                onDone={reload}
+              />
+              <button type="button" className="btn btn--primary" onClick={() => setEditing({})}>
+                Add person
+              </button>
+            </div>
           )
         }
       />

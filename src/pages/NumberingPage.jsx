@@ -1,13 +1,21 @@
 import { useMemo, useState } from 'react'
 import DataTable from '../components/DataTable.jsx'
+import ImportButton from '../components/ImportButton.jsx'
 import Modal from '../components/Modal.jsx'
 import { Badge, Field, Tick } from '../components/Field.jsx'
 import { PageHead } from '../components/Layout.jsx'
 import { useAuth } from '../lib/auth.jsx'
 import { fetchRows, nameMap, useLoad } from '../lib/data.js'
+import { readYesNo } from '../lib/exportFiles.js'
 import { formatDateTime, friendlyError } from '../lib/format.js'
 import { nextSampleNo } from '../lib/numbering.js'
 import { supabase } from '../lib/supabase.js'
+
+const IMPORT_FIELDS = [
+  { header: 'PREFIX', required: true, hint: '1 to 10 letters or digits, no spaces. Stored in capitals. Each prefix can be used once.' },
+  { header: 'STARTING NUMBER', required: true, hint: 'A whole number, 1 or more. The first sample of the series gets this number.' },
+  { header: 'ACTIVE', required: false, hint: 'Yes or No. Leave blank for Yes.' },
+]
 
 // Numbering master: one row per series. A sample number is PREFIX-NUMBER.
 export default function NumberingPage() {
@@ -20,6 +28,27 @@ export default function NumberingPage() {
 
   const rows = data?.rows ?? []
   const people = data?.people
+
+  const prepareImport = (cells, memo) => {
+    const prefix = cells.PREFIX.toUpperCase()
+    if (!/^[A-Z0-9]{1,10}$/.test(prefix)) return { error: 'PREFIX must be 1 to 10 letters or digits, with no spaces.' }
+    memo.seen ??= new Set()
+    if (memo.seen.has(prefix)) return { error: 'This prefix is repeated in the file.' }
+    memo.seen.add(prefix)
+    if (rows.some((row) => row.prefix === prefix)) return { skip: 'This prefix already exists.' }
+    const start = Number(cells['STARTING NUMBER'])
+    if (!/^\d+$/.test(cells['STARTING NUMBER']) || start < 1) {
+      return { error: 'STARTING NUMBER must be a whole number, 1 or more.' }
+    }
+    const isActive = readYesNo(cells.ACTIVE, true)
+    if (isActive === null) return { error: 'ACTIVE must be Yes or No.' }
+    return { record: { prefix, start_number: start, is_active: isActive } }
+  }
+
+  const saveImported = async (record) => {
+    const { error: failure } = await supabase.from('sample_series').insert(record)
+    if (failure) throw failure
+  }
 
   const columns = useMemo(() => {
     const list = [
@@ -75,15 +104,26 @@ export default function NumberingPage() {
       )}
       <DataTable
         tableId="numbering"
+        title="Numbering"
         columns={columns}
         rows={rows}
         loading={loading}
         emptyText="No series has been added yet."
         toolbar={
           isAdmin && (
-            <button type="button" className="btn btn--primary" onClick={() => setEditing({})}>
-              Add series
-            </button>
+            <div className="toolbar-actions">
+              <ImportButton
+                title="Import series"
+                templateTitle="Numbering"
+                fields={IMPORT_FIELDS}
+                prepare={prepareImport}
+                saveRecord={saveImported}
+                onDone={reload}
+              />
+              <button type="button" className="btn btn--primary" onClick={() => setEditing({})}>
+                Add series
+              </button>
+            </div>
           )
         }
       />

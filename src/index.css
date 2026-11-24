@@ -1310,3 +1310,53 @@ button.side-group-title:hover {
     padding: 20px;
   }
 }
+
+/* ---------- Import and export ---------- */
+
+.toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.option:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.import-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 0 0 16px;
+  padding-left: 20px;
+}
+.import-steps li > div {
+  margin-top: 8px;
+}
+.import-summary {
+  margin-bottom: 8px;
+}
+.import-hint {
+  margin-bottom: 10px;
+}
+.modal-body > .table-block {
+  margin-bottom: 14px;
+}
+.badge--ready,
+.badge--imported {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+.badge--skip {
+  background: var(--off-soft);
+  color: var(--off);
+}
+.badge--problem,
+.badge--failed {
+  background: var(--bad-soft);
+  color: var(--bad);
+}
+@media (max-width: 720px) {
+  .toolbar-actions .btn {
+    flex: 1;
+  }
+}

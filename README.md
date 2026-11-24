@@ -34,6 +34,8 @@ The sign-in page opens. The first time, choose "First time here?" to set up your
 6. Everything works on a phone.
 7. Every list can be grouped by up to two levels.
 8. The side menu groups fold.
+9. Every list exports to PDF, Excel and CSV.
+10. Every master has Import with a downloadable template.
 
 ## Project notes
 

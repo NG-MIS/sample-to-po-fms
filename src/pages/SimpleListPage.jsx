@@ -1,12 +1,19 @@
 import { useMemo, useState } from 'react'
 import DataTable from '../components/DataTable.jsx'
+import ImportButton from '../components/ImportButton.jsx'
 import Modal from '../components/Modal.jsx'
 import { Badge, Field, Tick } from '../components/Field.jsx'
 import { PageHead } from '../components/Layout.jsx'
 import { useAuth } from '../lib/auth.jsx'
 import { fetchRows, nameMap, useLoad } from '../lib/data.js'
+import { readYesNo } from '../lib/exportFiles.js'
 import { formatDateTime, friendlyError } from '../lib/format.js'
 import { supabase } from '../lib/supabase.js'
+
+const IMPORT_FIELDS = [
+  { header: 'NAME', required: true, hint: 'The name exactly as it should appear. Each name can be used once.' },
+  { header: 'ACTIVE', required: false, hint: 'Yes or No. Leave blank for Yes.' },
+]
 
 // One screen for every simple list (departments, designations, roles).
 // The list is only a name plus active/inactive.
@@ -23,6 +30,24 @@ export default function SimpleListPage({ table, title, singular }) {
 
   const rows = data?.rows ?? []
   const people = data?.people
+
+  const prepareImport = (cells, memo) => {
+    const name = cells.NAME
+    if (!name) return { error: 'NAME is empty.' }
+    const key = name.toLowerCase()
+    memo.seen ??= new Set()
+    if (memo.seen.has(key)) return { error: 'This name is repeated in the file.' }
+    memo.seen.add(key)
+    if (rows.some((row) => row.name.trim().toLowerCase() === key)) return { skip: 'Already in the list.' }
+    const isActive = readYesNo(cells.ACTIVE, true)
+    if (isActive === null) return { error: 'ACTIVE must be Yes or No.' }
+    return { record: { name, is_active: isActive } }
+  }
+
+  const saveImported = async (record) => {
+    const { error: failure } = await supabase.from(table).insert(record)
+    if (failure) throw failure
+  }
 
   const columns = useMemo(() => {
     const list = [
@@ -68,15 +93,26 @@ export default function SimpleListPage({ table, title, singular }) {
       )}
       <DataTable
         tableId={table}
+        title={title}
         columns={columns}
         rows={rows}
         loading={loading}
         emptyText={`No ${singular} has been added yet.`}
         toolbar={
           isAdmin && (
-            <button type="button" className="btn btn--primary" onClick={() => setEditing({})}>
-              Add {singular}
-            </button>
+            <div className="toolbar-actions">
+              <ImportButton
+                title={`Import ${title.toLowerCase()}`}
+                templateTitle={title}
+                fields={IMPORT_FIELDS}
+                prepare={prepareImport}
+                saveRecord={saveImported}
+                onDone={reload}
+              />
+              <button type="button" className="btn btn--primary" onClick={() => setEditing({})}>
+                Add {singular}
+              </button>
+            </div>
           )
         }
       />

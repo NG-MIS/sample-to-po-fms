@@ -171,6 +171,7 @@ export default function SamplesPage() {
       )}
       <DataTable
         tableId="samples"
+        title="Samples"
         columns={columns}
         rows={samples}
         loading={loading}

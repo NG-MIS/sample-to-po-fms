@@ -1,16 +1,21 @@
 import { useMemo, useRef, useState } from 'react'
 import Popover from './Popover.jsx'
+import { exportCsv, exportExcel, exportPdf } from '../lib/exportFiles.js'
+import { friendlyError } from '../lib/format.js'
 import { recall, remember } from '../lib/remember.js'
 import { useIsPhone } from '../lib/screen.js'
 
 // The one table used on every screen: search box, click-to-sort headings,
-// a Google-Sheets-style filter on every column, a column selector, and
-// grouping of rows by one or two columns.
+// a Google-Sheets-style filter on every column, a column selector,
+// grouping of rows by one or two columns, and export to PDF, Excel and CSV.
+// Export gives exactly what is on screen: the shown columns, and the rows
+// left after search and filters, in the order shown.
 // On a phone the rows are shown as cards, with the same search, sort,
 // filter and column choices.
 //
 // tableId - a short name for this table, used to remember which columns
 //           the person chose to show (in their own browser).
+// title   - the name of the list, used as the heading and file name of exports.
 // columns: [{
 //   key, header,
 //   value(row)      - text, number, or a list of texts. Drives search, sort and filter.
@@ -251,6 +256,32 @@ function ColumnPicker({ columns, hidden, onChange, onClose, anchorRef }) {
   )
 }
 
+// PDF, Excel or CSV.
+function ExportMenu({ onExport, busy, error, rowCount, onClose, anchorRef }) {
+  const kinds = [
+    ['pdf', 'PDF'],
+    ['excel', 'Excel (.xlsx)'],
+    ['csv', 'CSV'],
+  ]
+  return (
+    <Popover anchorRef={anchorRef} onClose={onClose} width={230} className="popover--export">
+      <div className="popover-title">
+        Export {rowCount} {rowCount === 1 ? 'row' : 'rows'} as
+      </div>
+      <ul className="option-list">
+        {kinds.map(([kind, label]) => (
+          <li key={kind}>
+            <button type="button" className="option" disabled={Boolean(busy)} onClick={() => onExport(kind)}>
+              <span>{busy === kind ? `Preparing ${label}…` : label}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      {error && <p className="hint error-text">{error}</p>}
+    </Popover>
+  )
+}
+
 // Choose up to two columns to group rows by.
 function GroupPicker({ columns, group, onChange, onFoldAll, onOpenAll, onClose, anchorRef }) {
   const usable = columns.filter((column) => typeof column.value === 'function')
@@ -380,6 +411,7 @@ function PhoneSortFilter({ columns, rows, sort, filters, onSort, onFilter, ancho
 
 export default function DataTable({
   tableId,
+  title = 'List',
   columns,
   rows,
   rowKey = 'id',
@@ -392,6 +424,7 @@ export default function DataTable({
   const columnsRef = useRef(null)
   const phoneRef = useRef(null)
   const groupRef = useRef(null)
+  const exportRef = useRef(null)
   const memoryKey = tableId ? `table-columns:${tableId}` : null
 
   const [search, setSearch] = useState('')
@@ -400,7 +433,9 @@ export default function DataTable({
   const [hidden, setHidden] = useState(() => new Set(memoryKey ? recall(memoryKey, []) : []))
   const [group, setGroup] = useState(() => (memoryKey ? recall(`${memoryKey}:group`, []) : []))
   const [foldedGroups, setFoldedGroups] = useState(() => new Set())
-  const [panel, setPanel] = useState(null) // null | 'columns' | 'phone' | 'group'
+  const [panel, setPanel] = useState(null) // null | 'columns' | 'phone' | 'group' | 'export'
+  const [exporting, setExporting] = useState('')
+  const [exportError, setExportError] = useState('')
 
   const shownColumns = useMemo(() => columns.filter((column) => !hidden.has(column.key)), [columns, hidden])
   const filterCount = Object.keys(filters).length
@@ -460,7 +495,8 @@ export default function DataTable({
   }, [rows, shownColumns, filters, search, sort])
 
   // What is drawn: plain rows, or group headings with their rows underneath.
-  const display = useMemo(() => {
+  // With respectFolds off, it gives every row in on-screen order (used for export).
+  const arrange = (respectFolds) => {
     if (groupColumns.length === 0) return visible.map((row) => ({ type: 'row', row }))
 
     const labelOf = (column, row) => asText(column.value(row)) || BLANK
@@ -483,7 +519,7 @@ export default function DataTable({
         .sort((a, b) => compare(a[1].order, b[1].order))
         .forEach(([label, bucket]) => {
           const id = `${path}/${label}`
-          const folded = foldedGroups.has(id)
+          const folded = respectFolds && foldedGroups.has(id)
           out.push({ type: 'group', id, level, header: column.header, label, count: bucket.rows.length, folded })
           if (folded) return
           if (level + 1 < groupColumns.length) out.push(...build(bucket.rows, level + 1, id))
@@ -492,7 +528,33 @@ export default function DataTable({
       return out
     }
     return build(visible, 0, '')
-  }, [visible, groupColumns, foldedGroups])
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const display = useMemo(() => arrange(true), [visible, groupColumns, foldedGroups])
+
+  const runExport = async (kind) => {
+    const exportColumns = shownColumns.filter((column) => column.header && typeof column.value === 'function')
+    const headers = exportColumns.map((column) => column.header)
+    const data = arrange(false)
+      .filter((item) => item.type === 'row')
+      .map((item) =>
+        exportColumns.map((column) => {
+          const value = column.value(item.row)
+          return typeof value === 'number' ? value : asText(value)
+        }),
+      )
+    setExporting(kind)
+    setExportError('')
+    try {
+      if (kind === 'csv') exportCsv(title, headers, data)
+      else if (kind === 'excel') await exportExcel(title, headers, data)
+      else await exportPdf(title, headers, data, visible.length === rows.length ? '' : `Filtered: ${visible.length} of ${rows.length}`)
+      setPanel(null)
+    } catch (failure) {
+      setExportError(friendlyError(failure))
+    }
+    setExporting('')
+  }
 
   const toggleGroup = (id) =>
     setFoldedGroups((previous) => {
@@ -562,6 +624,17 @@ export default function DataTable({
         >
           {groupColumns.length > 0 ? `Group: ${groupColumns.map((column) => column.header).join(', ')}` : 'Group'}
         </button>
+        <button
+          type="button"
+          ref={exportRef}
+          className="btn btn--small"
+          onClick={() => {
+            setExportError('')
+            setPanel('export')
+          }}
+        >
+          Export
+        </button>
         <span className="table-count" role="status">
           {visible.length === rows.length ? `${rows.length} rows` : `Showing ${visible.length} of ${rows.length}`}
         </span>
@@ -588,6 +661,16 @@ export default function DataTable({
           onChange={changeHidden}
           onClose={() => setPanel(null)}
           anchorRef={columnsRef}
+        />
+      )}
+      {panel === 'export' && (
+        <ExportMenu
+          onExport={runExport}
+          busy={exporting}
+          error={exportError}
+          rowCount={visible.length}
+          onClose={() => setPanel(null)}
+          anchorRef={exportRef}
         />
       )}
       {panel === 'group' && (

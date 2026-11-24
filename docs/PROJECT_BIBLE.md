@@ -114,6 +114,15 @@ from the Supabase dashboard, but only if another project is paused first.
    selector, and is remembered per table in the person's own browser.
 8. **The side menu folds.** Each menu group (Sampling, Masters, and later ones) can be folded
    and opened; the choice is remembered in the person's own browser.
+9. **Every list exports to PDF, Excel and CSV.** The export is exactly what is on screen:
+   the shown columns, and the rows left after search and filters, in the order shown
+   (including group order). Pictures and buttons are left out. Anyone who can see a list
+   can export it.
+10. **Every master has Import with a downloadable template.** The template is an Excel file
+    with the right headings and a "How to fill" sheet. The person fills it, chooses the file
+    (Excel or CSV), and sees every row checked before anything is saved. Import only ADDS
+    rows: rows that already exist are skipped and reported, rows with a problem are left out
+    with the reason shown, and nothing existing is ever changed. Only authority All can import.
 
 ### Look and feel
 
@@ -186,13 +195,14 @@ All in `src/components`. A screen never builds its own version of these.
 
 | Block | What it does |
 |---|---|
-| `DataTable` | Table with search box, click-to-sort headings, a Sheets-style filter on every column, a column selector, and grouping by up to two levels. Turns into cards on a phone |
+| `DataTable` | Table with search box, click-to-sort headings, a Sheets-style filter on every column, a column selector, grouping by up to two levels, and export to PDF, Excel and CSV. Turns into cards on a phone |
 | `Modal` | Popup box for forms. Handles Esc, click outside, and "Discard changes?" when there is unsaved work |
 | `ConfirmDialog` | Yes/no question on top of everything (inside `Modal.jsx`) |
 | `ImageViewer` | Picture popup: full screen, copy link, open in new tab, close |
 | `ClickableImage` | Thumbnail that opens the picture popup. Shows initials when there is no picture |
 | `ImageUpload` | Picture field for forms: choose, preview, change, remove |
 | `PickList` | Pick-list, single or multi-tick, with search |
+| `ImportButton` | Import for a master: template download, file check with a preview of every row, then import |
 | `RemarksEditor`, `RemarksView` | Remarks in a form (text, voice, pictures, any number of each) and their read-only display |
 | `VoiceRecorder`, `VoiceNote` | Record a voice note from the microphone; play one back |
 | `Popover` | Floating panel under a button, used by pick-lists and column filters |
@@ -242,6 +252,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 24 Nov 2026 | Standing rules 9 and 10 added and built: export to PDF, Excel and CSV on every list; import with template on every master (user master, departments, designations, roles, numbering, references) |
 | 24 Nov 2026 | Standing rules 7 and 8 added and built: group by two levels on every list, folding side menu. Theme changed to soft emerald, inspired by Lycra Tracker |
 | 23 Nov 2026 | Two standing rules added and built into the shared blocks: column selector on every list, and phone layout everywhere |
 | 23 Nov 2026 | Step 2 built: Numbering master, References list, sample creation with automatic sample number, reference, and remarks (text, voice, pictures) |

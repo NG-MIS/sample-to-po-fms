@@ -5,6 +5,11 @@ Newest first. A changed decision is not deleted: a new entry is added that repla
 
 | Date | Decision | Reason |
 |---|---|---|
+| 24 Nov 2026 | Import only adds rows; it never changes or removes existing ones. Existing rows are skipped and reported | A wrong file can then never damage a master. Corrections are made on screen |
+| 24 Nov 2026 | Import shows a check of every row first, and imports the good rows even if others have problems | The person sees exactly what will happen before anything is saved |
+| 24 Nov 2026 | Export gives what is on screen (shown columns, filtered rows, shown order) | "What you see is what you get" is the easiest rule to trust |
+| 24 Nov 2026 | "XLS" export is a modern Excel file (.xlsx) | Opens in Excel and Google Sheets; the old .xls format is obsolete |
+| 24 Nov 2026 | Export on every list and import with template on every master | Nihal's standing rules |
 | 24 Nov 2026 | Theme: soft emerald with glass-style panels, taken from the Lycra Tracker project. Buttons and links use a slightly deeper green than Lycra Tracker | Nihal asked for the Lycra Tracker look; the deeper green keeps white text on buttons easy to read |
 | 24 Nov 2026 | Grouping and folded menu groups are remembered in the person's own browser | Personal conveniences, same as the column choice |
 | 24 Nov 2026 | Every list can be grouped by up to two levels; side menu groups fold | Nihal's standing rules |
