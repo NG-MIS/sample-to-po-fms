@@ -19,21 +19,30 @@ const BUCKET = 'samples'
 const sameName = (value, name) => (value || '').trim().toLowerCase() === name
 
 async function loadEverything() {
-  const [samples, remarks, series, references, people, departments, roles, userRoles] = await Promise.all([
-    fetchRows('samples'),
-    fetchRows('sample_remarks', 'created_at'),
-    fetchRows('sample_series'),
-    fetchRows('sample_reference_options'),
-    fetchRows('app_users'),
-    fetchRows('departments'),
-    fetchRows('roles'),
-    fetchRows('user_roles', null),
-  ])
+  const [samples, remarks, sampleComponents, components, series, references, people, departments, roles, userRoles] =
+    await Promise.all([
+      fetchRows('samples'),
+      fetchRows('sample_remarks', 'created_at'),
+      fetchRows('sample_components', null),
+      fetchRows('components'),
+      fetchRows('sample_series'),
+      fetchRows('sample_reference_options'),
+      fetchRows('app_users'),
+      fetchRows('departments'),
+      fetchRows('roles'),
+      fetchRows('user_roles', null),
+    ])
 
   const remarksBySample = new Map()
   remarks.forEach((remark) => {
     if (!remarksBySample.has(remark.sample_id)) remarksBySample.set(remark.sample_id, [])
     remarksBySample.get(remark.sample_id).push(remark)
+  })
+
+  const componentsBySample = new Map()
+  sampleComponents.forEach((link) => {
+    if (!componentsBySample.has(link.sample_id)) componentsBySample.set(link.sample_id, [])
+    componentsBySample.get(link.sample_id).push(link.component_id)
   })
 
   // DESIGNER pick-list rule: department "Sample" + role "Designer".
@@ -42,7 +51,12 @@ async function loadEverything() {
   const designerIds = new Set(userRoles.filter((link) => link.role_id === designerRole).map((link) => link.user_id))
 
   return {
-    samples: samples.map((sample) => ({ ...sample, remarks: remarksBySample.get(sample.id) ?? [] })),
+    samples: samples.map((sample) => ({
+      ...sample,
+      remarks: remarksBySample.get(sample.id) ?? [],
+      component_ids: componentsBySample.get(sample.id) ?? [],
+    })),
+    components,
     series,
     references,
     people,
@@ -64,12 +78,17 @@ export default function SamplesPage() {
   const canCreate = isAdmin || Boolean(data?.designerIds.has(profile.id))
 
   const lookups = useMemo(
-    () => ({ person: nameMap(data?.people), reference: nameMap(data?.references) }),
+    () => ({
+      person: nameMap(data?.people),
+      reference: nameMap(data?.references),
+      component: nameMap(data?.components),
+    }),
     [data],
   )
 
   const columns = useMemo(() => {
-    const { person, reference } = lookups
+    const { person, reference, component } = lookups
+    const componentNames = (row) => row.component_ids.map((id) => component.get(id)).filter(Boolean).sort()
     return [
       { key: 'sl_no', header: 'SL NO', value: (row) => row.sl_no, width: 80 },
       {
@@ -89,6 +108,7 @@ export default function SamplesPage() {
         sortValue: (row) => row.creation_date,
       },
       { key: 'designer', header: 'DESIGNER', value: (row) => person.get(row.designer_id) ?? '' },
+      { key: 'components', header: 'COMPONENTS', value: componentNames },
       {
         key: 'concept_image',
         header: 'CONCEPT IMAGE',
@@ -248,6 +268,16 @@ function SampleView({ sample, lookups, canEdit, onEdit, onClose }) {
           <dd>{lookups.person.get(sample.designer_id)}</dd>
         </div>
         <div>
+          <dt>Components</dt>
+          <dd>
+            {sample.component_ids
+              .map((id) => lookups.component.get(id))
+              .filter(Boolean)
+              .sort()
+              .join(', ') || <span className="hint">None</span>}
+          </dd>
+        </div>
+        <div>
           <dt>Entered by</dt>
           <dd>
             {lookups.person.get(sample.created_by)}, {formatDateTime(sample.created_at)}
@@ -293,6 +323,7 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
       series_id: null,
       creation_date: sample.creation_date ?? todayLocal(),
       designer_id: sample.designer_id ?? null,
+      component_ids: sample.component_ids ?? [],
       concept_image_path: sample.concept_image_path ?? null,
       reference_option_id: sample.reference_option_id ?? null,
       reference_image_path: sample.reference_image_path ?? null,
@@ -334,6 +365,12 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
     .map((person) => ({ value: person.id, label: person.name }))
     .sort((a, b) => a.label.localeCompare(b.label))
 
+  // Active components, plus any already on this sample even if now inactive.
+  const componentOptions = lists.components
+    .filter((item) => item.is_active || (sample.component_ids ?? []).includes(item.id))
+    .map((item) => ({ value: item.id, label: item.is_active ? item.name : `${item.name} (inactive)` }))
+    .sort((a, b) => a.label.localeCompare(b.label))
+
   const referenceOptions = lists.references
     .filter((option) => option.is_active || option.id === sample.reference_option_id)
     .map((option) => ({ value: option.id, label: option.name }))
@@ -345,6 +382,7 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
     if (!form.creation_date) return setError('Creation date is required.')
     if (form.creation_date > todayLocal()) return setError('Creation date cannot be in the future.')
     if (!form.designer_id) return setError('Choose a designer.')
+    if (form.component_ids.length === 0) return setError('Choose at least one component.')
     if (!conceptFile && !form.concept_image_path) return setError('Add the concept image.')
 
     setBusy(true)
@@ -373,6 +411,7 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
         p_reference_option_id: form.reference_option_id,
         p_reference_image_path: referencePath,
         p_remarks: payload,
+        p_component_ids: form.component_ids,
       })
       if (failure) throw failure
       await onSaved(sampleNo)
@@ -457,6 +496,23 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
             onChange={set('reference_option_id')}
           />
         </Field>
+
+        <div className="form-wide">
+          <Field
+            label="Components"
+            htmlFor="sample-components"
+            required
+            hint={componentOptions.length ? 'Pick one or more.' : 'No active component yet. Add them in Masters, under Components.'}
+          >
+            <PickList
+              id="sample-components"
+              multiple
+              options={componentOptions}
+              value={form.component_ids}
+              onChange={set('component_ids')}
+            />
+          </Field>
+        </div>
 
         <h3 className="section-title section-title--next form-wide">Pictures</h3>
         <div className="picture-box">

@@ -19,6 +19,7 @@ const MENU = [
       { to: '/designations', label: 'Designations' },
       { to: '/roles', label: 'Roles' },
       { to: '/numbering', label: 'Numbering' },
+      { to: '/components', label: 'Components' },
       { to: '/references', label: 'References' },
     ],
   },

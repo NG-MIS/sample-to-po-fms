@@ -21,6 +21,10 @@ export default function App() {
         <Route path="/samples" element={<SamplesPage />} />
         <Route path="/numbering" element={<NumberingPage />} />
         <Route
+          path="/components"
+          element={<SimpleListPage key="components" table="components" title="Components" singular="component" />}
+        />
+        <Route
           path="/references"
           element={
             <SimpleListPage key="references" table="sample_reference_options" title="References" singular="reference" />

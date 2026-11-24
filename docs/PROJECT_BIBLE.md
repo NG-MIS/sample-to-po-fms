@@ -37,6 +37,7 @@ Each stage is filled in here as it is discussed and agreed, one step at a time.
 | SAMPLE NO | Automatic. The person picks a PREFIX; the system adds the next number of that series |
 | CREATION DATE | Chosen by the person, defaulting to today. Earlier dates allowed, future dates not |
 | DESIGNER | Required. Picked from active people whose department is "Sample" and who hold the role "Designer" |
+| COMPONENTS | Required, at least one. Several can be picked from the Components master |
 | CONCEPT IMAGE | Required. Uploaded picture, clickable |
 | REFERENCE | Optional. One choice from the References list, and one picture |
 | REMARKS | Optional. Any number of typed notes, voice notes and pictures |
@@ -170,9 +171,12 @@ Created by `supabase/migrations/20261123113937_masters_and_sign_in.sql`.
 | `sample_reference_options` | References list: name, active or inactive |
 | `samples` | One row per sample: sample number, creation date, designer, concept image, reference |
 | `sample_remarks` | Remarks of a sample: typed notes, voice notes, pictures |
+| `components` | Components master: name, active or inactive |
+| `sample_components` | Which components each sample has |
 | `samples` (file store) | Concept images, reference images, remark pictures and voice notes. Private: a file can be viewed only by people who can see its sample |
 
 Step 2 was created by `supabase/migrations/20261123130147_numbering_references_samples.sql`.
+Components were added by `supabase/migrations/20261124071841_sample_components.sql`.
 Samples are created and changed only through one database routine (`save_sample`), which
 checks who is asking and gives out the sample number. Screens cannot write to samples directly.
 
@@ -198,9 +202,10 @@ Rules the database enforces, whatever the screens do:
 | Roles | List, add and edit | Built |
 | Numbering | List, add and edit series (prefix and starting number) | Built |
 | References | List, add and edit | Built |
+| Components | List, add, edit and import | Built |
 | Samples | List with search, sort and filter; new sample form; view; edit (authority All) | Built |
 
-The simple lists (departments, designations, roles, references) share one screen file (`SimpleListPage`). The starter page from the
+The simple lists (departments, designations, roles, references, components) share one screen file (`SimpleListPage`). The starter page from the
 set-up has been replaced by these screens.
 
 ## 9. Reusable building blocks
@@ -267,6 +272,8 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 24 Nov 2026 | Components added: a Components master, and a required multi-pick COMPONENTS field on every sample |
+| 24 Nov 2026 | First real sample created by Nihal on the live database |
 | 24 Nov 2026 | Thumbnails changed to show the whole picture instead of trimming the edges |
 | 24 Nov 2026 | Standing rule 13 added and built: pictures fill the popup and the editor preview |
 | 24 Nov 2026 | Standing rule 12 added and built: picture editor (rotate, crop, compress) on every picture upload |

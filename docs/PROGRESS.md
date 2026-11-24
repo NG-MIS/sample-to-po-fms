@@ -9,8 +9,10 @@ Last updated: 24 Nov 2026
 Step 2 (numbering master, references and sample creation) is built. Nihal has set up the
 first sign-in. Waiting for him to try step 2 against the real database.
 
-Before the first sample can be created, the masters need: at least one series in Numbering,
-and at least one active person in department Sample with the role Designer.
+Before a sample can be created, the masters need: at least one series in Numbering, at
+least one active person in department Sample with the role Designer, and at least one
+component in Components. The one sample created before components existed has none; it
+needs components picked the next time it is edited.
 
 Next to discuss: what happens to a sample after it is created (the next sample step).
 
@@ -39,6 +41,8 @@ Next to discuss: what happens to a sample after it is created (the next sample s
 | 24 Nov 2026 | Sample form tested by Nihal on the real database (prefix, designer and picture upload preview work); form rearranged into balanced sections |
 | 24 Nov 2026 | Picture editor on every upload: rotate, crop, compress (23 more screen checks passed; 228 in total) |
 | 24 Nov 2026 | Pictures fill the popup and the editor preview (9 more screen checks passed; 237 in total) |
+| 24 Nov 2026 | First real sample created by Nihal: sample number, picture upload and save all work on the live database |
+| 24 Nov 2026 | Components master and required COMPONENTS on samples (17 database rule checks passed; 244 screen checks pass in total) |
 
 ## Next, in order
 
