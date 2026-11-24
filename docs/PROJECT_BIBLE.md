@@ -90,13 +90,26 @@ exists. Uploading a stage image again replaces the earlier one.
 
 **Approval.** For the sample as a whole, not for a piece, and with no precondition.
 
-| Approval | Choices | Remarks |
-|---|---|---|
-| 1st approval | Yes, No, Maybe | Optional |
-| Final approval | Yes, No | Optional |
+| Approval | Choices | Remarks | How many times |
+|---|---|---|---|
+| Initial approval | Yes, No, Maybe | Optional | Again and again while the latest one is Maybe |
+| Final approval | Yes, No | Optional | Once |
 
-The final approval can be given directly without a 1st approval; after that a 1st approval
-can no longer be added. Every approval given or changed is kept in a history.
+- **Maybe means "changes requested".** The sample goes back for changes and can be given an
+  initial approval again. Every round is kept with its remarks, who and when, and the number
+  of times changes were requested is shown on the sample and in the lists.
+- **Yes settles the initial approval.** No further initial approval; the final approval is next.
+- **No closes the sample.** One No is enough. See "A closed sample" below.
+- **The final approval can be given directly** without an initial approval, at any time before
+  the sample is closed. After a final approval, no initial approval can be added.
+- Every approval given or changed is kept in a history.
+
+**A closed sample.** A sample is closed when its latest initial approval is No. Then
+everything stops: no further approval, nothing more can be sent to a process, no piece can be
+marked completed, and no stage image can be added or replaced. This holds for everyone,
+authority All included. One exception: a piece that is already at a vendor can still be
+received back, so the record of where it is stays true. A closed sample is reopened only by a
+person with authority All changing that No.
 
 **Who can do what after creation.**
 
@@ -105,7 +118,7 @@ can no longer be added. Every approval given or changed is kept in a history.
 | Send and receive process entries | The sample's designer, or Department(s) authority that includes Sample |
 | Upload stage images | Same as above |
 | Mark a piece completed | Department(s) authority that includes Sample, and only when the piece is not At vendor |
-| Give 1st or final approval | Anyone in department Management |
+| Give initial or final approval | Anyone in department Management |
 | Change an approval, correct a process entry, reopen a completed piece | Authority All only |
 | See every sample | Authority All, and everyone in department Management |
 
@@ -121,13 +134,13 @@ action is done.
 | Tab | What it lists | Actions on a row | Who sees the tab |
 |---|---|---|---|
 | All samples | Every sample the person can see | Open, Edit (authority All) | Everyone |
-| Process | Every piece that is not completed, one row per piece, with what is out at which vendor | Send, Receive | The sample's designer for their own samples; Sample department authority for all |
+| Process | Every piece that is not completed, one row per piece, with what is out at which vendor. On a closed sample, only pieces still at a vendor | Send, Receive | The sample's designer for their own samples; Sample department authority for all |
 | Mark completed | Pieces that are Pending: nothing out at a vendor, not completed | Mark completed | Sample department authority |
 | Images | Samples still missing a 1st sample, 2nd sample or photoshoot image | Add (per missing image) | Same as Process |
-| Approval | Samples with no final approval yet | 1st approval, Final approval | Department Management |
+| Approval | Samples with no final approval yet that are not closed | Initial approval (while it is not Yes), Final approval | Department Management |
 
-Sending and receiving share the Process tab, and the 1st and final approval share the Approval
-tab. A work tab lists only items the signed-in person may act on, and a tab the person can
+Sending and receiving share the Process tab, and the initial and final approval share the
+Approval tab. Closed samples leave the Mark completed, Images and Approval tabs. A work tab lists only items the signed-in person may act on, and a tab the person can
 never use is not shown to them. The chosen tab is kept in the page address, so a refresh or a
 shared link opens the same tab. Opening a sample still shows its full picture and history.
 
@@ -252,7 +265,9 @@ samples created before 24 Nov 2026 and required on every sample saved from then 
 Step 2 was created by `supabase/migrations/20261123130147_numbering_references_samples.sql`.
 Components were added by `supabase/migrations/20261124071841_sample_components.sql`,
 category details by `supabase/migrations/20261124073301_sample_category_details.sql`, and
-step 3 by `supabase/migrations/20261124082250_sample_processes_images_approvals.sql`.
+step 3 by `supabase/migrations/20261124082250_sample_processes_images_approvals.sql`, and the
+revised approval rules by
+`supabase/migrations/20261124103219_initial_approval_rounds_and_closed_samples.sql`.
 
 | Stored as (step 3) | What it holds |
 |---|---|
@@ -260,7 +275,7 @@ step 3 by `supabase/migrations/20261124082250_sample_processes_images_approvals.
 | `sample_process_entries` | Process log: piece, process, vendor, sent date, received date, who and when |
 | `sample_piece_completions` | A row means that piece is completed: who and when |
 | `sample_stage_images` | The 1st sample, 2nd sample and photoshoot image of each sample |
-| `sample_approvals` | The current 1st and final approval of each sample |
+| `sample_approvals` | Every initial approval round of each sample, and its final approval |
 | `sample_approval_history` | Every approval ever given or changed |
 
 Like samples, all of these are written only through database routines that check who is
@@ -367,6 +382,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 24 Nov 2026 | Approval rules revised: "1st approval" renamed "initial approval" and can be repeated while it is Maybe, with the number of times changes were requested shown; an initial approval of No closes the sample and everything on it stops |
 | 24 Nov 2026 | Samples screen given a tab per activity (All samples, Process, Mark completed, Images, Approval), each listing only what is waiting |
 | 24 Nov 2026 | Step 3 built: process log for the two pieces, piece completion, stage images, 1st and final approval, Process log screen, Processes and Vendors masters |
 | 24 Nov 2026 | Category details added to samples: PCS type (automatic), denim type, product type and collection, with Product types and Collections masters |

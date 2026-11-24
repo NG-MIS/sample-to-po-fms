@@ -1692,3 +1692,33 @@ button.side-group-title:hover {
     padding: 8px 10px;
   }
 }
+
+/* ---------- Approval rounds and closed samples ---------- */
+
+.alert--closed {
+  background: var(--bad-soft);
+  color: var(--bad);
+}
+.approval-count {
+  font-size: 13px;
+}
+.approval-rounds {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding-left: 22px;
+}
+.approval-rounds li {
+  padding-left: 2px;
+}
+.approval-rounds li > .badge {
+  margin-right: 8px;
+  vertical-align: top;
+}
+.approval-round-text {
+  display: inline-flex;
+  flex-direction: column;
+  vertical-align: top;
+  max-width: calc(100% - 80px);
+}

@@ -22,6 +22,7 @@ import {
   PIECE_LABEL,
   PIECE_STATUS_LABEL,
   callSampleAction,
+  isClosed,
   latestImage,
   loadSampleData,
   pieceStatus,
@@ -175,19 +176,38 @@ export default function SamplesPage() {
         },
       })),
       ...[
-        ['first', '1ST APPROVAL'],
+        ['initial', 'INITIAL APPROVAL'],
         ['final', 'FINAL APPROVAL'],
-      ].map(([stage, header]) => ({
-        key: `approval_${stage}`,
-        header,
-        value: (row) => (row.approvals[stage] ? DECISION_LABEL[row.approvals[stage].decision] : ''),
-        render: (row) =>
-          row.approvals[stage] && (
-            <span className={`badge badge--${row.approvals[stage].decision}`}>
-              {DECISION_LABEL[row.approvals[stage].decision]}
-            </span>
-          ),
-      })),
+      ].flatMap(([stage, header]) => [
+        {
+          key: `approval_${stage}`,
+          header,
+          value: (row) => (row.approvals[stage] ? DECISION_LABEL[row.approvals[stage].decision] : ''),
+          render: (row) =>
+            row.approvals[stage] && (
+              <span className={`badge badge--${row.approvals[stage].decision}`}>
+                {DECISION_LABEL[row.approvals[stage].decision]}
+              </span>
+            ),
+        },
+        ...(stage === 'initial'
+          ? [
+              {
+                key: 'changes_requested',
+                header: 'CHANGES REQUESTED',
+                value: (row) => (row.approvals.rounds.length ? row.approvals.changesRequested : ''),
+              },
+            ]
+          : []),
+      ]),
+      {
+        key: 'sample_status',
+        header: 'STATUS',
+        value: (row) => (isClosed(row) ? 'Closed' : 'Open'),
+        render: (row) => (
+          <span className={`badge badge--${isClosed(row) ? 'no' : 'pending'}`}>{isClosed(row) ? 'Closed' : 'Open'}</span>
+        ),
+      },
       {
         key: 'reference',
         header: 'REFERENCE',
@@ -328,7 +348,6 @@ export default function SamplesPage() {
         <ApprovalDialog
           sample={work.sample}
           stage={work.stage}
-          current={work.sample.approvals[work.stage]}
           onClose={() => setWork(null)}
           onSaved={workSaved}
         />

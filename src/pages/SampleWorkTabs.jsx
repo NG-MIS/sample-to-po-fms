@@ -106,9 +106,11 @@ export function ProcessTab({ rows, lookups, loading, onOpen, onSend, onReceive }
         align: 'right',
         render: (row) => (
           <span className="row-actions">
-            <button type="button" className="btn btn--small" onClick={() => onSend(row)}>
-              Send
-            </button>
+            {!row.closed && (
+              <button type="button" className="btn btn--small" onClick={() => onSend(row)}>
+                Send
+              </button>
+            )}
             {row.open.length > 0 && (
               <button type="button" className="btn btn--small btn--primary" onClick={() => onReceive(row)}>
                 Receive
@@ -124,7 +126,8 @@ export function ProcessTab({ rows, lookups, loading, onOpen, onSend, onReceive }
   return (
     <>
       <p className="tab-note">
-        Every piece that is not completed. Send it to a process, and receive it here when it comes back.
+        Every piece that is not completed. Send it to a process, and receive it here when it comes back. On a
+        closed sample, only pieces still at a vendor are listed, to be received.
       </p>
       <DataTable
         tableId="samples-process"
@@ -288,27 +291,28 @@ export function ApprovalTab({ rows, lookups, loading, onOpen, onApprove }) {
       })),
       {
         key: 'first_approval',
-        header: '1ST APPROVAL',
-        value: (row) => (row.approvals.first ? DECISION_LABEL[row.approvals.first.decision] : 'Not given'),
+        header: 'INITIAL APPROVAL',
+        value: (row) => (row.approvals.initial ? DECISION_LABEL[row.approvals.initial.decision] : 'Not given'),
         render: (row) =>
-          row.approvals.first ? (
-            <span className={`badge badge--${row.approvals.first.decision}`}>
-              {DECISION_LABEL[row.approvals.first.decision]}
+          row.approvals.initial ? (
+            <span className={`badge badge--${row.approvals.initial.decision}`}>
+              {DECISION_LABEL[row.approvals.initial.decision]}
             </span>
           ) : (
             <span className="badge badge--pending">Not given</span>
           ),
       },
-      { key: 'first_remarks', header: '1ST APPROVAL REMARKS', value: (row) => row.approvals.first?.remarks ?? '' },
+      { key: 'changes_requested', header: 'CHANGES REQUESTED', value: (row) => row.approvals.changesRequested },
+      { key: 'first_remarks', header: 'LATEST REMARKS', value: (row) => row.approvals.initial?.remarks ?? '' },
       {
         key: 'actions',
         header: '',
         align: 'right',
         render: (row) => (
           <span className="row-actions">
-            {!row.approvals.first && (
-              <button type="button" className="btn btn--small" onClick={() => onApprove(row, 'first')}>
-                1st approval
+            {row.approvals.initial?.decision !== 'yes' && (
+              <button type="button" className="btn btn--small" onClick={() => onApprove(row, 'initial')}>
+                Initial approval
               </button>
             )}
             <button type="button" className="btn btn--small btn--primary" onClick={() => onApprove(row, 'final')}>
@@ -324,7 +328,8 @@ export function ApprovalTab({ rows, lookups, loading, onOpen, onApprove }) {
   return (
     <>
       <p className="tab-note">
-        Samples with no final approval yet. Give the 1st approval, or go straight to the final approval.
+        Samples with no final approval yet. Give the initial approval (again, if changes were requested), or go
+        straight to the final approval. A sample whose initial approval is No is closed and leaves this list.
       </p>
       <DataTable
         tableId="samples-approval"

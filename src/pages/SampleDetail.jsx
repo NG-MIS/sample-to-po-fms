@@ -21,6 +21,7 @@ import {
   callSampleAction as call,
   canWorkOn,
   daysOut,
+  isClosed,
   latestImage,
   pieceStatus,
   stageImagePath,
@@ -37,9 +38,13 @@ export default function SampleDetail({ sample, data, onChanged, onEdit, onClose 
   const [dialog, setDialog] = useState(null)
   const [error, setError] = useState('')
 
-  const canWork = canWorkOn(sample, data, profile)
-  const canComplete = data.access.manages
-  const canApprove = data.access.management
+  const closed = isClosed(sample)
+  const mayWork = canWorkOn(sample, data, profile)
+  // On a closed sample everything stops; a piece already at a vendor can still be received back.
+  const canWork = mayWork && !closed
+  const canReceive = mayWork
+  const canComplete = data.access.manages && !closed
+  const canApprove = data.access.management && !closed
 
   const names = useMemo(
     () => ({
@@ -106,7 +111,7 @@ export default function SampleDetail({ sample, data, onChanged, onEdit, onClose 
         align: 'right',
         render: (entry) => (
           <span className="row-actions">
-            {canWork && !entry.received_date && (
+            {canReceive && !entry.received_date && (
               <button type="button" className="btn btn--small btn--primary" onClick={() => setDialog({ type: 'receive', entry })}>
                 Receive
               </button>
@@ -120,7 +125,7 @@ export default function SampleDetail({ sample, data, onChanged, onEdit, onClose 
         ),
       },
     ],
-    [names, canWork, isAdmin],
+    [names, canReceive, isAdmin],
   )
 
   const componentNames = sample.component_ids
@@ -151,6 +156,13 @@ export default function SampleDetail({ sample, data, onChanged, onEdit, onClose 
       {error && (
         <p className="alert alert--error" role="alert">
           {error}
+        </p>
+      )}
+
+      {closed && (
+        <p className="alert alert--closed" role="status">
+          <strong>This sample is closed.</strong> Its initial approval is No, so nothing more can be done on it.
+          {sample.entries.some((entry) => !entry.received_date) && ' A piece that is still at a vendor can be received back.'}
         </p>
       )}
 
@@ -259,7 +271,12 @@ export default function SampleDetail({ sample, data, onChanged, onEdit, onClose 
       <div className="piece-grid">
         {Object.entries(APPROVAL_STAGES).map(([stage, info]) => {
           const approval = sample.approvals[stage]
-          const blockedByFinal = stage === 'first' && Boolean(sample.approvals.final)
+          const rounds = stage === 'initial' ? sample.approvals.rounds : []
+          const hasFinal = Boolean(sample.approvals.final)
+          const blockedByFinal = stage === 'initial' && hasFinal
+          // Initial approval can be given again while the latest one is Maybe.
+          const canGive =
+            canApprove && !hasFinal && (stage === 'final' ? true : !approval || approval.decision === 'maybe')
           return (
             <div key={stage} className="piece-card" data-approval={stage}>
               <div className="piece-head">
@@ -278,17 +295,43 @@ export default function SampleDetail({ sample, data, onChanged, onEdit, onClose 
                   </p>
                 </>
               )}
+              {stage === 'initial' && rounds.length > 0 && (
+                <p className="approval-count">
+                  Changes requested: <strong>{sample.approvals.changesRequested}</strong>
+                  {' · '}
+                  {rounds.length} {rounds.length === 1 ? 'round' : 'rounds'}
+                </p>
+              )}
+              {rounds.length > 1 && (
+                <ol className="approval-rounds">
+                  {rounds.map((round) => (
+                    <li key={round.id}>
+                      <span className={`badge badge--${round.decision}`}>{DECISION_LABEL[round.decision]}</span>
+                      <span className="approval-round-text">
+                        {round.remarks && <span className="approval-remarks">{round.remarks}</span>}
+                        <span className="hint">
+                          {names.person.get(round.decided_by)}, {formatDateTime(round.decided_at)}
+                        </span>
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              )}
               {!approval && blockedByFinal && (
-                <p className="hint">The final approval was given directly, so no 1st approval is needed.</p>
+                <p className="hint">The final approval was given directly, so no initial approval is needed.</p>
+              )}
+              {stage === 'final' && !approval && closed && (
+                <p className="hint">Not needed: the sample was closed at the initial approval.</p>
               )}
               <div className="piece-actions">
-                {!approval && canApprove && !blockedByFinal && (
+                {canGive && (
                   <button type="button" className="btn btn--small btn--primary" onClick={() => setDialog({ type: 'approval', stage })}>
                     Give {info.label.toLowerCase()}
+                    {approval ? ' again' : ''}
                   </button>
                 )}
                 {approval && isAdmin && (
-                  <button type="button" className="btn btn--small" onClick={() => setDialog({ type: 'approval', stage })}>
+                  <button type="button" className="btn btn--small" onClick={() => setDialog({ type: 'approval', stage, correct: true })}>
                     Change
                   </button>
                 )}
@@ -311,7 +354,7 @@ export default function SampleDetail({ sample, data, onChanged, onEdit, onClose 
         <EntryDialog mode="correct" sample={sample} data={data} entry={dialog.entry} pieces={PIECES} onClose={() => setDialog(null)} onSaved={saved} />
       )}
       {dialog?.type === 'approval' && (
-        <ApprovalDialog sample={sample} stage={dialog.stage} current={sample.approvals[dialog.stage]} onClose={() => setDialog(null)} onSaved={saved} />
+        <ApprovalDialog sample={sample} stage={dialog.stage} correct={Boolean(dialog.correct)} onClose={() => setDialog(null)} onSaved={saved} />
       )}
       {dialog?.type === 'complete' && (
         <ConfirmDialog
@@ -582,8 +625,11 @@ export function EntryDialog({ mode, sample, data, entry, piece, pieces, onClose,
   )
 }
 
-export function ApprovalDialog({ sample, stage, current, onClose, onSaved }) {
+// Give an approval, or (correct = true, authority All) change the latest one.
+export function ApprovalDialog({ sample, stage, correct = false, onClose, onSaved }) {
   const info = APPROVAL_STAGES[stage]
+  const latest = sample.approvals[stage]
+  const current = correct ? latest : null
   const [decision, setDecision] = useState(current?.decision ?? null)
   const [remarks, setRemarks] = useState(current?.remarks ?? '')
   const [busy, setBusy] = useState(false)
@@ -601,6 +647,7 @@ export function ApprovalDialog({ sample, stage, current, onClose, onSaved }) {
         p_stage: stage,
         p_decision: decision,
         p_remarks: remarks,
+        p_correct: correct,
       })
       await onSaved()
     } catch (failure) {
@@ -611,7 +658,7 @@ export function ApprovalDialog({ sample, stage, current, onClose, onSaved }) {
 
   return (
     <Modal
-      title={`${current ? 'Change the' : 'Give the'} ${info.label.toLowerCase()} for ${sample.sample_no}`}
+      title={`${correct ? 'Change the' : 'Give the'} ${info.label.toLowerCase()} for ${sample.sample_no}`}
       onClose={onClose}
       dirty={dirty}
       width={480}
@@ -649,8 +696,14 @@ export function ApprovalDialog({ sample, stage, current, onClose, onSaved }) {
             onChange={(event) => setRemarks(event.target.value)}
           />
         </Field>
-        {!current && (
-          <p className="hint">Once saved, only a person with authority All can change this approval.</p>
+        {!correct && stage === 'initial' && (
+          <p className="hint">
+            {latest ? `Changes were requested ${sample.approvals.changesRequested} ${sample.approvals.changesRequested === 1 ? 'time' : 'times'} so far. ` : ''}
+            Maybe asks for changes and lets you approve again later. No closes the sample: everything on it stops.
+          </p>
+        )}
+        {!correct && stage === 'final' && (
+          <p className="hint">Once saved, only a person with authority All can change the final approval.</p>
         )}
         {error && (
           <p className="alert alert--error" role="alert">

@@ -5,6 +5,12 @@ Newest first. A changed decision is not deleted: a new entry is added that repla
 
 | Date | Decision | Reason |
 |---|---|---|
+| 24 Nov 2026 | On a closed sample, a piece that is already at a vendor can still be received back | Otherwise the piece would show "At vendor" for ever. Everything else stops, as Nihal asked |
+| 24 Nov 2026 | A closed sample stops everything for everyone, authority All included; it is reopened only by authority All changing the No | One clear way to reopen, and it leaves a record in the approval history |
+| 24 Nov 2026 | An initial approval of No closes the sample: no final approval, and all further work stops | Nihal: "everything stops" |
+| 24 Nov 2026 | Initial approval can be repeated only while the latest one is Maybe; Yes settles it | Maybe is "changes requested"; after Yes the next step is the final approval |
+| 24 Nov 2026 | "Changes requested" is the number of initial approval rounds that were Maybe | Nihal wants to see how many times changes were requested |
+| 24 Nov 2026 | "1st approval" renamed "initial approval" (replaces the earlier name) | Nihal's wording |
 | 24 Nov 2026 | A work tab lists only items the signed-in person may act on, and is hidden from people who can never use it | Nobody sees a list of work that is not theirs |
 | 24 Nov 2026 | The Process tab has one row per piece that is not completed; when a piece is out in two processes, Receive asks which one came back | Send and receive in one place, as Nihal asked |
 | 24 Nov 2026 | Samples screen has a tab per activity; send and receive share one tab, 1st and final approval share one tab; each tab shows only eligible items | Nihal's instruction |

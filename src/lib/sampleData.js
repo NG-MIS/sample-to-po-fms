@@ -24,8 +24,11 @@ export const STAGES = [
 ]
 
 export const DECISION_LABEL = { yes: 'Yes', no: 'No', maybe: 'Maybe' }
+
+// A sample is closed when its latest initial approval is No. Everything stops on it.
+export const isClosed = (sample) => sample.approvals.initial?.decision === 'no'
 export const APPROVAL_STAGES = {
-  first: { label: '1st approval', decisions: ['yes', 'no', 'maybe'] },
+  initial: { label: 'Initial approval', decisions: ['yes', 'no', 'maybe'] },
   final: { label: 'Final approval', decisions: ['yes', 'no'] },
 }
 
@@ -57,6 +60,18 @@ export function daysOut(entry) {
     return Date.UTC(year, month - 1, day)
   }
   return Math.round((toDay(entry.received_date || todayLocal()) - toDay(entry.sent_date)) / 86400000)
+}
+
+// Initial approval can be given several times. `initial` is the latest round,
+// `rounds` is every round in order, and `changesRequested` counts the Maybe rounds.
+function arrangeApprovals(rows = []) {
+  const rounds = rows.filter((row) => row.stage === 'initial').sort((a, b) => a.round - b.round)
+  return {
+    initial: rounds[rounds.length - 1],
+    final: rows.find((row) => row.stage === 'final'),
+    rounds,
+    changesRequested: rounds.filter((row) => row.decision === 'maybe').length,
+  }
 }
 
 function groupBy(rows, key) {
@@ -139,7 +154,7 @@ export async function loadSampleData(profile) {
       entries: entriesBySample.get(sample.id) ?? [],
       completions: keyed(completionsBySample.get(sample.id), 'piece'),
       stageImages: keyed(imagesBySample.get(sample.id), 'stage'),
-      approvals: keyed(approvalsBySample.get(sample.id), 'stage'),
+      approvals: arrangeApprovals(approvalsBySample.get(sample.id)),
     })),
     components,
     productTypes,
