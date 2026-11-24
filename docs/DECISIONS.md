@@ -5,6 +5,23 @@ Newest first. A changed decision is not deleted: a new entry is added that repla
 
 | Date | Decision | Reason |
 |---|---|---|
+| 24 Nov 2026 | Every approval given or changed is kept in a history | An approval can be changed by authority All, and the earlier decision must not be lost |
+| 24 Nov 2026 | Department "Management" is created by the system and cannot be renamed or switched inactive | The approval rule and "sees every sample" depend on it |
+| 24 Nov 2026 | People in Management can see every sample | They approve any sample |
+| 24 Nov 2026 | After a final approval, a 1st approval can no longer be added | The final decision makes the first one pointless |
+| 24 Nov 2026 | Approval has no precondition and is for the sample as a whole | Nihal: "as whole"; agreed it can be given at any time |
+| 24 Nov 2026 | An approval is given once; only authority All can change it | Nihal's rule |
+| 24 Nov 2026 | Remarks are optional on both the 1st and the final approval | Nihal's answer |
+| 24 Nov 2026 | Uploading a stage image again replaces the earlier one | One current picture per stage |
+| 24 Nov 2026 | The picture shown for a sample is the highest stage image that exists: photoshoot, then 2nd sample, then 1st sample, then concept | Nihal's priority order |
+| 24 Nov 2026 | A completed piece is closed: nothing more can be sent for it; only authority All can reopen it | Agreed |
+| 24 Nov 2026 | A piece cannot be marked completed while any of its process entries has not been received | Nihal: status must not be at vendor |
+| 24 Nov 2026 | Mark completed: Department(s) authority that includes Sample, whatever the designation or role | Nihal's rule |
+| 24 Nov 2026 | Process entries and stage images: the sample's designer, or Department(s) authority that includes Sample | Nihal's rule |
+| 24 Nov 2026 | "Looks after Sample" is defined once as authority Department(s) with Sample ticked, and used for both rules above | One definition is easier to explain and to set up in the user master |
+| 24 Nov 2026 | Every process entry has a vendor; process and vendor come from masters | Agreed |
+| 24 Nov 2026 | A process entry is made at sending and completed later with the received date | Nihal: sent details first, received date later |
+| 24 Nov 2026 | Each sample has two physical pieces (1st and 2nd sample), tracked separately and independent of each other | Nihal's description |
 | 24 Nov 2026 | Collection is its own master, like product type | New collections arrive every season, so the list must be editable without a code change |
 | 24 Nov 2026 | Denim type is a fixed choice (Denim, Non denim), not a master | There are only ever two values |
 | 24 Nov 2026 | PCS type is worked out from the number of components and never stored | It can then never disagree with the components |

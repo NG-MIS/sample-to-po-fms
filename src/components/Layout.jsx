@@ -9,7 +9,10 @@ import { useIsPhone } from '../lib/screen.js'
 const MENU = [
   {
     title: 'Sampling',
-    links: [{ to: '/samples', label: 'Samples' }],
+    links: [
+      { to: '/samples', label: 'Samples' },
+      { to: '/process-log', label: 'Process log' },
+    ],
   },
   {
     title: 'Masters',
@@ -22,6 +25,8 @@ const MENU = [
       { to: '/components', label: 'Components' },
       { to: '/product-types', label: 'Product types' },
       { to: '/collections', label: 'Collections' },
+      { to: '/processes', label: 'Processes' },
+      { to: '/vendors', label: 'Vendors' },
       { to: '/references', label: 'References' },
     ],
   },

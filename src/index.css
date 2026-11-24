@@ -1529,3 +1529,104 @@ button.side-group-title:hover {
   .crop-handle--sw { bottom: -14px; left: -14px; }
   .crop-handle--se { bottom: -14px; right: -14px; }
 }
+
+/* ---------- Sample detail: pieces, stage images, approval ---------- */
+
+.badge--pending {
+  background: var(--off-soft);
+  color: var(--off);
+}
+.badge--at_vendor,
+.badge--maybe {
+  background: #fdf1d3;
+  color: #7a5200;
+}
+.badge--completed,
+.badge--yes {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+.badge--no {
+  background: var(--bad-soft);
+  color: var(--bad);
+}
+.details--three {
+  grid-template-columns: repeat(3, 1fr);
+}
+.stage-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.stage-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+.stage-tile--main {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.stage-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-height: 22px;
+}
+.piece-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.piece-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+.piece-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.piece-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.piece-actions:empty {
+  display: none;
+}
+.approval-remarks {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 900px) {
+  .stage-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .details--three {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 720px) {
+  .piece-grid,
+  .details--three {
+    grid-template-columns: 1fr;
+  }
+  .piece-actions .btn {
+    flex: 1;
+  }
+}

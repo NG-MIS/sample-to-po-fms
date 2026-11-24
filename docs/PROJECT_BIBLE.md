@@ -20,7 +20,7 @@ It is a fresh build, not the next version of the earlier sample system.
 | Stage | What happens | Detail status |
 |---|---|---|
 | 0. Masters and sign-in | People, departments, designations and roles are kept; people sign in | Built (step 1) |
-| 1. Sample | A sample is created and moves through its steps, each step tracked | Sample creation built (step 2, see 2.1). Later steps not yet defined |
+| 1. Sample | A sample is created and moves through its steps, each step tracked | Sample creation built (step 2, see 2.1). Process log, completion, stage images and approval built (step 3, see 2.2) |
 | 2. CAD | The CAD drawing is made for the sample and sent for approval | Not yet defined |
 | 3. Purchase order | Once approved, a purchase order is raised for the materials | Not yet defined |
 | 4. Receiving | Materials arrive against the purchase order, fully or in parts | Not yet defined |
@@ -65,6 +65,54 @@ automatically and cannot be renamed or switched inactive, because they decide wh
 
 Pick-list pattern for the whole system: each people pick-list is defined as "department X plus role Y".
 Adding a person to the user master with that department and role makes them appear automatically.
+
+### 2.2 After creation: pieces, process log, stage images, approval (built)
+
+These run side by side after a sample is created. None waits for another.
+
+**Two physical pieces.** Every sample has a 1st sample piece and a 2nd sample piece, tracked
+separately. The two are independent: the 2nd can start before the 1st is completed.
+
+| Status of a piece | Meaning |
+|---|---|
+| Pending | In-house and not yet completed |
+| At vendor | Sent out to at least one process and not yet received back |
+| Completed | Marked completed. Nothing more can be sent for it |
+
+**Process log.** One entry each time a piece is sent out: PIECE, PROCESS, VENDOR, SENT DATE,
+and later RECD DATE. A piece can be in several processes at once. Process and vendor come from
+their masters, and every entry has a vendor. The received date is entered later on the same
+entry; it cannot be before the sent date, and no date can be in the future.
+
+**Stage images.** Four per sample, in rising priority: concept (from creation), 1st sample,
+2nd sample, photoshoot. The picture shown for a sample everywhere is the highest one that
+exists. Uploading a stage image again replaces the earlier one.
+
+**Approval.** For the sample as a whole, not for a piece, and with no precondition.
+
+| Approval | Choices | Remarks |
+|---|---|---|
+| 1st approval | Yes, No, Maybe | Optional |
+| Final approval | Yes, No | Optional |
+
+The final approval can be given directly without a 1st approval; after that a 1st approval
+can no longer be added. Every approval given or changed is kept in a history.
+
+**Who can do what after creation.**
+
+| Action | Who |
+|---|---|
+| Send and receive process entries | The sample's designer, or Department(s) authority that includes Sample |
+| Upload stage images | Same as above |
+| Mark a piece completed | Department(s) authority that includes Sample, and only when the piece is not At vendor |
+| Give 1st or final approval | Anyone in department Management |
+| Change an approval, correct a process entry, reopen a completed piece | Authority All only |
+| See every sample | Authority All, and everyone in department Management |
+
+"Department(s) authority that includes Sample" means authority Department(s) with Sample among
+the ticked departments. Authority All can do everything in this table.
+
+**Names the system depends on** now also include the department "Management".
 
 ## 3. How it is built
 
@@ -186,7 +234,21 @@ samples created before 24 Nov 2026 and required on every sample saved from then 
 
 Step 2 was created by `supabase/migrations/20261123130147_numbering_references_samples.sql`.
 Components were added by `supabase/migrations/20261124071841_sample_components.sql`,
-and category details by `supabase/migrations/20261124073301_sample_category_details.sql`.
+category details by `supabase/migrations/20261124073301_sample_category_details.sql`, and
+step 3 by `supabase/migrations/20261124082250_sample_processes_images_approvals.sql`.
+
+| Stored as (step 3) | What it holds |
+|---|---|
+| `processes`, `vendors` | The two new masters |
+| `sample_process_entries` | Process log: piece, process, vendor, sent date, received date, who and when |
+| `sample_piece_completions` | A row means that piece is completed: who and when |
+| `sample_stage_images` | The 1st sample, 2nd sample and photoshoot image of each sample |
+| `sample_approvals` | The current 1st and final approval of each sample |
+| `sample_approval_history` | Every approval ever given or changed |
+
+Like samples, all of these are written only through database routines that check who is
+asking: `send_sample_process`, `receive_sample_process`, `correct_sample_process`,
+`complete_sample_piece`, `reopen_sample_piece`, `set_sample_stage_image`, `set_sample_approval`.
 Samples are created and changed only through one database routine (`save_sample`), which
 checks who is asking and gives out the sample number. Screens cannot write to samples directly.
 
@@ -215,9 +277,12 @@ Rules the database enforces, whatever the screens do:
 | Components | List, add, edit and import | Built |
 | Product types | List, add, edit and import | Built |
 | Collections | List, add, edit and import | Built |
-| Samples | List with search, sort and filter; new sample form; view; edit (authority All) | Built |
+| Samples | List with search, sort and filter; new sample form; edit (authority All). Opening a sample shows details, stage images, the two pieces with their process log, approval and remarks, with the buttons that person is allowed to use | Built |
+| Process log | Every process entry of every sample in one list; clicking a row opens the sample | Built |
+| Processes | List, add, edit and import | Built |
+| Vendors | List, add, edit and import | Built |
 
-The simple lists (departments, designations, roles, references, components, product types, collections) share one screen file (`SimpleListPage`). The starter page from the
+The simple lists (departments, designations, roles, references, components, product types, collections, processes, vendors) share one screen file (`SimpleListPage`). The starter page from the
 set-up has been replaced by these screens.
 
 ## 9. Reusable building blocks
@@ -284,6 +349,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 24 Nov 2026 | Step 3 built: process log for the two pieces, piece completion, stage images, 1st and final approval, Process log screen, Processes and Vendors masters |
 | 24 Nov 2026 | Category details added to samples: PCS type (automatic), denim type, product type and collection, with Product types and Collections masters |
 | 24 Nov 2026 | Components added: a Components master, and a required multi-pick COMPONENTS field on every sample |
 | 24 Nov 2026 | First real sample created by Nihal on the live database |

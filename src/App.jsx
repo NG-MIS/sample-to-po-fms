@@ -3,6 +3,7 @@ import Layout from './components/Layout.jsx'
 import { useAuth } from './lib/auth.jsx'
 import SignIn, { NoAccess, SetPassword } from './pages/SignIn.jsx'
 import NumberingPage from './pages/NumberingPage.jsx'
+import ProcessLogPage from './pages/ProcessLogPage.jsx'
 import SamplesPage from './pages/SamplesPage.jsx'
 import SimpleListPage from './pages/SimpleListPage.jsx'
 import UsersPage from './pages/UsersPage.jsx'
@@ -19,7 +20,16 @@ export default function App() {
     <Layout>
       <Routes>
         <Route path="/samples" element={<SamplesPage />} />
+        <Route path="/process-log" element={<ProcessLogPage />} />
         <Route path="/numbering" element={<NumberingPage />} />
+        <Route
+          path="/processes"
+          element={<SimpleListPage key="processes" table="processes" title="Processes" singular="process" />}
+        />
+        <Route
+          path="/vendors"
+          element={<SimpleListPage key="vendors" table="vendors" title="Vendors" singular="vendor" />}
+        />
         <Route
           path="/components"
           element={<SimpleListPage key="components" table="components" title="Components" singular="component" />}

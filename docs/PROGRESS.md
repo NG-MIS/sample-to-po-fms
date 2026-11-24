@@ -6,8 +6,12 @@ Last updated: 24 Nov 2026
 
 ## Now
 
-Step 2 (numbering master, references and sample creation) is built. Nihal has set up the
-first sign-in. Waiting for him to try step 2 against the real database.
+Step 3 (process log, piece completion, stage images, approval) is built. Waiting for Nihal
+to try it against the real database.
+
+To try step 3 the masters need: at least one process and one vendor, a person in department
+Management (to approve), and a person with Department(s) authority that includes Sample
+(to mark pieces completed). Authority All can do all of it in the meantime.
 
 Before a sample can be created, the masters need: at least one series in Numbering, at
 least one active person in department Sample with the role Designer, and at least one
@@ -15,7 +19,7 @@ component in Components. Product types and Collections already hold Nihal's star
 entries. The one sample created before components and category details existed (LB-3000)
 has none; they must be picked the next time it is edited.
 
-Next to discuss: what happens to a sample after it is created (the next sample step).
+Next to discuss: the CAD stage (CAD drawing and its approval).
 
 ## Done
 
@@ -45,15 +49,17 @@ Next to discuss: what happens to a sample after it is created (the next sample s
 | 24 Nov 2026 | First real sample created by Nihal: sample number, picture upload and save all work on the live database |
 | 24 Nov 2026 | Components master and required COMPONENTS on samples (17 database rule checks passed; 244 screen checks pass in total) |
 | 24 Nov 2026 | Category details on samples: PCS type, denim type, product type, collection (17 database rule checks passed; 255 screen checks pass in total) |
+| 24 Nov 2026 | Step 3 database: processes, vendors, process log, completion, stage images, approvals with history (51 rule checks passed) |
+| 24 Nov 2026 | Step 3 screens: sample detail with all actions, Process log, two masters (49 new screen checks, as five different kinds of person; 308 screen checks pass in total) |
 
 ## Next, in order
 
-1. Nihal tries step 2 against the real database (upload, voice note, sample number)
-2. Define and build the next sample step
+1. Nihal tries step 3 against the real database
+2. CAD stage
 4. CAD stage
 5. Purchase order stage
 6. Receiving stage
 
 ## Open questions
 
-- What are the sample steps after creation, in order?
+- How does the CAD stage start: which samples go to CAD, and who makes and approves the drawing?

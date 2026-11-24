@@ -4,18 +4,26 @@ import DataTable from '../components/DataTable.jsx'
 import ImageUpload from '../components/ImageUpload.jsx'
 import Modal from '../components/Modal.jsx'
 import PickList from '../components/PickList.jsx'
-import { RemarksEditor, RemarksView } from '../components/Remarks.jsx'
+import { RemarksEditor } from '../components/Remarks.jsx'
 import { Field } from '../components/Field.jsx'
 import { PageHead } from '../components/Layout.jsx'
 import { useAuth } from '../lib/auth.jsx'
-import { fetchRows, nameMap, useLoad } from '../lib/data.js'
+import { nameMap, useLoad } from '../lib/data.js'
 import { formatDate, formatDateTime, friendlyError, todayLocal } from '../lib/format.js'
 import { uploadFile } from '../lib/images.js'
 import { nextSampleNo } from '../lib/numbering.js'
 import { remarksSummary } from '../lib/remarks.js'
+import {
+  BUCKET,
+  DECISION_LABEL,
+  PIECE_STATUS_LABEL,
+  latestImage,
+  loadSampleData,
+  pieceStatus,
+} from '../lib/sampleData.js'
 import { supabase } from '../lib/supabase.js'
+import SampleDetail from './SampleDetail.jsx'
 
-const BUCKET = 'samples'
 const DENIM_OPTIONS = [
   { value: 'denim', label: 'Denim' },
   { value: 'non_denim', label: 'Non denim' },
@@ -23,81 +31,16 @@ const DENIM_OPTIONS = [
 const DENIM_LABEL = { denim: 'Denim', non_denim: 'Non denim' }
 // PCS type is worked out from the number of components: 2 components = 2PCS.
 const pcsType = (componentIds) => (componentIds.length ? `${componentIds.length}PCS` : '')
-const sameName = (value, name) => (value || '').trim().toLowerCase() === name
-
-async function loadEverything() {
-  const [
-    samples,
-    remarks,
-    sampleComponents,
-    components,
-    productTypes,
-    collections,
-    series,
-    references,
-    people,
-    departments,
-    roles,
-    userRoles,
-  ] = await Promise.all([
-      fetchRows('samples'),
-      fetchRows('sample_remarks', 'created_at'),
-      fetchRows('sample_components', null),
-      fetchRows('components'),
-      fetchRows('product_types'),
-      fetchRows('collections'),
-      fetchRows('sample_series'),
-      fetchRows('sample_reference_options'),
-      fetchRows('app_users'),
-      fetchRows('departments'),
-      fetchRows('roles'),
-      fetchRows('user_roles', null),
-    ])
-
-  const remarksBySample = new Map()
-  remarks.forEach((remark) => {
-    if (!remarksBySample.has(remark.sample_id)) remarksBySample.set(remark.sample_id, [])
-    remarksBySample.get(remark.sample_id).push(remark)
-  })
-
-  const componentsBySample = new Map()
-  sampleComponents.forEach((link) => {
-    if (!componentsBySample.has(link.sample_id)) componentsBySample.set(link.sample_id, [])
-    componentsBySample.get(link.sample_id).push(link.component_id)
-  })
-
-  // DESIGNER pick-list rule: department "Sample" + role "Designer".
-  const sampleDepartment = departments.find((department) => sameName(department.name, 'sample'))?.id
-  const designerRole = roles.find((role) => sameName(role.name, 'designer'))?.id
-  const designerIds = new Set(userRoles.filter((link) => link.role_id === designerRole).map((link) => link.user_id))
-
-  return {
-    samples: samples.map((sample) => ({
-      ...sample,
-      remarks: remarksBySample.get(sample.id) ?? [],
-      component_ids: componentsBySample.get(sample.id) ?? [],
-    })),
-    components,
-    productTypes,
-    collections,
-    series,
-    references,
-    people,
-    designerIds,
-    designers: people.filter(
-      (person) => person.is_active && person.department_id === sampleDepartment && designerIds.has(person.id),
-    ),
-  }
-}
 
 export default function SamplesPage() {
   const { isAdmin, profile } = useAuth()
-  const { data, loading, error, reload } = useLoad(loadEverything)
+  const { data, loading, error, reload } = useLoad(() => loadSampleData(profile))
   const [editing, setEditing] = useState(null) // null = closed, {} = new, sample = edit
-  const [viewing, setViewing] = useState(null)
+  const [viewingId, setViewingId] = useState(null)
   const [notice, setNotice] = useState('')
 
   const samples = useMemo(() => data?.samples ?? [], [data])
+  const viewing = samples.find((sample) => sample.id === viewingId)
   const canCreate = isAdmin || Boolean(data?.designerIds.has(profile.id))
 
   const lookups = useMemo(
@@ -121,7 +64,7 @@ export default function SamplesPage() {
         header: 'SAMPLE NO',
         value: (row) => row.sample_no,
         render: (row) => (
-          <button type="button" className="link link--strong" onClick={() => setViewing(row)}>
+          <button type="button" className="link link--strong" onClick={() => setViewingId(row.id)}>
             {row.sample_no}
           </button>
         ),
@@ -139,12 +82,44 @@ export default function SamplesPage() {
       { key: 'product_type', header: 'PRODUCT TYPE', value: (row) => productType.get(row.product_type_id) ?? '' },
       { key: 'collection', header: 'COLLECTION', value: (row) => collection.get(row.collection_id) ?? '' },
       {
-        key: 'concept_image',
-        header: 'CONCEPT IMAGE',
-        render: (row) => (
-          <ClickableImage bucket={BUCKET} path={row.concept_image_path} alt={`${row.sample_no} concept`} size={44} />
-        ),
+        key: 'image',
+        header: 'IMAGE',
+        value: (row) => latestImage(row)?.label ?? '',
+        render: (row) => {
+          const image = latestImage(row)
+          return (
+            <ClickableImage
+              bucket={BUCKET}
+              path={image?.path}
+              alt={`${row.sample_no} ${image?.label.toLowerCase() ?? ''} image`}
+              size={44}
+            />
+          )
+        },
       },
+      ...[1, 2].map((piece) => ({
+        key: `piece_${piece}`,
+        header: piece === 1 ? '1ST PIECE' : '2ND PIECE',
+        value: (row) => PIECE_STATUS_LABEL[pieceStatus(row, piece)],
+        render: (row) => {
+          const status = pieceStatus(row, piece)
+          return <span className={`badge badge--${status}`}>{PIECE_STATUS_LABEL[status]}</span>
+        },
+      })),
+      ...[
+        ['first', '1ST APPROVAL'],
+        ['final', 'FINAL APPROVAL'],
+      ].map(([stage, header]) => ({
+        key: `approval_${stage}`,
+        header,
+        value: (row) => (row.approvals[stage] ? DECISION_LABEL[row.approvals[stage].decision] : ''),
+        render: (row) =>
+          row.approvals[stage] && (
+            <span className={`badge badge--${row.approvals[stage].decision}`}>
+              {DECISION_LABEL[row.approvals[stage].decision]}
+            </span>
+          ),
+      })),
       {
         key: 'reference',
         header: 'REFERENCE',
@@ -170,7 +145,7 @@ export default function SamplesPage() {
         value: (row) => remarksSummary(row.remarks),
         render: (row) =>
           row.remarks.length > 0 && (
-            <button type="button" className="link" onClick={() => setViewing(row)}>
+            <button type="button" className="link" onClick={() => setViewingId(row.id)}>
               {remarksSummary(row.remarks)}
             </button>
           ),
@@ -188,8 +163,8 @@ export default function SamplesPage() {
         align: 'right',
         render: (row) => (
           <span className="row-actions">
-            <button type="button" className="btn btn--small" onClick={() => setViewing(row)}>
-              View
+            <button type="button" className="btn btn--small" onClick={() => setViewingId(row.id)}>
+              Open
             </button>
             {isAdmin && (
               <button type="button" className="btn btn--small" onClick={() => setEditing(row)}>
@@ -235,15 +210,15 @@ export default function SamplesPage() {
         }
       />
       {viewing && (
-        <SampleView
+        <SampleDetail
           sample={viewing}
-          lookups={lookups}
-          canEdit={isAdmin}
+          data={data}
+          onChanged={reload}
           onEdit={() => {
             setEditing(viewing)
-            setViewing(null)
+            setViewingId(null)
           }}
-          onClose={() => setViewing(null)}
+          onClose={() => setViewingId(null)}
         />
       )}
       {editing && (
@@ -260,104 +235,6 @@ export default function SamplesPage() {
         />
       )}
     </>
-  )
-}
-
-function SampleView({ sample, lookups, canEdit, onEdit, onClose }) {
-  const referenceName = lookups.reference.get(sample.reference_option_id)
-  return (
-    <Modal
-      title={`Sample ${sample.sample_no}`}
-      onClose={onClose}
-      width={680}
-      footer={() => (
-        <>
-          {canEdit && (
-            <button type="button" className="btn" onClick={onEdit}>
-              Edit
-            </button>
-          )}
-          <button type="button" className="btn btn--primary" onClick={onClose}>
-            Close
-          </button>
-        </>
-      )}
-    >
-      <dl className="details">
-        <div>
-          <dt>Sample no</dt>
-          <dd>{sample.sample_no}</dd>
-        </div>
-        <div>
-          <dt>Creation date</dt>
-          <dd>{formatDate(sample.creation_date)}</dd>
-        </div>
-        <div>
-          <dt>Designer</dt>
-          <dd>{lookups.person.get(sample.designer_id)}</dd>
-        </div>
-        <div>
-          <dt>Components</dt>
-          <dd>
-            {sample.component_ids
-              .map((id) => lookups.component.get(id))
-              .filter(Boolean)
-              .sort()
-              .join(', ') || <span className="hint">None</span>}
-          </dd>
-        </div>
-        <div>
-          <dt>PCS type</dt>
-          <dd>{pcsType(sample.component_ids) || <span className="hint">None</span>}</dd>
-        </div>
-        <div>
-          <dt>Denim type</dt>
-          <dd>{DENIM_LABEL[sample.denim_type] ?? <span className="hint">Not set</span>}</dd>
-        </div>
-        <div>
-          <dt>Product type</dt>
-          <dd>{lookups.productType.get(sample.product_type_id) ?? <span className="hint">Not set</span>}</dd>
-        </div>
-        <div>
-          <dt>Collection</dt>
-          <dd>{lookups.collection.get(sample.collection_id) ?? <span className="hint">Not set</span>}</dd>
-        </div>
-        <div>
-          <dt>Entered by</dt>
-          <dd>
-            {lookups.person.get(sample.created_by)}, {formatDateTime(sample.created_at)}
-          </dd>
-        </div>
-        <div>
-          <dt>Concept image</dt>
-          <dd>
-            <ClickableImage
-              bucket={BUCKET}
-              path={sample.concept_image_path}
-              alt={`${sample.sample_no} concept`}
-              size={140}
-            />
-          </dd>
-        </div>
-        <div>
-          <dt>Reference</dt>
-          <dd>
-            {!referenceName && !sample.reference_image_path && <span className="hint">None</span>}
-            {referenceName && <div>{referenceName}</div>}
-            {sample.reference_image_path && (
-              <ClickableImage
-                bucket={BUCKET}
-                path={sample.reference_image_path}
-                alt={`${sample.sample_no} reference`}
-                size={140}
-              />
-            )}
-          </dd>
-        </div>
-      </dl>
-      <h3 className="section-title">Remarks</h3>
-      <RemarksView bucket={BUCKET} remarks={sample.remarks} people={lookups.person} />
-    </Modal>
   )
 }
 
