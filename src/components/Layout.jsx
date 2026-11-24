@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom'
 import ClickableImage from './ClickableImage.jsx'
 import { useAuth } from '../lib/auth.jsx'
 import { useEscape } from '../lib/escape.js'
+import { recall, remember } from '../lib/remember.js'
 import { useIsPhone } from '../lib/screen.js'
 
 const MENU = [
@@ -30,6 +31,16 @@ export default function Layout({ children }) {
   const isPhone = useIsPhone()
   const [menuOpen, setMenuOpen] = useState(false)
   const drawerOpen = isPhone && menuOpen
+  // Which menu groups the person has folded away (remembered in their browser).
+  const [folded, setFolded] = useState(() => new Set(recall('menu-folded', [])))
+
+  const toggleGroup = (title) => {
+    const next = new Set(folded)
+    if (next.has(title)) next.delete(title)
+    else next.add(title)
+    setFolded(next)
+    remember('menu-folded', [...next])
+  }
 
   useEscape(() => setMenuOpen(false), drawerOpen)
 
@@ -39,21 +50,35 @@ export default function Layout({ children }) {
       <aside className={`side ${isPhone ? 'side--drawer' : ''} ${drawerOpen ? 'side--open' : ''}`}>
         <div className="side-brand">Sample to PO FMS</div>
         <nav aria-label="Main menu">
-          {MENU.map((group) => (
-            <div key={group.title} className="side-group">
-              <div className="side-group-title">{group.title}</div>
-              {group.links.map((link) => (
-                <NavLink
-                  key={link.to}
-                  to={link.to}
-                  className={({ isActive }) => `side-link ${isActive ? 'side-link--on' : ''}`}
-                  onClick={() => setMenuOpen(false)}
+          {MENU.map((group) => {
+            const isFolded = folded.has(group.title)
+            return (
+              <div key={group.title} className="side-group">
+                <button
+                  type="button"
+                  className="side-group-title"
+                  aria-expanded={!isFolded}
+                  onClick={() => toggleGroup(group.title)}
                 >
-                  {link.label}
-                </NavLink>
-              ))}
-            </div>
-          ))}
+                  <span>{group.title}</span>
+                  <span className={`side-group-arrow ${isFolded ? 'side-group-arrow--folded' : ''}`} aria-hidden="true">
+                    ▾
+                  </span>
+                </button>
+                {!isFolded &&
+                  group.links.map((link) => (
+                    <NavLink
+                      key={link.to}
+                      to={link.to}
+                      className={({ isActive }) => `side-link ${isActive ? 'side-link--on' : ''}`}
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      {link.label}
+                    </NavLink>
+                  ))}
+              </div>
+            )
+          })}
         </nav>
       </aside>
       <div className="main">

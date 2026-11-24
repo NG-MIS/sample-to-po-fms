@@ -1,29 +1,39 @@
 :root {
-  --bg: #f4f5f7;
+  /* Theme: soft emerald, in the family of the Lycra Tracker project. */
+  --bg: #eef3f0;
+  --bg-gradient: linear-gradient(140deg, #d8f0e6 0%, #eef3f0 55%, #e4edea 100%);
   --surface: #ffffff;
-  --surface-2: #f8f9fb;
-  --text: #1b1f24;
-  --text-muted: #5b6470;
-  --border: #dfe3e8;
-  --border-strong: #c3c9d1;
-  --primary: #1f4fd8;
-  --primary-hover: #183fb0;
-  --primary-soft: #e8eefc;
-  --ok: #166a3f;
-  --ok-soft: #e3f4ea;
+  --surface-2: #f2f9f5;
+  --glass: rgba(255, 255, 255, 0.82);
+  --glass-border: rgba(15, 189, 133, 0.26);
+  --text: #0d2820;
+  --text-muted: #4a6158;
+  --border: #d6e6df;
+  --border-strong: #b4cbc1;
+  --accent: #0fbd85;
+  --primary: #08805d;
+  --primary-hover: #066a4d;
+  --primary-gradient: linear-gradient(135deg, #0b9069, #076b50);
+  --primary-soft: #e2f5ed;
+  --ok: #0a6b4d;
+  --ok-soft: #dff4ea;
   --bad: #b3261e;
   --bad-soft: #fbe9e7;
-  --off: #5b6470;
-  --off-soft: #eceef1;
-  --side: #161b26;
-  --side-text: #c9d1e0;
-  --radius: 8px;
-  --shadow: 0 10px 30px rgba(16, 24, 40, 0.18);
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --off: #55675f;
+  --off-soft: #e9efec;
+  --side: linear-gradient(180deg, #0d2820 0%, #103a2d 100%);
+  --side-text: #c4dbd1;
+  --radius: 12px;
+  --shadow: 0 12px 34px rgba(13, 40, 32, 0.18);
+  --shadow-soft: 0 2px 16px rgba(13, 40, 32, 0.07);
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   font-size: 14px;
   line-height: 1.45;
   color: var(--text);
   background: var(--bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
 * {
@@ -633,13 +643,6 @@ textarea {
   font-weight: 700;
   font-size: 15px;
 }
-.side-group-title {
-  padding: 8px 10px 4px;
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  opacity: 0.7;
-}
 .side-link {
   display: block;
   padding: 7px 10px;
@@ -890,6 +893,211 @@ textarea {
   gap: 6px;
 }
 
+/* ---------- Theme details ---------- */
+
+body {
+  background: var(--bg-gradient) fixed;
+}
+:focus-visible {
+  outline-color: var(--accent);
+}
+.btn,
+.input,
+.picklist {
+  border-radius: 9px;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+.input:focus,
+.picklist:focus-visible {
+  border-color: var(--accent);
+}
+.btn--primary {
+  background: var(--primary-gradient);
+  border-color: transparent;
+  font-weight: 600;
+  box-shadow: 0 4px 14px rgba(15, 189, 133, 0.28);
+}
+.btn--primary:hover {
+  background: linear-gradient(135deg, #0a8561, #066048);
+}
+.table-block,
+.auth-card,
+.card {
+  background: var(--glass);
+  border-color: var(--glass-border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-soft);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+.table-block {
+  overflow: hidden;
+}
+.table th {
+  background: rgba(226, 245, 237, 0.75);
+}
+.table tbody tr:hover td {
+  background: rgba(226, 245, 237, 0.45);
+}
+.top {
+  background: var(--glass);
+  border-bottom-color: var(--glass-border);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+.modal,
+.confirm {
+  border-radius: 16px;
+}
+.modal-head {
+  background: var(--surface-2);
+  border-radius: 16px 16px 0 0;
+}
+.side-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.side-brand::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--accent);
+  box-shadow: 0 0 12px rgba(15, 189, 133, 0.7);
+}
+.side-link--on {
+  background: rgba(15, 189, 133, 0.2);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.th-arrow {
+  color: var(--primary);
+}
+.page-head h1 {
+  letter-spacing: -0.01em;
+}
+.auth-brand {
+  color: var(--primary);
+}
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(13, 40, 32, 0.05);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(13, 40, 32, 0.22);
+  border-radius: 4px;
+}
+
+/* ---------- Menu groups that fold ---------- */
+
+.side-group {
+  margin-bottom: 6px;
+}
+button.side-group-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 10px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: inherit;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.8;
+  cursor: pointer;
+}
+button.side-group-title:hover {
+  background: rgba(255, 255, 255, 0.07);
+  opacity: 1;
+}
+.side-group-arrow,
+.group-arrow {
+  display: inline-block;
+  transition: transform 0.15s ease;
+}
+.side-group-arrow--folded,
+.group-arrow--folded {
+  transform: rotate(-90deg);
+}
+
+/* ---------- Grouped rows ---------- */
+
+.group-level {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 4px 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.group-row td {
+  padding: 0;
+  border-bottom: 1px solid var(--border);
+}
+.group-row--1 td {
+  background: rgba(15, 189, 133, 0.14);
+}
+.group-row--2 td {
+  background: rgba(15, 189, 133, 0.06);
+}
+.table tbody tr.group-row:hover td {
+  background: rgba(15, 189, 133, 0.2);
+}
+.group-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+.group-row--2 .group-toggle,
+.group-head--2 .group-toggle {
+  padding-left: 32px;
+}
+.group-name {
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+.group-name strong {
+  color: var(--text);
+  font-size: 14px;
+}
+.group-count {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--glass-border);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 700;
+}
+.group-head {
+  border-radius: 10px;
+  background: rgba(15, 189, 133, 0.16);
+}
+.group-head--2 {
+  background: rgba(15, 189, 133, 0.08);
+}
+@media (prefers-reduced-motion: reduce) {
+  .side-group-arrow,
+  .group-arrow,
+  .btn,
+  .input,
+  .picklist {
+    transition: none;
+  }
+}
+
 /* ---------- Phone layout (720px and narrower) ---------- */
 
 .cards {
@@ -1030,6 +1238,16 @@ textarea {
   .table-block {
     background: transparent;
     border: 0;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    overflow: visible;
+  }
+  .modal-head {
+    border-radius: 0;
+  }
+  .cards {
+    gap: 8px;
   }
   .table-toolbar {
     border: 1px solid var(--border);

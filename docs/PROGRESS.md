@@ -2,7 +2,7 @@
 
 What is done, what is being worked on, and what comes next. Updated with every change.
 
-Last updated: 23 Nov 2026
+Last updated: 24 Nov 2026
 
 ## Now
 
@@ -33,6 +33,7 @@ Next to discuss: what happens to a sample after it is created (the next sample s
 | 23 Nov 2026 | Step 2 database: numbering master, references, samples, remarks, private file store (33 rule checks passed) |
 | 23 Nov 2026 | Step 2 screens: Numbering, References, Samples with new, view and edit; remarks with text, voice and pictures (37 screen checks passed with stand-in data) |
 | 23 Nov 2026 | Column selector on every list, and phone layout for every screen (38 more screen checks passed with stand-in data, at computer and phone size) |
+| 24 Nov 2026 | Group by two levels on every list, folding side menu, emerald theme (31 more screen checks passed; all 151 screen checks pass with the new theme) |
 
 ## Next, in order
 

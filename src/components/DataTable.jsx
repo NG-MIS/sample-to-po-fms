@@ -4,7 +4,8 @@ import { recall, remember } from '../lib/remember.js'
 import { useIsPhone } from '../lib/screen.js'
 
 // The one table used on every screen: search box, click-to-sort headings,
-// a Google-Sheets-style filter on every column, and a column selector.
+// a Google-Sheets-style filter on every column, a column selector, and
+// grouping of rows by one or two columns.
 // On a phone the rows are shown as cards, with the same search, sort,
 // filter and column choices.
 //
@@ -250,6 +251,86 @@ function ColumnPicker({ columns, hidden, onChange, onClose, anchorRef }) {
   )
 }
 
+// Choose up to two columns to group rows by.
+function GroupPicker({ columns, group, onChange, onFoldAll, onOpenAll, onClose, anchorRef }) {
+  const usable = columns.filter((column) => typeof column.value === 'function')
+  const [first, second] = group
+
+  return (
+    <Popover anchorRef={anchorRef} onClose={onClose} width={260} className="popover--group">
+      <div className="popover-title">Group rows by</div>
+      <label className="group-level">
+        <span>First level</span>
+        <select
+          className="input"
+          aria-label="First level"
+          value={first ?? ''}
+          onChange={(event) => {
+            const key = event.target.value
+            onChange(key ? [key, ...(second && second !== key ? [second] : [])] : [])
+          }}
+        >
+          <option value="">No grouping</option>
+          {usable.map((column) => (
+            <option key={column.key} value={column.key}>
+              {column.header}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="group-level">
+        <span>Second level</span>
+        <select
+          className="input"
+          aria-label="Second level"
+          disabled={!first}
+          value={second ?? ''}
+          onChange={(event) => onChange(event.target.value ? [first, event.target.value] : [first])}
+        >
+          <option value="">None</option>
+          {usable
+            .filter((column) => column.key !== first)
+            .map((column) => (
+              <option key={column.key} value={column.key}>
+                {column.header}
+              </option>
+            ))}
+        </select>
+      </label>
+      <div className="popover-foot">
+        {first && (
+          <>
+            <button type="button" className="btn btn--small" onClick={onFoldAll}>
+              Fold all
+            </button>
+            <button type="button" className="btn btn--small" onClick={onOpenAll}>
+              Open all
+            </button>
+          </>
+        )}
+        <button type="button" className="btn btn--small btn--primary" onClick={onClose}>
+          Done
+        </button>
+      </div>
+    </Popover>
+  )
+}
+
+// The heading of one group of rows. Click to fold or open the group.
+function GroupHead({ item, onToggle }) {
+  return (
+    <button type="button" className="group-toggle" aria-expanded={!item.folded} onClick={() => onToggle(item.id)}>
+      <span className={`group-arrow ${item.folded ? 'group-arrow--folded' : ''}`} aria-hidden="true">
+        ▾
+      </span>
+      <span className="group-name">
+        {item.header}: <strong>{item.label}</strong>
+      </span>
+      <span className="group-count">{item.count}</span>
+    </button>
+  )
+}
+
 // Phone only: the headings are not on screen, so sort and filter are reached from one button.
 function PhoneSortFilter({ columns, rows, sort, filters, onSort, onFilter, anchorRef, onClose }) {
   const [columnKey, setColumnKey] = useState(null)
@@ -310,16 +391,29 @@ export default function DataTable({
   const isPhone = useIsPhone()
   const columnsRef = useRef(null)
   const phoneRef = useRef(null)
+  const groupRef = useRef(null)
   const memoryKey = tableId ? `table-columns:${tableId}` : null
 
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState(null)
   const [filters, setFilters] = useState({})
   const [hidden, setHidden] = useState(() => new Set(memoryKey ? recall(memoryKey, []) : []))
-  const [panel, setPanel] = useState(null) // null | 'columns' | 'phone'
+  const [group, setGroup] = useState(() => (memoryKey ? recall(`${memoryKey}:group`, []) : []))
+  const [foldedGroups, setFoldedGroups] = useState(() => new Set())
+  const [panel, setPanel] = useState(null) // null | 'columns' | 'phone' | 'group'
 
   const shownColumns = useMemo(() => columns.filter((column) => !hidden.has(column.key)), [columns, hidden])
   const filterCount = Object.keys(filters).length
+  const groupColumns = useMemo(
+    () => group.map((key) => shownColumns.find((column) => column.key === key && column.value)).filter(Boolean),
+    [group, shownColumns],
+  )
+
+  const changeGroup = (next) => {
+    setGroup(next)
+    setFoldedGroups(new Set())
+    if (memoryKey) remember(`${memoryKey}:group`, next)
+  }
 
   const changeHidden = (next) => {
     setHidden(next)
@@ -327,6 +421,7 @@ export default function DataTable({
     // A hidden column must not keep filtering or sorting rows out of sight.
     setFilters((previous) => Object.fromEntries(Object.entries(previous).filter(([key]) => !next.has(key))))
     setSort((previous) => (previous && next.has(previous.key) ? null : previous))
+    if (group.some((key) => next.has(key))) changeGroup(group.filter((key) => !next.has(key)))
   }
 
   const visible = useMemo(() => {
@@ -363,6 +458,55 @@ export default function DataTable({
     }
     return out
   }, [rows, shownColumns, filters, search, sort])
+
+  // What is drawn: plain rows, or group headings with their rows underneath.
+  const display = useMemo(() => {
+    if (groupColumns.length === 0) return visible.map((row) => ({ type: 'row', row }))
+
+    const labelOf = (column, row) => asText(column.value(row)) || BLANK
+    const orderOf = (column, row) => {
+      if (column.sortValue) return column.sortValue(row)
+      const value = column.value(row)
+      return typeof value === 'number' ? value : asText(value)
+    }
+
+    const build = (groupRows, level, path) => {
+      const column = groupColumns[level]
+      const buckets = new Map()
+      groupRows.forEach((row) => {
+        const label = labelOf(column, row)
+        if (!buckets.has(label)) buckets.set(label, { rows: [], order: orderOf(column, row) })
+        buckets.get(label).rows.push(row)
+      })
+      const out = []
+      ;[...buckets.entries()]
+        .sort((a, b) => compare(a[1].order, b[1].order))
+        .forEach(([label, bucket]) => {
+          const id = `${path}/${label}`
+          const folded = foldedGroups.has(id)
+          out.push({ type: 'group', id, level, header: column.header, label, count: bucket.rows.length, folded })
+          if (folded) return
+          if (level + 1 < groupColumns.length) out.push(...build(bucket.rows, level + 1, id))
+          else bucket.rows.forEach((row) => out.push({ type: 'row', row }))
+        })
+      return out
+    }
+    return build(visible, 0, '')
+  }, [visible, groupColumns, foldedGroups])
+
+  const toggleGroup = (id) =>
+    setFoldedGroups((previous) => {
+      const next = new Set(previous)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+
+  const foldAllGroups = () => {
+    const column = groupColumns[0]
+    if (!column) return
+    setFoldedGroups(new Set(visible.map((row) => `/${asText(column.value(row)) || BLANK}`)))
+  }
 
   const changeSort = (key, dir) => setSort(dir ? { key, dir } : null)
   const changeFilter = (key, allowed) =>
@@ -410,6 +554,14 @@ export default function DataTable({
         >
           Columns{hidden.size > 0 ? ` (${hidden.size} hidden)` : ''}
         </button>
+        <button
+          type="button"
+          ref={groupRef}
+          className={`btn btn--small ${groupColumns.length > 0 ? 'btn--marked' : ''}`}
+          onClick={() => setPanel('group')}
+        >
+          {groupColumns.length > 0 ? `Group: ${groupColumns.map((column) => column.header).join(', ')}` : 'Group'}
+        </button>
         <span className="table-count" role="status">
           {visible.length === rows.length ? `${rows.length} rows` : `Showing ${visible.length} of ${rows.length}`}
         </span>
@@ -438,6 +590,17 @@ export default function DataTable({
           anchorRef={columnsRef}
         />
       )}
+      {panel === 'group' && (
+        <GroupPicker
+          columns={shownColumns}
+          group={groupColumns.map((column) => column.key)}
+          onChange={changeGroup}
+          onFoldAll={foldAllGroups}
+          onOpenAll={() => setFoldedGroups(new Set())}
+          onClose={() => setPanel(null)}
+          anchorRef={groupRef}
+        />
+      )}
       {panel === 'phone' && (
         <PhoneSortFilter
           columns={shownColumns}
@@ -453,24 +616,30 @@ export default function DataTable({
 
       {isPhone ? (
         <ul className="cards">
-          {visible.map((row) => (
-            <li key={row[rowKey]} className="card">
-              {shownColumns.map((column) => {
-                const content = column.render ? column.render(row) : asText(column.value?.(row))
-                if (content === null || content === undefined || content === '' || content === false) return null
-                return column.header ? (
-                  <div key={column.key} className="card-line">
-                    <span className="card-label">{column.header}</span>
-                    <span className="card-value">{content}</span>
-                  </div>
-                ) : (
-                  <div key={column.key} className="card-actions">
-                    {content}
-                  </div>
-                )
-              })}
-            </li>
-          ))}
+          {display.map((item) =>
+            item.type === 'group' ? (
+              <li key={`group${item.id}`} className={`group-head group-head--${item.level + 1}`}>
+                <GroupHead item={item} onToggle={toggleGroup} />
+              </li>
+            ) : (
+              <li key={item.row[rowKey]} className="card">
+                {shownColumns.map((column) => {
+                  const content = column.render ? column.render(item.row) : asText(column.value?.(item.row))
+                  if (content === null || content === undefined || content === '' || content === false) return null
+                  return column.header ? (
+                    <div key={column.key} className="card-line">
+                      <span className="card-label">{column.header}</span>
+                      <span className="card-value">{content}</span>
+                    </div>
+                  ) : (
+                    <div key={column.key} className="card-actions">
+                      {content}
+                    </div>
+                  )
+                })}
+              </li>
+            ),
+          )}
           {visible.length === 0 && <li className="table-empty">{emptyMessage}</li>}
         </ul>
       ) : (
@@ -492,15 +661,23 @@ export default function DataTable({
               </tr>
             </thead>
             <tbody>
-              {visible.map((row) => (
-                <tr key={row[rowKey]}>
-                  {shownColumns.map((column) => (
-                    <td key={column.key} style={{ textAlign: column.align }}>
-                      {column.render ? column.render(row) : asText(column.value?.(row))}
+              {display.map((item) =>
+                item.type === 'group' ? (
+                  <tr key={`group${item.id}`} className={`group-row group-row--${item.level + 1}`}>
+                    <td colSpan={shownColumns.length}>
+                      <GroupHead item={item} onToggle={toggleGroup} />
                     </td>
-                  ))}
-                </tr>
-              ))}
+                  </tr>
+                ) : (
+                  <tr key={item.row[rowKey]}>
+                    {shownColumns.map((column) => (
+                      <td key={column.key} style={{ textAlign: column.align }}>
+                        {column.render ? column.render(item.row) : asText(column.value?.(item.row))}
+                      </td>
+                    ))}
+                  </tr>
+                ),
+              )}
               {visible.length === 0 && (
                 <tr>
                   <td className="table-empty" colSpan={shownColumns.length}>

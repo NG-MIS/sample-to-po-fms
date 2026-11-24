@@ -3,7 +3,7 @@
 The single source of truth for this project. If this file and anything else disagree,
 this file is fixed first. It is updated with every change, in the same save as the change.
 
-Last updated: 23 Nov 2026
+Last updated: 24 Nov 2026
 
 ---
 
@@ -108,6 +108,19 @@ from the Supabase dashboard, but only if another project is paused first.
    cards instead of a wide table, sort and filter are reached from one "Sort and filter"
    button, the menu becomes a drawer, popups and forms fill the whole screen, form fields
    stack one per row, and nothing scrolls sideways.
+7. **Every list can be grouped by up to two levels.** The person picks a first-level column
+   and, if wanted, a second-level column. Rows sit under group headings that show a count and
+   fold when clicked. Grouping works together with search, sort, filter and the column
+   selector, and is remembered per table in the person's own browser.
+8. **The side menu folds.** Each menu group (Sampling, Masters, and later ones) can be folded
+   and opened; the choice is remembered in the person's own browser.
+
+### Look and feel
+
+Soft emerald theme in the family of the Lycra Tracker project: pale green background,
+white glass-style panels with a faint green edge, deep green side menu, emerald accents,
+rounded corners. All colours are set in one place at the top of `src/index.css`, so the
+theme can be changed without touching any screen.
 
 ## 6. How we work
 
@@ -173,7 +186,7 @@ All in `src/components`. A screen never builds its own version of these.
 
 | Block | What it does |
 |---|---|
-| `DataTable` | Table with search box, click-to-sort headings, a Sheets-style filter on every column, and a column selector. Turns into cards on a phone |
+| `DataTable` | Table with search box, click-to-sort headings, a Sheets-style filter on every column, a column selector, and grouping by up to two levels. Turns into cards on a phone |
 | `Modal` | Popup box for forms. Handles Esc, click outside, and "Discard changes?" when there is unsaved work |
 | `ConfirmDialog` | Yes/no question on top of everything (inside `Modal.jsx`) |
 | `ImageViewer` | Picture popup: full screen, copy link, open in new tab, close |
@@ -184,7 +197,7 @@ All in `src/components`. A screen never builds its own version of these.
 | `VoiceRecorder`, `VoiceNote` | Record a voice note from the microphone; play one back |
 | `Popover` | Floating panel under a button, used by pick-lists and column filters |
 | `Field`, `Tick`, `Badge` | Labelled form row, tick box, coloured yes/no label |
-| `Layout`, `PageHead` | Menu on the left (a drawer on a phone), signed-in person on top, screen heading |
+| `Layout`, `PageHead` | Menu on the left with folding groups (a drawer on a phone), signed-in person on top, screen heading |
 
 Shared helpers in `src/lib`: database connection, sign-in state, Esc handling, picture links
 and upload, data loading, date and error wording.
@@ -229,6 +242,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 24 Nov 2026 | Standing rules 7 and 8 added and built: group by two levels on every list, folding side menu. Theme changed to soft emerald, inspired by Lycra Tracker |
 | 23 Nov 2026 | Two standing rules added and built into the shared blocks: column selector on every list, and phone layout everywhere |
 | 23 Nov 2026 | Step 2 built: Numbering master, References list, sample creation with automatic sample number, reference, and remarks (text, voice, pictures) |
 | 23 Nov 2026 | Step 1 built: department, designation and role lists, user master, sign-in, and all reusable building blocks |

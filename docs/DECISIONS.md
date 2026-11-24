@@ -5,6 +5,9 @@ Newest first. A changed decision is not deleted: a new entry is added that repla
 
 | Date | Decision | Reason |
 |---|---|---|
+| 24 Nov 2026 | Theme: soft emerald with glass-style panels, taken from the Lycra Tracker project. Buttons and links use a slightly deeper green than Lycra Tracker | Nihal asked for the Lycra Tracker look; the deeper green keeps white text on buttons easy to read |
+| 24 Nov 2026 | Grouping and folded menu groups are remembered in the person's own browser | Personal conveniences, same as the column choice |
+| 24 Nov 2026 | Every list can be grouped by up to two levels; side menu groups fold | Nihal's standing rules |
 | 23 Nov 2026 | On a phone, lists are shown as cards and popups fill the screen | A wide table is unusable on a phone; nothing should scroll sideways |
 | 23 Nov 2026 | Column choice is remembered per table in the person's own browser, not in the database | It is a personal convenience; another device simply starts with all columns |
 | 23 Nov 2026 | Column selector on every list, built into the shared table | Nihal's standing rule |
