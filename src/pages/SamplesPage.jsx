@@ -334,6 +334,7 @@ export default function SamplesPage() {
         value: (row) =>
           [...new Set(row.accessories.map((line) => lookups.accessory.get(line.accessory_id)).filter(Boolean))].sort(),
       },
+      { key: 'wishlist', header: 'WISHLIST', value: (row) => row.wishlist.map((entry) => entry.wishlist_no) },
       {
         key: 'remarks',
         header: 'REMARKS',
@@ -490,6 +491,7 @@ export default function SamplesPage() {
         <ApprovalDialog
           sample={work.sample}
           stage={work.stage}
+          sizeRatios={data.sizeRatios}
           onClose={() => setWork(null)}
           onSaved={workSaved}
         />

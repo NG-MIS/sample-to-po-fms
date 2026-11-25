@@ -30,8 +30,8 @@ Nothing recorded yet. Add ideas here as they come up, with the date.
 
 ## The production side, as told by Nihal on 25 Nov 2026 (not built yet)
 
-Order agreed: wishlist, then CAD, then fabric and accessory masters, then the material list
-for the PO.
+Order agreed: wishlist (built 25 Nov 2026, see the Project Bible 2.3), then CAD, then fabric
+and accessory masters, then the material list for the PO.
 
 **Wishlist**
 - A sample with final approval Yes is approved for production and goes to the wishlist.

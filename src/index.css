@@ -1858,3 +1858,26 @@ button.side-group-title:hover {
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* ---------- Wishlist ---------- */
+
+.wishlist-line {
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+}
+.wishlist-no {
+  grid-column: 1 / -1;
+  font-weight: 600;
+  font-size: 13px;
+}
+.wishlist-sets {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+.approval-wishlist {
+  margin-top: 4px;
+}
+@media (max-width: 720px) {
+  .wishlist-line {
+    grid-template-columns: 1fr 1fr;
+  }
+}

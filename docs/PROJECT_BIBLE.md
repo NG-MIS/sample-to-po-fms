@@ -184,6 +184,8 @@ person with authority All changing that No.
 | Add or change the fabric list | Same as above |
 | Add or change the accessory list | Same as above |
 | Give a sample its design number | Same as above, and only after the final approval is Yes |
+| Add a sample to the wishlist (first entry or repeats) | The people who approve: department Management, and authority All |
+| Correct a wishlist entry | Authority All |
 | Mark a piece completed | Department(s) authority that includes Sample, and only when the piece is not At vendor |
 | Give initial or final approval | Anyone in department Management |
 | Change an approval, correct a process entry, reopen a completed piece | Authority All only |
@@ -213,6 +215,39 @@ Sending and receiving share the Process tab, and the initial and final approval 
 Approval tab. Closed samples leave the Mark completed, Images and Approval tabs. A work tab lists only items the signed-in person may act on, and a tab the person can
 never use is not shown to them. The chosen tab is kept in the page address, so a refresh or a
 shared link opens the same tab. Opening a sample still shows its full picture and history.
+
+### 2.3 Wishlist (built)
+
+A sample approved for production (final approval Yes) goes to the wishlist: what it is to be
+produced in. One sample can be in the wishlist many times.
+
+| Field | Rule |
+|---|---|
+| WISHLIST ID | Automatic. The first entry of a sample is `SAMPLE NO-NEW`; every later one is a repeat: `SAMPLE NO-REPEAT-1`, `-2`, and so on |
+| SIZE | Required. Picked from the Sizes and ratios master |
+| RATIO | Only for a size that is made in ratios (22-38). Required there, starting at 1:1. Not asked for any other size |
+| QTY | Required. A whole number of pieces, 1 or more. The screen also shows how many sets that is |
+
+**Sizes and ratios master.** One row per allowed combination, with the pieces in one set:
+22-38 in 1:1 (9 pieces), 1:2 (13) and 2:1 (14); 22-30 (5) and 32-38 (4) without a ratio. The
+ratio is sets of 22-30 : sets of 32-38. New sizes and ratios are added here; a size is either
+made in ratios or not.
+
+**How a sample gets into the wishlist**
+- *At approval:* when giving the final approval Yes, the approver may add one or more
+  entries in the same step (the first NEW, the rest REPEAT-1, REPEAT-2...). Optional.
+  Approval and entries are saved together, or not at all.
+- *Newly approved:* a sample approved without entries waits in the Newly approved tab of the
+  Wishlist screen until its first entry is added.
+- *Add repeat:* the Add repeat tab lists samples already in the wishlist; any number of
+  repeats can be added at one time.
+
+**Who.** Entries are added by the people who approve samples: department Management (and
+authority All). A person with authority All can correct the size, ratio or quantity of an
+entry. Entries are never deleted. Once a sample is in the wishlist its final approval can no
+longer be changed from Yes.
+
+The Wishlist screen has three tabs: Wishlist (every entry), Newly approved, Add repeat.
 
 ## 3. How it is built
 
@@ -332,6 +367,8 @@ Created by `supabase/migrations/20261123113937_masters_and_sign_in.sql`.
 | `accessories` | Accessories list: the accessory names, active or inactive |
 | `sample_accessories` | The accessory lines of each sample: accessory, qty type, qty, breadth, vendor, rate, remarks |
 | `design_series` | The one design number series: starting number and last number given |
+| `size_ratios` | Sizes and ratios master: size, ratio (empty for a size without ratios), pieces in a set, active or inactive |
+| `wishlist_entries` | Wishlist: wishlist id, sample, repeat number (0 = NEW), size and ratio, quantity in pieces |
 | `samples` | One row per sample: sample number, creation date, designer, concept image |
 | `sample_remarks` | Remarks of a sample: typed notes, voice notes, pictures |
 | `components` | Components master: name, active or inactive |
@@ -392,6 +429,8 @@ Rules the database enforces, whatever the screens do:
 | Fabric vendors | List, add and edit: vendor name and vendor code (each code used once) | Built |
 | Accessories | List, add and edit the accessory names | Built |
 | Accessory vendors | List, add and edit: vendor name and vendor code (each code used once) | Built |
+| Sizes and ratios | List, add and edit the size and ratio combinations, with import | Built |
+| Wishlist | Tabs: Wishlist (all entries), Newly approved, Add repeat. Add to wishlist and Add repeat popups; Edit for authority All | Built |
 | Components | List, add, edit and import | Built |
 | Product types | List, add, edit and import | Built |
 | Collections | List, add, edit and import | Built |
@@ -468,6 +507,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 25 Nov 2026 | Wishlist built: Sizes and ratios master, wishlist entries at final approval or later, Wishlist screen with Newly approved and Add repeat. Added by `supabase/migrations/20261125081337_wishlist_and_size_ratios.sql` |
 | 25 Nov 2026 | Design numbers added (Design no tab, one plain series set in Numbering) and the accessory list of a sample (Accessories tab, Accessories and Accessory vendors masters). Added by `supabase/migrations/20261125072608_design_numbers_and_sample_accessories.sql` |
 | 25 Nov 2026 | Process and Mark completed tabs changed to one row per sample, showing both pieces |
 | 25 Nov 2026 | Fabrics tab changed to one row per sample, with a fabric status: Pending, Incomplete or Completed |

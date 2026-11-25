@@ -5,7 +5,9 @@ import ImageEditor from '../components/ImageEditor.jsx'
 import Modal, { ConfirmDialog } from '../components/Modal.jsx'
 import PickList from '../components/PickList.jsx'
 import { RemarksView } from '../components/Remarks.jsx'
+import { checkWishlistLines, wishlistPayload } from '../lib/wishlist.js'
 import { AccessoryDialog, AccessoryTable } from './SampleAccessories.jsx'
+import { WishlistLinesEditor } from './WishlistParts.jsx'
 import { FabricDialog, FabricTable } from './SampleFabrics.jsx'
 import { Field } from '../components/Field.jsx'
 import { useAuth } from '../lib/auth.jsx'
@@ -184,6 +186,17 @@ export default function SampleDetail({ sample, data, onChanged, onEdit, onClose 
       <dl className="details details--three">
         <Detail label="Sample no">{sample.sample_no}</Detail>
         <Detail label="Design no">{sample.design_no}</Detail>
+        <Detail label="Wishlist">
+          {sample.wishlist.length > 0 && (
+            <span className="tag-list">
+              {sample.wishlist.map((entry) => (
+                <span key={entry.id} className="tag-chip">
+                  {entry.wishlist_no}
+                </span>
+              ))}
+            </span>
+          )}
+        </Detail>
         <Detail label="Creation date">{formatDate(sample.creation_date)}</Detail>
         <Detail label="Designer">{names.person.get(sample.designer_id)}</Detail>
         <Detail label="Components">{componentNames.join(', ')}</Detail>
@@ -420,7 +433,7 @@ export default function SampleDetail({ sample, data, onChanged, onEdit, onClose 
         <FabricDialog sample={sample} data={data} onClose={() => setDialog(null)} onSaved={saved} />
       )}
       {dialog?.type === 'approval' && (
-        <ApprovalDialog sample={sample} stage={dialog.stage} correct={Boolean(dialog.correct)} onClose={() => setDialog(null)} onSaved={saved} />
+        <ApprovalDialog sample={sample} stage={dialog.stage} correct={Boolean(dialog.correct)} sizeRatios={data.sizeRatios} onClose={() => setDialog(null)} onSaved={saved} />
       )}
       {dialog?.type === 'complete' && (
         <ConfirmDialog
@@ -692,7 +705,9 @@ export function EntryDialog({ mode, sample, data, entry, piece, pieces, onClose,
 }
 
 // Give an approval, or (correct = true, authority All) change the latest one.
-export function ApprovalDialog({ sample, stage, correct = false, onClose, onSaved }) {
+// sizeRatios: the Sizes and ratios master. When given, a final approval of Yes
+// can add the sample to the wishlist in the same step.
+export function ApprovalDialog({ sample, stage, correct = false, sizeRatios, onClose, onSaved }) {
   const info = APPROVAL_STAGES[stage]
   const latest = sample.approvals[stage]
   const current = correct ? latest : null
@@ -700,21 +715,35 @@ export function ApprovalDialog({ sample, stage, correct = false, onClose, onSave
   const [remarks, setRemarks] = useState(current?.remarks ?? '')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const dirty = decision !== (current?.decision ?? null) || remarks !== (current?.remarks ?? '')
+  const [wishLines, setWishLines] = useState([])
+  const offersWishlist = Boolean(sizeRatios) && !correct && stage === 'final' && decision === 'yes'
+  const dirty =
+    decision !== (current?.decision ?? null) || remarks !== (current?.remarks ?? '') || wishLines.length > 0
 
   const save = async (event) => {
     event.preventDefault()
     if (!decision) return setError(`Choose ${info.decisions.map((key) => DECISION_LABEL[key]).join(', ').replace(/, ([^,]*)$/, ' or $1')}.`)
+    const wishProblem = offersWishlist ? checkWishlistLines(wishLines) : ''
+    if (wishProblem) return setError(wishProblem)
+    const wishEntries = offersWishlist ? wishlistPayload(wishLines) : []
     setBusy(true)
     setError('')
     try {
-      await call('set_sample_approval', {
-        p_sample_id: sample.id,
-        p_stage: stage,
-        p_decision: decision,
-        p_remarks: remarks,
-        p_correct: correct,
-      })
+      if (wishEntries.length > 0) {
+        await call('approve_final_with_wishlist', {
+          p_sample_id: sample.id,
+          p_remarks: remarks,
+          p_entries: wishEntries,
+        })
+      } else {
+        await call('set_sample_approval', {
+          p_sample_id: sample.id,
+          p_stage: stage,
+          p_decision: decision,
+          p_remarks: remarks,
+          p_correct: correct,
+        })
+      }
       await onSaved()
     } catch (failure) {
       setError(friendlyError(failure))
@@ -727,7 +756,7 @@ export function ApprovalDialog({ sample, stage, correct = false, onClose, onSave
       title={`${correct ? 'Change the' : 'Give the'} ${info.label.toLowerCase()} for ${sample.sample_no}`}
       onClose={onClose}
       dirty={dirty}
-      width={480}
+      width={offersWishlist ? 760 : 480}
       footer={(requestClose) => (
         <>
           <button type="button" className="btn" onClick={requestClose}>
@@ -770,6 +799,23 @@ export function ApprovalDialog({ sample, stage, correct = false, onClose, onSave
         )}
         {!correct && stage === 'final' && (
           <p className="hint">Once saved, only a person with authority All can change the final approval.</p>
+        )}
+        {offersWishlist && (
+          <div className="approval-wishlist">
+            <h3 className="section-title section-title--next">
+              Add to wishlist now <span className="hint">optional</span>
+            </h3>
+            <p className="hint fabric-intro">
+              Add the size, ratio and quantity to produce. Without it, the sample waits under Wishlist, Newly approved.
+            </p>
+            <WishlistLinesEditor
+              lines={wishLines}
+              onChange={setWishLines}
+              sizeRatios={sizeRatios}
+              sample={sample}
+              idPrefix="approval-wish"
+            />
+          </div>
         )}
         {error && (
           <p className="alert alert--error" role="alert">

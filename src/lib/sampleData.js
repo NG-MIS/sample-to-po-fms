@@ -122,6 +122,7 @@ export async function loadSampleData(profile) {
     sampleFabrics,
     sampleFabricComponents,
     sampleAccessories,
+    wishlistEntries,
     entries,
     completions,
     stageImages,
@@ -137,6 +138,7 @@ export async function loadSampleData(profile) {
     accessories,
     accessoryVendors,
     designSeries,
+    sizeRatios,
     processes,
     vendors,
     people,
@@ -153,6 +155,7 @@ export async function loadSampleData(profile) {
     fetchRows('sample_fabrics'),
     fetchRows('sample_fabric_components', null),
     fetchRows('sample_accessories'),
+    fetchRows('wishlist_entries'),
     fetchRows('sample_process_entries'),
     fetchRows('sample_piece_completions', null),
     fetchRows('sample_stage_images', null),
@@ -168,6 +171,7 @@ export async function loadSampleData(profile) {
     fetchRows('accessories'),
     fetchRows('accessory_vendors'),
     fetchRows('design_series', null),
+    fetchRows('size_ratios'),
     fetchRows('processes'),
     fetchRows('vendors'),
     fetchRows('app_users'),
@@ -184,6 +188,7 @@ export async function loadSampleData(profile) {
   const fabricsBySample = groupBy(sampleFabrics, 'sample_id')
   const componentsByFabricLine = groupBy(sampleFabricComponents, 'sample_fabric_id')
   const accessoriesBySample = groupBy(sampleAccessories, 'sample_id')
+  const wishlistBySample = groupBy(wishlistEntries, 'sample_id')
   const entriesBySample = groupBy(entries, 'sample_id')
   const completionsBySample = groupBy(completions, 'sample_id')
   const imagesBySample = groupBy(stageImages, 'sample_id')
@@ -214,6 +219,8 @@ export async function loadSampleData(profile) {
         component_ids: (componentsByFabricLine.get(line.id) ?? []).map((link) => link.component_id),
       })),
       accessories: accessoriesBySample.get(sample.id) ?? [],
+      // the wishlist entries of the sample: the NEW one first, then its repeats
+      wishlist: [...(wishlistBySample.get(sample.id) ?? [])].sort((a, b) => a.repeat_no - b.repeat_no),
       entries: entriesBySample.get(sample.id) ?? [],
       completions: keyed(completionsBySample.get(sample.id), 'piece'),
       stageImages: keyed(imagesBySample.get(sample.id), 'stage'),
@@ -230,6 +237,7 @@ export async function loadSampleData(profile) {
     accessories,
     accessoryVendors,
     designSeries: designSeries[0] ?? null,
+    sizeRatios,
     processes,
     vendors,
     people,

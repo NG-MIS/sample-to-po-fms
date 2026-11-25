@@ -12,6 +12,7 @@ const MENU = [
     links: [
       { to: '/samples', label: 'Samples' },
       { to: '/process-log', label: 'Process log' },
+      { to: '/wishlist', label: 'Wishlist' },
     ],
   },
   {
@@ -33,6 +34,7 @@ const MENU = [
       { to: '/fabric-vendors', label: 'Fabric vendors' },
       { to: '/accessories', label: 'Accessories' },
       { to: '/accessory-vendors', label: 'Accessory vendors' },
+      { to: '/sizes', label: 'Sizes and ratios' },
     ],
   },
 ]

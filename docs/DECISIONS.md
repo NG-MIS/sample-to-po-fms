@@ -5,6 +5,13 @@ Newest first. A changed decision is not deleted: a new entry is added that repla
 
 | Date | Decision | Reason |
 |---|---|---|
+| 25 Nov 2026 | Once a sample is in the wishlist its final approval cannot be changed from Yes | Production is planned on it |
+| 25 Nov 2026 | A wishlist entry can be corrected only by authority All and is never deleted | Same pattern as the rest of the system; Nihal did not say otherwise, so open to change |
+| 25 Nov 2026 | A quantity that is not a whole number of sets is allowed; the screen points it out | Nihal gave the quantity in pieces and set no rule that it must fill whole sets |
+| 25 Nov 2026 | The master keeps the pieces in a set for each size and ratio | Lets the screens show sets for a quantity; the numbers are Nihal's (9, 13, 14, 5, 4) |
+| 25 Nov 2026 | Size and ratio are one master, one row per combination; "1:0" is simply size 22-30 | Nihal: ratio applies only to 22-38, with 1:1, 1:2 and 2:1, more to be added from the master |
+| 25 Nov 2026 | Wishlist entries are added by the people who approve samples | Nihal's answer |
+| 25 Nov 2026 | Wishlist quantity is in pieces | Nihal's answer |
 | 25 Nov 2026 | Assigning a design number asks for confirmation first | The number is used up and cannot be taken back; Nihal asked only that a click gives the next number, so this is open to change |
 | 25 Nov 2026 | A design number is given by the same people who update a sample's images | Nihal described the screen as "like image update"; who exactly was not stated, so this is open to change |
 | 25 Nov 2026 | Once a sample has a design number its final approval cannot be changed from Yes | Production refers to the design number, so the approval behind it must stand |

@@ -59,6 +59,7 @@ Next to discuss: the CAD stage (CAD drawing and its approval).
 | 25 Nov 2026 | Fabrics tab: one row per sample with fabric status Pending, Incomplete, Completed (426 screen checks pass in total) |
 | 25 Nov 2026 | Process and Mark completed tabs: one row per sample (427 screen checks pass in total) |
 | 25 Nov 2026 | Design number assignment and the accessory list of a sample (31 database rule checks; 46 new screen checks, 475 pass in total) |
+| 25 Nov 2026 | Wishlist: Sizes and ratios master, entries at final approval or later, Wishlist screen (29 database rule checks; 43 new screen checks, 520 pass in total) |
 
 ## Next, in order
 

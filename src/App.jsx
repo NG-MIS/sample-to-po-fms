@@ -5,6 +5,8 @@ import SignIn, { NoAccess, SetPassword } from './pages/SignIn.jsx'
 import NumberingPage from './pages/NumberingPage.jsx'
 import ProcessLogPage from './pages/ProcessLogPage.jsx'
 import SamplesPage from './pages/SamplesPage.jsx'
+import SizeRatiosPage from './pages/SizeRatiosPage.jsx'
+import WishlistPage from './pages/WishlistPage.jsx'
 import SimpleListPage from './pages/SimpleListPage.jsx'
 import UsersPage from './pages/UsersPage.jsx'
 
@@ -82,6 +84,8 @@ export default function App() {
             />
           }
         />
+        <Route path="/wishlist" element={<WishlistPage />} />
+        <Route path="/sizes" element={<SizeRatiosPage />} />
         <Route
           path="/accessories"
           element={<SimpleListPage key="accessories" table="accessories" title="Accessories" singular="accessory" />}
