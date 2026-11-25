@@ -186,6 +186,8 @@ person with authority All changing that No.
 | Give a sample its design number | Same as above, and only after the final approval is Yes |
 | Add a sample to the wishlist (first entry or repeats) | The people who approve: department Management, and authority All |
 | Correct a wishlist entry | Authority All |
+| Make or change a CAD, assign it to wishlist items, set up a primary accessory list | Department CAD, and authority All |
+| Fill the fabric, vendor and rate of CAD rows | The sample's designer, or department authority over Sample |
 | Mark a piece completed | Department(s) authority that includes Sample, and only when the piece is not At vendor |
 | Give initial or final approval | Anyone in department Management |
 | Change an approval, correct a process entry, reopen a completed piece | Authority All only |
@@ -248,6 +250,60 @@ entry. Entries are never deleted. Once a sample is in the wishlist its final app
 longer be changed from Yes.
 
 The Wishlist screen has three tabs: Wishlist (every entry), Newly approved, Add repeat.
+
+### 2.4 CAD drawings (built)
+
+A CAD is for one sample and one size (and ratio), and has one row per drawing. It is shown
+and entered as a table like the CAD sheet. A sample can have many CADs; each is numbered
+`SAMPLE NO-CAD-1`, `-2`, and so on.
+
+Top line of the table: sample number, design number, size, ratio, number of drawings (the
+count of rows), and the button for the primary accessory list.
+
+| Column of a row | Rule | Filled by |
+|---|---|---|
+| PARTICULARS | Required. Picked from the names used before (CAD particulars master), or typed new | CAD department |
+| FABRIC TYPE | Required. Primary or Secondary | CAD department |
+| MSRMNT | Optional number, up to 2 decimals: the fabric length needed | CAD department |
+| PAINA | Optional number: the fabric width in inches | CAD department |
+| NO. OF PCS IN LAYER | Optional whole number | CAD department |
+| NO OF PANELS | Optional whole number | CAD department |
+| FABRIC | From the Fabrics list, or typed new | The people who look after the sample |
+| VENDOR | Fabric vendor code | The people who look after the sample |
+| RATE | Number, up to 2 decimals | The people who look after the sample |
+
+- A CAD can be made only for a sample whose final approval is Yes.
+- On the New CAD form several CAD tables can be entered at once for the same sample, and the
+  rows can be copied from an existing CAD of that sample ("Copy as new CAD", "Copy rows from").
+- **Assigning.** A CAD is assigned to wishlist items of the same sample, size and ratio, from
+  the CAD or from the wishlist item. An item can have several CADs; one is enough for "CAD
+  assigned". The Pending drawing tab lists wishlist items with no CAD assigned. An existing
+  CAD of the right size is not enough: it must be assigned.
+- Once assigned, a CAD keeps its size and ratio, and so does the wishlist item.
+- **Fabric pending** tab: CADs with rows that still have no fabric, for the people who look
+  after the sample.
+
+**Who.** Department CAD (a fixed department name) and authority All make and change CADs,
+assign them, and set up primary accessory lists. The fabric, vendor and rate of the rows are
+filled by the people who can add images to the sample: its designer, or department authority
+over Sample. The CAD department can see every sample, as Management can.
+
+### 2.5 Primary accessory list (built)
+
+One list per sample + size (+ ratio), shared by every wishlist item and CAD of that
+combination. Set up by the CAD department, from the CAD table or the New CAD form.
+
+| Field | Rule |
+|---|---|
+| ACCESSORY NAME | Required. From the Accessories list, or typed new |
+| QTY TYPE | Required: Quantity, Length or Dimension |
+| QTY | For one garment piece. Quantity: pieces. Length: number of pieces and inches each. Dimension: number of pieces, and length and breadth in inches |
+| SIZES | The qty can differ by size. The single sizes of the range are shown as boxes; clicking a box ends a group there, and the next group starts after it. Groups follow one another and must reach the last size. An accessory that is the same for every size has one group |
+
+The single sizes of each range (22-38 = 22, 24 ... 38) are kept in the Sizes and ratios master.
+The sampling accessory list of a sample (2.1b) is separate and unchanged.
+
+**Wishlist statuses so far:** CAD assigned, and Primary accessory list (Added or Pending).
 
 ## 3. How it is built
 
@@ -369,6 +425,11 @@ Created by `supabase/migrations/20261123113937_masters_and_sign_in.sql`.
 | `design_series` | The one design number series: starting number and last number given |
 | `size_ratios` | Sizes and ratios master: size, ratio (empty for a size without ratios), pieces in a set, active or inactive |
 | `wishlist_entries` | Wishlist: wishlist id, sample, repeat number (0 = NEW), size and ratio, quantity in pieces |
+| `cad_particulars` | CAD particulars master: the names of drawing rows |
+| `cads` | One row per CAD: CAD number, sample, size and ratio |
+| `cad_rows` | The drawing rows of each CAD, with their fabric, vendor and rate |
+| `cad_wishlist` | Which wishlist items each CAD is assigned to |
+| `primary_accessory_lines` | The lines of each primary accessory list (sample + size and ratio), with their size groups |
 | `samples` | One row per sample: sample number, creation date, designer, concept image |
 | `sample_remarks` | Remarks of a sample: typed notes, voice notes, pictures |
 | `components` | Components master: name, active or inactive |
@@ -431,6 +492,8 @@ Rules the database enforces, whatever the screens do:
 | Accessory vendors | List, add and edit: vendor name and vendor code (each code used once) | Built |
 | Sizes and ratios | List, add and edit the size and ratio combinations, with import | Built |
 | Wishlist | Tabs: Wishlist (all entries), Newly approved, Add repeat. Add to wishlist and Add repeat popups; Edit for authority All | Built |
+| CAD drawings | Tabs: CAD drawings (each CAD as a table), Pending drawing, Fabric pending, All rows. New CAD, Copy as new CAD, Edit, Assign, Fill fabric, primary accessory list | Built |
+| CAD particulars | List, add and edit the names of drawing rows | Built |
 | Components | List, add, edit and import | Built |
 | Product types | List, add, edit and import | Built |
 | Collections | List, add, edit and import | Built |
@@ -507,6 +570,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 25 Nov 2026 | CAD drawings and the primary accessory list built, with department CAD, CAD particulars master and single sizes in the Sizes and ratios master. Added by `supabase/migrations/20261125112929_cad_drawings_and_primary_accessories.sql` |
 | 25 Nov 2026 | Wishlist built: Sizes and ratios master, wishlist entries at final approval or later, Wishlist screen with Newly approved and Add repeat. Added by `supabase/migrations/20261125081337_wishlist_and_size_ratios.sql` |
 | 25 Nov 2026 | Design numbers added (Design no tab, one plain series set in Numbering) and the accessory list of a sample (Accessories tab, Accessories and Accessory vendors masters). Added by `supabase/migrations/20261125072608_design_numbers_and_sample_accessories.sql` |
 | 25 Nov 2026 | Process and Mark completed tabs changed to one row per sample, showing both pieces |

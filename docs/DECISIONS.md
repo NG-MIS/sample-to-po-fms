@@ -5,6 +5,15 @@ Newest first. A changed decision is not deleted: a new entry is added that repla
 
 | Date | Decision | Reason |
 |---|---|---|
+| 25 Nov 2026 | The CAD department can see every sample, like Management | They must see approved samples and their pictures to make CADs |
+| 25 Nov 2026 | A CAD and a wishlist item keep their size and ratio once they are assigned to each other | A CAD is drawn for one size and ratio; changing either side would break the match |
+| 25 Nov 2026 | CADs are numbered per sample: SAMPLE NO-CAD-1, -2 ... | Nihal gave no numbering; a sample can have several CADs and versions |
+| 25 Nov 2026 | Number of pieces for Length and Dimension is only on the primary accessory list; the sampling draft stays as it is | Nihal's answer |
+| 25 Nov 2026 | Accessory qty on the primary list is for one garment piece and can be split by groups of sizes that follow one another | Nihal's chain example: 22-24 6 inch, 26-30 8 inch, 32-38 10 inch |
+| 25 Nov 2026 | The fabric, vendor and rate of CAD rows are filled by the people who can add images to the sample, not by the CAD department | Nihal's answer |
+| 25 Nov 2026 | CADs and primary accessory lists are made by department CAD (a fixed name) and authority All | Nihal: "the cad department updates the cad drawing and the primary accessory" |
+| 25 Nov 2026 | Particulars of a CAD row come from the names used before, with new ones added on the spot | Nihal's answer |
+| 25 Nov 2026 | One assigned CAD is enough for a wishlist item; a drawing for every fabric is not required | Nihal's answer |
 | 25 Nov 2026 | Once a sample is in the wishlist its final approval cannot be changed from Yes | Production is planned on it |
 | 25 Nov 2026 | A wishlist entry can be corrected only by authority All and is never deleted | Same pattern as the rest of the system; Nihal did not say otherwise, so open to change |
 | 25 Nov 2026 | A quantity that is not a whole number of sets is allowed; the screen points it out | Nihal gave the quantity in pieces and set no rule that it must fill whole sets |

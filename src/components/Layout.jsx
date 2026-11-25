@@ -13,6 +13,7 @@ const MENU = [
       { to: '/samples', label: 'Samples' },
       { to: '/process-log', label: 'Process log' },
       { to: '/wishlist', label: 'Wishlist' },
+      { to: '/cad', label: 'CAD drawings' },
     ],
   },
   {
@@ -35,6 +36,7 @@ const MENU = [
       { to: '/accessories', label: 'Accessories' },
       { to: '/accessory-vendors', label: 'Accessory vendors' },
       { to: '/sizes', label: 'Sizes and ratios' },
+      { to: '/cad-particulars', label: 'CAD particulars' },
     ],
   },
 ]

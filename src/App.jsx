@@ -5,6 +5,7 @@ import SignIn, { NoAccess, SetPassword } from './pages/SignIn.jsx'
 import NumberingPage from './pages/NumberingPage.jsx'
 import ProcessLogPage from './pages/ProcessLogPage.jsx'
 import SamplesPage from './pages/SamplesPage.jsx'
+import CadPage from './pages/CadPage.jsx'
 import SizeRatiosPage from './pages/SizeRatiosPage.jsx'
 import WishlistPage from './pages/WishlistPage.jsx'
 import SimpleListPage from './pages/SimpleListPage.jsx'
@@ -85,6 +86,11 @@ export default function App() {
           }
         />
         <Route path="/wishlist" element={<WishlistPage />} />
+        <Route path="/cad" element={<CadPage />} />
+        <Route
+          path="/cad-particulars"
+          element={<SimpleListPage key="cad-particulars" table="cad_particulars" title="CAD particulars" singular="particular" />}
+        />
         <Route path="/sizes" element={<SizeRatiosPage />} />
         <Route
           path="/accessories"

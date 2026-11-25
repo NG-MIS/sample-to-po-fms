@@ -30,8 +30,27 @@ Nothing recorded yet. Add ideas here as they come up, with the date.
 
 ## The production side, as told by Nihal on 25 Nov 2026 (not built yet)
 
-Order agreed: wishlist (built 25 Nov 2026, see the Project Bible 2.3), then CAD, then fabric
-and accessory masters, then the material list for the PO.
+Order agreed: wishlist (built 25 Nov 2026, Project Bible 2.3), then CAD and the primary
+accessory list (built 25 Nov 2026, Project Bible 2.4 and 2.5), then the material lists and
+purchase orders below.
+
+**Material lists and purchase orders (told on 25 Nov 2026, next to build)**
+- Every wishlist item has four material lists: primary fabric, secondary fabric, primary
+  accessory, secondary accessory.
+- Each list has two statuses: Updated (filled and confirmed) and Ordered (every item has a PO
+  raised or is marked Not required).
+- Primary accessory: a button brings in the primary accessory list of that sample + size +
+  ratio when one exists; the person reviews it and edits if needed.
+- Fabric lists: picked from the CAD drawings assigned to the wishlist item (rows marked
+  Primary or Secondary).
+- Secondary accessory list: created by hand.
+- From a material list: raise a PO for the items required, or mark an item Not required
+  (already in-house, or not needed at all).
+- Open order: an order outside the material list, to reorder something lost or to add a new
+  item that was not on the list.
+- Order of work: primary fabric first. Raising its PO or marking it Not required puts the
+  wishlist item on three pending screens: primary accessory, secondary fabric and secondary
+  accessory. The secondary accessory pending screen will be changed later.
 
 **Wishlist**
 - A sample with final approval Yes is approved for production and goes to the wishlist.

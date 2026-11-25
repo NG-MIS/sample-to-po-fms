@@ -123,6 +123,10 @@ export async function loadSampleData(profile) {
     sampleFabricComponents,
     sampleAccessories,
     wishlistEntries,
+    cads,
+    cadRows,
+    cadWishlist,
+    primaryLines,
     entries,
     completions,
     stageImages,
@@ -139,6 +143,7 @@ export async function loadSampleData(profile) {
     accessoryVendors,
     designSeries,
     sizeRatios,
+    cadParticulars,
     processes,
     vendors,
     people,
@@ -156,6 +161,10 @@ export async function loadSampleData(profile) {
     fetchRows('sample_fabric_components', null),
     fetchRows('sample_accessories'),
     fetchRows('wishlist_entries'),
+    fetchRows('cads'),
+    fetchRows('cad_rows', 'position'),
+    fetchRows('cad_wishlist', null),
+    fetchRows('primary_accessory_lines', 'position'),
     fetchRows('sample_process_entries'),
     fetchRows('sample_piece_completions', null),
     fetchRows('sample_stage_images', null),
@@ -172,6 +181,7 @@ export async function loadSampleData(profile) {
     fetchRows('accessory_vendors'),
     fetchRows('design_series', null),
     fetchRows('size_ratios'),
+    fetchRows('cad_particulars'),
     fetchRows('processes'),
     fetchRows('vendors'),
     fetchRows('app_users'),
@@ -189,6 +199,10 @@ export async function loadSampleData(profile) {
   const componentsByFabricLine = groupBy(sampleFabricComponents, 'sample_fabric_id')
   const accessoriesBySample = groupBy(sampleAccessories, 'sample_id')
   const wishlistBySample = groupBy(wishlistEntries, 'sample_id')
+  const cadsBySample = groupBy(cads, 'sample_id')
+  const rowsByCad = groupBy(cadRows, 'cad_id')
+  const wishlistByCad = groupBy(cadWishlist, 'cad_id')
+  const primaryBySample = groupBy(primaryLines, 'sample_id')
   const entriesBySample = groupBy(entries, 'sample_id')
   const completionsBySample = groupBy(completions, 'sample_id')
   const imagesBySample = groupBy(stageImages, 'sample_id')
@@ -198,6 +212,7 @@ export async function loadSampleData(profile) {
   // DESIGNER pick-list rule: department "Sample" + role "Designer".
   const sampleDepartment = departments.find((department) => sameName(department.name, 'sample'))?.id
   const managementDepartment = departments.find((department) => sameName(department.name, 'management'))?.id
+  const cadDepartment = departments.find((department) => sameName(department.name, 'cad'))?.id
   const designerRole = roles.find((role) => sameName(role.name, 'designer'))?.id
   const designerIds = new Set(userRoles.filter((link) => link.role_id === designerRole).map((link) => link.user_id))
 
@@ -221,6 +236,16 @@ export async function loadSampleData(profile) {
       accessories: accessoriesBySample.get(sample.id) ?? [],
       // the wishlist entries of the sample: the NEW one first, then its repeats
       wishlist: [...(wishlistBySample.get(sample.id) ?? [])].sort((a, b) => a.repeat_no - b.repeat_no),
+      // the CADs of the sample, each with its drawing rows and the wishlist items it is assigned to
+      cads: [...(cadsBySample.get(sample.id) ?? [])]
+        .sort((a, b) => a.seq - b.seq)
+        .map((cad) => ({
+          ...cad,
+          rows: rowsByCad.get(cad.id) ?? [],
+          wishlist_ids: (wishlistByCad.get(cad.id) ?? []).map((link) => link.wishlist_entry_id),
+        })),
+      // the lines of its primary accessory lists, for every size (+ ratio)
+      primaryLines: primaryBySample.get(sample.id) ?? [],
       entries: entriesBySample.get(sample.id) ?? [],
       completions: keyed(completionsBySample.get(sample.id), 'piece'),
       stageImages: keyed(imagesBySample.get(sample.id), 'stage'),
@@ -238,6 +263,7 @@ export async function loadSampleData(profile) {
     accessoryVendors,
     designSeries: designSeries[0] ?? null,
     sizeRatios,
+    cadParticulars,
     processes,
     vendors,
     people,
@@ -250,6 +276,8 @@ export async function loadSampleData(profile) {
       manages: isAll || looksAfterSample,
       // May approve samples.
       management: isAll || (Boolean(managementDepartment) && profile.department_id === managementDepartment),
+      // Makes CADs, assigns them to wishlist items and sets up primary accessory lists.
+      cad: isAll || (Boolean(cadDepartment) && profile.department_id === cadDepartment),
     },
   }
 }

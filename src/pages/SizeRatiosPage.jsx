@@ -14,11 +14,14 @@ const IMPORT_FIELDS = [
   { header: 'SIZE', required: true, hint: 'For example 22-38.' },
   { header: 'RATIO', required: false, hint: 'Two numbers with a colon, for example 1:1. Leave empty for a size that is not made in ratios.' },
   { header: 'PCS IN A SET', required: true, hint: 'A whole number, 1 or more.' },
+  { header: 'SINGLE SIZES', required: true, hint: 'Every single size of the range, with commas between them, for example 22, 24, 26.' },
   { header: 'ACTIVE', required: false, hint: 'Yes or No. Empty means Yes.' },
 ]
 
 const RATIO = /^\d{1,2}:\d{1,2}$/
 const same = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase()
+// "22, 24 ,26" -> ['22', '24', '26']
+const readSizes = (text) => [...new Set((text || '').split(',').map((part) => part.trim()).filter(Boolean))]
 
 // Says why a size + ratio cannot be saved next to the rows already there, or ''.
 function clash(rows, size, ratio, ownId) {
@@ -57,11 +60,13 @@ export default function SizeRatiosPage() {
     }
     const isActive = readYesNo(cells.ACTIVE, true)
     if (isActive === null) return { error: 'ACTIVE must be Yes or No.' }
+    const sizes = readSizes(cells['SINGLE SIZES'])
+    if (sizes.length === 0) return { error: 'SINGLE SIZES is empty.' }
     memo.rows ??= []
     const problem = clash([...rows, ...memo.rows], size, ratio, null)
     if (problem) return rows.some((row) => same(row.size, size) && (row.ratio ?? '') === (ratio ?? '')) ? { skip: 'Already in the list.' } : { error: problem }
     memo.rows.push({ id: `file-${memo.rows.length}`, size, ratio })
-    return { record: { size, ratio, pieces_per_set: Number(cells['PCS IN A SET']), is_active: isActive } }
+    return { record: { size, ratio, pieces_per_set: Number(cells['PCS IN A SET']), sizes, is_active: isActive } }
   }
 
   const saveImported = async (record) => {
@@ -75,6 +80,7 @@ export default function SizeRatiosPage() {
       { key: 'size', header: 'SIZE', value: (row) => row.size },
       { key: 'ratio', header: 'RATIO', value: (row) => row.ratio ?? '' },
       { key: 'pieces', header: 'PCS IN A SET', align: 'right', value: (row) => row.pieces_per_set },
+      { key: 'sizes', header: 'SINGLE SIZES', value: (row) => row.sizes.join(', ') },
       {
         key: 'status',
         header: 'STATUS',
@@ -165,6 +171,7 @@ function SizeRatioForm({ row, rows, onClose, onSaved }) {
   const [size, setSize] = useState(row.size ?? '')
   const [ratio, setRatio] = useState(row.ratio ?? '')
   const [pieces, setPieces] = useState(row.pieces_per_set ? String(row.pieces_per_set) : '')
+  const [sizes, setSizes] = useState((row.sizes ?? []).join(', '))
   const [isActive, setIsActive] = useState(row.is_active ?? true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -173,6 +180,7 @@ function SizeRatioForm({ row, rows, onClose, onSaved }) {
     size !== (row.size ?? '') ||
     ratio !== (row.ratio ?? '') ||
     pieces !== (row.pieces_per_set ? String(row.pieces_per_set) : '') ||
+    sizes !== (row.sizes ?? []).join(', ') ||
     isActive !== (row.is_active ?? true)
 
   const save = async (event) => {
@@ -182,11 +190,13 @@ function SizeRatioForm({ row, rows, onClose, onSaved }) {
     if (!cleanSize) return setError('Size is required.')
     if (cleanRatio && !RATIO.test(cleanRatio)) return setError('Ratio must be two numbers with a colon, for example 1:1.')
     if (!/^\d+$/.test(pieces) || Number(pieces) < 1) return setError('Pcs in a set must be a whole number, 1 or more.')
+    const singleSizes = readSizes(sizes)
+    if (singleSizes.length === 0) return setError('Enter the single sizes of this range, with commas between them.')
     const problem = clash(rows, cleanSize, cleanRatio, row.id)
     if (problem) return setError(problem)
     setBusy(true)
     setError('')
-    const values = { size: cleanSize, ratio: cleanRatio, pieces_per_set: Number(pieces), is_active: isActive }
+    const values = { size: cleanSize, ratio: cleanRatio, pieces_per_set: Number(pieces), sizes: singleSizes, is_active: isActive }
     const { error: failure } = isNew
       ? await supabase.from('size_ratios').insert(values)
       : await supabase.from('size_ratios').update(values).eq('id', row.id)
@@ -235,6 +245,14 @@ function SizeRatioForm({ row, rows, onClose, onSaved }) {
             value={pieces}
             onChange={(event) => setPieces(event.target.value.replace(/\D/g, ''))}
           />
+        </Field>
+        <Field
+          label="Single sizes"
+          htmlFor="size-ratio-sizes"
+          required
+          hint="Every single size of this range, in order, with commas between them. Used to split an accessory qty by size."
+        >
+          <input id="size-ratio-sizes" className="input" value={sizes} onChange={(event) => setSizes(event.target.value)} />
         </Field>
         <Tick
           id="size-ratio-active"

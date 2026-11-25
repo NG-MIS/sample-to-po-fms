@@ -8,6 +8,7 @@ import { useAuth } from '../lib/auth.jsx'
 import { nameMap, useLoad } from '../lib/data.js'
 import { formatDate, formatDateTime, friendlyError } from '../lib/format.js'
 import { BUCKET, isApproved, latestImage, loadSampleData } from '../lib/sampleData.js'
+import { cadsOfEntry, primaryLinesFor } from '../lib/cad.js'
 import { setsText, wishlistKind } from '../lib/wishlist.js'
 import SampleDetail from './SampleDetail.jsx'
 import { WishlistCorrectDialog, WishlistDialog } from './WishlistParts.jsx'
@@ -120,6 +121,24 @@ export default function WishlistPage() {
         key: 'sets',
         header: 'SETS',
         value: (row) => setsText(row.qty, lookups.combination.get(row.size_ratio_id)?.pieces_per_set),
+      },
+      {
+        key: 'cad',
+        header: 'CAD ASSIGNED',
+        value: (row) => (cadsOfEntry(row.sample, row).length ? cadsOfEntry(row.sample, row).map((cad) => cad.cad_no) : 'Pending'),
+        render: (row) => {
+          const assigned = cadsOfEntry(row.sample, row)
+          return assigned.length ? assigned.map((cad) => cad.cad_no).join(', ') : <span className="badge badge--pending">Pending</span>
+        },
+      },
+      {
+        key: 'primary_accessory',
+        header: 'PRIMARY ACCESSORY LIST',
+        value: (row) => (primaryLinesFor(row.sample, row.size_ratio_id).length ? 'Added' : 'Pending'),
+        render: (row) => {
+          const added = primaryLinesFor(row.sample, row.size_ratio_id).length > 0
+          return <span className={`badge badge--${added ? 'completed' : 'pending'}`}>{added ? 'Added' : 'Pending'}</span>
+        },
       },
       ...contextColumns(lookups, (row) => row.sample),
       { key: 'added_by', header: 'ADDED BY', value: (row) => lookups.person.get(row.created_by) ?? '' },
