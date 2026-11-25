@@ -96,6 +96,40 @@ The same list for accessories comes next (see FUTURE).
 
 The status shows in the Fabrics tab, in All samples and on the opened sample.
 
+### 2.1b Accessory list of a sample (built)
+
+Every sample also has its own accessory list, the draft made during sampling. Any number of
+lines, entered on the New sample form or later. Nothing here is needed to create a sample.
+
+| Field | Rule |
+|---|---|
+| ACCESSORY NAME | Picked from the Accessories list (the names used before), or typed new and added to the list when the line is saved. The only field a line must have |
+| QTY TYPE | Optional: Quantity, Length or Dimension |
+| QTY | Depends on the qty type. Quantity: a whole number of pieces (pcs). Length: a number in inches. Dimension: length x breadth, two numbers in inches. A qty needs its qty type first |
+| VENDOR CODE | Optional. Picked from the Accessory vendors master (its own list, separate from fabric vendors). Samples show the vendor's code, never the name |
+| RATE | Optional. A number, 0 or more, up to 2 decimals |
+| REMARKS | Optional text, up to 500 characters |
+
+Changed after creation from the Accessories tab or the opened sample, by the same people as
+the fabric list; not on a closed sample. **Accessory status:** Pending while the sample has
+no accessory line, Added once it has one. Unlike fabric, an accessory line is not tied to
+components.
+
+### 2.1c Design number (built)
+
+A sample approved for production (final approval Yes) is given a design number. From then on
+production refers to the design number (and lot number), and the sample number much less.
+
+- One plain running series for all samples: no prefix. Its starting number is set once in
+  Masters, under Numbering, by a person with authority All, and is locked after the first
+  design number is given.
+- The Design no tab of the Samples screen lists the samples with final approval Yes and no
+  design number yet. Clicking Assign design number (after a confirmation) gives the sample the
+  next number. Nothing is typed.
+- A sample gets one design number, and it cannot be changed or taken back.
+- Who: the same people who update the sample's images.
+- Once a sample has a design number, its final approval can no longer be changed from Yes.
+
 ### 2.2 After creation: pieces, process log, stage images, approval (built)
 
 These run side by side after a sample is created. None waits for another.
@@ -148,6 +182,8 @@ person with authority All changing that No.
 | Send and receive process entries | The sample's designer, or Department(s) authority that includes Sample |
 | Upload stage images | Same as above |
 | Add or change the fabric list | Same as above |
+| Add or change the accessory list | Same as above |
+| Give a sample its design number | Same as above, and only after the final approval is Yes |
 | Mark a piece completed | Department(s) authority that includes Sample, and only when the piece is not At vendor |
 | Give initial or final approval | Anyone in department Management |
 | Change an approval, correct a process entry, reopen a completed piece | Authority All only |
@@ -169,7 +205,9 @@ action is done.
 | Mark completed | One row per sample with a piece that is Pending (nothing out at a vendor, not completed), with the status of both pieces | Complete 1st, Complete 2nd (only for a Pending piece) | Sample department authority |
 | Images | Samples still missing a 1st sample, 2nd sample or photoshoot image | Add (per missing image) | Same as Process |
 | Fabrics | Every open sample the person looks after, one row per sample, with its fabric status, its fabrics, the components still without fabric and the vendor codes. The number on the tab counts samples that are not Completed | Add fabrics, Change fabrics | Same as Process |
+| Accessories | Every open sample the person looks after, one row per sample, with its accessory status (Pending or Added), its accessories and the vendor codes. The number on the tab counts samples that are Pending | Add accessories, Change accessories | Same as Process |
 | Approval | Samples with no final approval yet that are not closed | Initial approval (while it is not Yes), Final approval | Department Management |
+| Design no | Samples with final approval Yes and no design number yet | Assign design number | Same as Process |
 
 Sending and receiving share the Process tab, and the initial and final approval share the
 Approval tab. Closed samples leave the Mark completed, Images and Approval tabs. A work tab lists only items the signed-in person may act on, and a tab the person can
@@ -290,6 +328,10 @@ Created by `supabase/migrations/20261123113937_masters_and_sign_in.sql`.
 | `fabrics` | Fabrics list: the fabric names, active or inactive |
 | `sample_fabrics` | The fabric lines of each sample: fabric, vendor, rate |
 | `sample_fabric_components` | Which components each fabric line is for |
+| `accessory_vendors` | Accessory vendors master: vendor name, vendor code, active or inactive |
+| `accessories` | Accessories list: the accessory names, active or inactive |
+| `sample_accessories` | The accessory lines of each sample: accessory, qty type, qty, breadth, vendor, rate, remarks |
+| `design_series` | The one design number series: starting number and last number given |
 | `samples` | One row per sample: sample number, creation date, designer, concept image |
 | `sample_remarks` | Remarks of a sample: typed notes, voice notes, pictures |
 | `components` | Components master: name, active or inactive |
@@ -343,11 +385,13 @@ Rules the database enforces, whatever the screens do:
 | Departments | List, add and edit | Built |
 | Designations | List, add and edit | Built |
 | Roles | List, add and edit | Built |
-| Numbering | List, add and edit series (series name, prefix and starting number) | Built |
+| Numbering | List, add and edit series (series name, prefix and starting number). Also shows the design number series, where authority All sets its starting number | Built |
 | References | List, add and edit, each with its picture (required when added by hand; an imported reference gets its picture afterwards) | Built |
 | Tags | List, add and edit. Shown with a # in front | Built |
 | Fabrics | List, add and edit the fabric names | Built |
 | Fabric vendors | List, add and edit: vendor name and vendor code (each code used once) | Built |
+| Accessories | List, add and edit the accessory names | Built |
+| Accessory vendors | List, add and edit: vendor name and vendor code (each code used once) | Built |
 | Components | List, add, edit and import | Built |
 | Product types | List, add, edit and import | Built |
 | Collections | List, add, edit and import | Built |
@@ -356,7 +400,7 @@ Rules the database enforces, whatever the screens do:
 | Processes | List, add, edit and import | Built |
 | Vendors | List, add, edit and import | Built |
 
-The simple lists (departments, designations, roles, references, tags, fabrics, fabric vendors, components, product types, collections, processes, vendors) share one screen file (`SimpleListPage`). The starter page from the
+The simple lists (departments, designations, roles, references, tags, fabrics, fabric vendors, accessories, accessory vendors, components, product types, collections, processes, vendors) share one screen file (`SimpleListPage`). The starter page from the
 set-up has been replaced by these screens.
 
 ## 9. Reusable building blocks
@@ -424,6 +468,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 25 Nov 2026 | Design numbers added (Design no tab, one plain series set in Numbering) and the accessory list of a sample (Accessories tab, Accessories and Accessory vendors masters). Added by `supabase/migrations/20261125072608_design_numbers_and_sample_accessories.sql` |
 | 25 Nov 2026 | Process and Mark completed tabs changed to one row per sample, showing both pieces |
 | 25 Nov 2026 | Fabrics tab changed to one row per sample, with a fabric status: Pending, Incomplete or Completed |
 | 24 Nov 2026 | Fabric list added to samples (fabric name, for components, vendor code, rate), with a Fabrics tab, a Fabrics master and a Fabric vendors master. Added by `supabase/migrations/20261124131621_sample_fabrics_and_fabric_vendors.sql` |

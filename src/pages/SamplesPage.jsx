@@ -23,6 +23,7 @@ import {
   FABRIC_STATUS_LABEL,
   PIECE_STATUS_LABEL,
   fabricStatus,
+  nextDesignNumber,
   callSampleAction,
   isClosed,
   latestImage,
@@ -31,12 +32,31 @@ import {
   sampleReferences,
   sampleTags,
 } from '../lib/sampleData.js'
+import { accessoryPayload, checkAccessoryLines, toAccessoryLines } from '../lib/sampleAccessories.js'
 import { checkFabricLines, fabricPayload, toFabricLines } from '../lib/sampleFabrics.js'
-import { approvalRows, completeRows, fabricRows, imageRows, processRows } from '../lib/sampleTabs.js'
+import {
+  accessoryRows,
+  approvalRows,
+  completeRows,
+  designRows,
+  fabricRows,
+  imageRows,
+  processRows,
+} from '../lib/sampleTabs.js'
 import { supabase } from '../lib/supabase.js'
 import SampleDetail, { ApprovalDialog, EntryDialog } from './SampleDetail.jsx'
+import { AccessoryDialog, AccessoryLinesEditor } from './SampleAccessories.jsx'
 import { FabricDialog, FabricLinesEditor } from './SampleFabrics.jsx'
-import { ApprovalTab, CompleteTab, FabricTab, ImagesTab, ProcessTab, ReceiveChooser } from './SampleWorkTabs.jsx'
+import {
+  AccessoryTab,
+  ApprovalTab,
+  CompleteTab,
+  DesignTab,
+  FabricTab,
+  ImagesTab,
+  ProcessTab,
+  ReceiveChooser,
+} from './SampleWorkTabs.jsx'
 
 // The references of a sample, each with its picture from Masters.
 function ReferenceList({ references, size, stacked = false }) {
@@ -103,6 +123,8 @@ export default function SamplesPage() {
       fabric: nameMap(data?.fabrics),
       // A fabric vendor is shown by its code.
       fabricVendor: new Map((data?.fabricVendors ?? []).map((vendor) => [vendor.id, vendor.code])),
+      accessory: nameMap(data?.accessories),
+      accessoryVendor: new Map((data?.accessoryVendors ?? []).map((vendor) => [vendor.id, vendor.code])),
     }),
     [data],
   )
@@ -116,9 +138,11 @@ export default function SamplesPage() {
             complete: completeRows(data),
             images: imageRows(data, profile),
             fabrics: fabricRows(data, profile),
+            accessories: accessoryRows(data, profile),
             approval: approvalRows(data),
+            design: designRows(data, profile),
           }
-        : { process: [], complete: [], images: [], fabrics: [], approval: [] },
+        : { process: [], complete: [], images: [], fabrics: [], accessories: [], approval: [], design: [] },
     [data, profile],
   )
   const worksOnSamples = Boolean(data?.access.manages || data?.designerIds.has(profile.id))
@@ -132,7 +156,13 @@ export default function SamplesPage() {
       label: 'Fabrics',
       count: waiting.fabrics.filter((row) => row.status !== 'completed').length,
     },
+    (worksOnSamples || waiting.accessories.length > 0) && {
+      key: 'accessories',
+      label: 'Accessories',
+      count: waiting.accessories.filter((row) => row.status === 'pending').length,
+    },
     data?.access.management && { key: 'approval', label: 'Approval', count: waiting.approval.length },
+    (worksOnSamples || waiting.design.length > 0) && { key: 'design', label: 'Design no', count: waiting.design.length },
   ].filter(Boolean)
   const wanted = params.get('tab') ?? 'all'
   const tab = tabs.some((item) => item.key === wanted) ? wanted : 'all'
@@ -150,6 +180,8 @@ export default function SamplesPage() {
   )
   const completeFrom = useCallback((row) => setWork({ type: 'complete', sample: row.sample, piece: row.piece }), [])
   const fabricsFrom = useCallback((sample) => setWork({ type: 'fabrics', sample }), [])
+  const accessoriesFrom = useCallback((sample) => setWork({ type: 'accessories', sample }), [])
+  const designFrom = useCallback((sample) => setWork({ type: 'design', sample }), [])
   const approveFrom = useCallback((sample, stage) => setWork({ type: 'approval', sample, stage }), [])
 
   const workSaved = useCallback(async () => {
@@ -164,6 +196,19 @@ export default function SamplesPage() {
     try {
       await callSampleAction('complete_sample_piece', { p_sample_id: sample.id, p_piece: piece })
       setWorkError('')
+      await reload()
+    } catch (failure) {
+      setWorkError(friendlyError(failure))
+    }
+  }
+
+  const confirmDesign = async () => {
+    const { sample } = work
+    setWork(null)
+    try {
+      const number = await callSampleAction('assign_design_number', { p_sample_id: sample.id })
+      setWorkError('')
+      setNotice(`Design number ${number} given to ${sample.sample_no}.`)
       await reload()
     } catch (failure) {
       setWorkError(friendlyError(failure))
@@ -255,6 +300,7 @@ export default function SamplesPage() {
           <span className={`badge badge--${isClosed(row) ? 'no' : 'pending'}`}>{isClosed(row) ? 'Closed' : 'Open'}</span>
         ),
       },
+      { key: 'design_no', header: 'DESIGN NO', value: (row) => row.design_no ?? '' },
       {
         key: 'reference',
         header: 'REFERENCE',
@@ -281,6 +327,12 @@ export default function SamplesPage() {
             {FABRIC_STATUS_LABEL[fabricStatus(row)]}
           </span>
         ),
+      },
+      {
+        key: 'accessories',
+        header: 'ACCESSORIES',
+        value: (row) =>
+          [...new Set(row.accessories.map((line) => lookups.accessory.get(line.accessory_id)).filter(Boolean))].sort(),
       },
       {
         key: 'remarks',
@@ -359,6 +411,19 @@ export default function SamplesPage() {
       {tab === 'fabrics' && (
         <FabricTab rows={waiting.fabrics} lookups={lookups} loading={loading} onOpen={openSample} onEdit={fabricsFrom} />
       )}
+      {tab === 'accessories' && (
+        <AccessoryTab rows={waiting.accessories} lookups={lookups} loading={loading} onOpen={openSample} onEdit={accessoriesFrom} />
+      )}
+      {tab === 'design' && (
+        <DesignTab
+          rows={waiting.design}
+          lookups={lookups}
+          loading={loading}
+          nextNumber={nextDesignNumber(data?.designSeries)}
+          onOpen={openSample}
+          onAssign={designFrom}
+        />
+      )}
       {tab === 'approval' && (
         <ApprovalTab rows={waiting.approval} lookups={lookups} loading={loading} onOpen={openSample} onApprove={approveFrom} />
       )}
@@ -403,6 +468,23 @@ export default function SamplesPage() {
       )}
       {work?.type === 'fabrics' && (
         <FabricDialog sample={work.sample} data={data} onClose={() => setWork(null)} onSaved={workSaved} />
+      )}
+      {work?.type === 'accessories' && (
+        <AccessoryDialog sample={work.sample} data={data} onClose={() => setWork(null)} onSaved={workSaved} />
+      )}
+      {work?.type === 'design' && (
+        <ConfirmDialog
+          title={`Give ${work.sample.sample_no} the next design number?`}
+          message={
+            nextDesignNumber(data?.designSeries)
+              ? `It will get design number ${nextDesignNumber(data.designSeries)}. A design number cannot be changed or taken back afterwards.`
+              : 'The starting design number has not been set yet. A person with authority All sets it in Masters, under Numbering.'
+          }
+          confirmLabel="Assign design number"
+          cancelLabel="Not now"
+          onCancel={() => setWork(null)}
+          onConfirm={confirmDesign}
+        />
       )}
       {work?.type === 'approval' && (
         <ApprovalDialog
@@ -480,6 +562,8 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
   const fabricsLocked = !isNew && isClosed(sample)
   const initialFabrics = useMemo(() => toFabricLines(sample), [sample])
   const [fabricLines, setFabricLines] = useState(initialFabrics)
+  const initialAccessories = useMemo(() => toAccessoryLines(sample), [sample])
+  const [accessoryLines, setAccessoryLines] = useState(initialAccessories)
   const [remarks, setRemarks] = useState(initialRemarks)
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)
@@ -491,6 +575,7 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
     conceptFile !== null ||
     newTags.length > 0 ||
     JSON.stringify(fabricPayload(fabricLines)) !== JSON.stringify(fabricPayload(initialFabrics)) ||
+    JSON.stringify(accessoryPayload(accessoryLines)) !== JSON.stringify(accessoryPayload(initialAccessories)) ||
     draft.trim() !== '' ||
     JSON.stringify(form) !== JSON.stringify(initial) ||
     remarks.length !== initialRemarks.length ||
@@ -577,6 +662,8 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
     if (!conceptFile && !form.concept_image_path) return setError('Add the concept image.')
     const fabricProblem = fabricsLocked ? '' : checkFabricLines(fabricLines)
     if (fabricProblem) return setError(fabricProblem)
+    const accessoryProblem = fabricsLocked ? '' : checkAccessoryLines(accessoryLines)
+    if (accessoryProblem) return setError(accessoryProblem)
 
     setBusy(true)
     setError('')
@@ -592,7 +679,7 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
         else payload.push({ kind: remark.kind, file_path: await uploadFile(BUCKET, remark.file, 'remarks') })
       }
 
-      const { data: sampleNo, error: failure } = await supabase.rpc('save_sample_with_fabrics', {
+      const { data: sampleNo, error: failure } = await supabase.rpc('save_sample_with_materials', {
         p_id: sample.id ?? null,
         p_series_id: form.series_id,
         p_creation_date: form.creation_date,
@@ -607,6 +694,7 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
         p_tag_ids: form.tag_ids,
         p_new_tags: newTags,
         p_fabrics: fabricsLocked ? null : fabricPayload(fabricLines),
+        p_accessories: fabricsLocked ? null : accessoryPayload(accessoryLines),
       })
       if (failure) throw failure
       await onSaved(sampleNo)
@@ -809,6 +897,21 @@ function SampleForm({ sample, lists, onClose, onSaved }) {
               componentOptions={chosenComponentOptions}
               saved={sample.fabrics}
               idPrefix="sample-fabric"
+            />
+          </div>
+        )}
+
+        {!fabricsLocked && (
+          <div className="form-wide">
+            <h3 className="section-title section-title--next">
+              Accessories <span className="hint">optional, can also be added later from the Accessories tab</span>
+            </h3>
+            <AccessoryLinesEditor
+              lines={accessoryLines}
+              onChange={setAccessoryLines}
+              lists={lists}
+              saved={sample.accessories}
+              idPrefix="sample-accessory"
             />
           </div>
         )}

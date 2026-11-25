@@ -11,6 +11,8 @@ import UsersPage from './pages/UsersPage.jsx'
 // A fabric vendor is a name plus a code; the sample screens show the code.
 const VENDOR_CODE = { key: 'code', label: 'Vendor code', header: 'VENDOR CODE', hint: 'Shown on samples in place of the vendor name.' }
 
+const ACCESSORY_VENDOR_CODE = { ...VENDOR_CODE }
+
 // Reference pictures live with the other sample pictures.
 const REFERENCE_PICTURE = { bucket: 'samples', folder: 'reference' }
 
@@ -77,6 +79,24 @@ export default function App() {
               nameLabel="Vendor name"
               nameHeader="VENDOR NAME"
               extra={VENDOR_CODE}
+            />
+          }
+        />
+        <Route
+          path="/accessories"
+          element={<SimpleListPage key="accessories" table="accessories" title="Accessories" singular="accessory" />}
+        />
+        <Route
+          path="/accessory-vendors"
+          element={
+            <SimpleListPage
+              key="accessory-vendors"
+              table="accessory_vendors"
+              title="Accessory vendors"
+              singular="accessory vendor"
+              nameLabel="Vendor name"
+              nameHeader="VENDOR NAME"
+              extra={ACCESSORY_VENDOR_CODE}
             />
           }
         />

@@ -5,6 +5,13 @@ Newest first. A changed decision is not deleted: a new entry is added that repla
 
 | Date | Decision | Reason |
 |---|---|---|
+| 25 Nov 2026 | Assigning a design number asks for confirmation first | The number is used up and cannot be taken back; Nihal asked only that a click gives the next number, so this is open to change |
+| 25 Nov 2026 | A design number is given by the same people who update a sample's images | Nihal described the screen as "like image update"; who exactly was not stated, so this is open to change |
+| 25 Nov 2026 | Once a sample has a design number its final approval cannot be changed from Yes | Production refers to the design number, so the approval behind it must stand |
+| 25 Nov 2026 | Design numbers are plain numbers from one series, with the starting number set by authority All in Numbering | Nihal: "same series for now", "keep it plain"; he did not give a starting number |
+| 25 Nov 2026 | Dimension is entered as length and breadth in inches | Nihal gave inches for Length and "length * breadth" for Dimension; the unit for Dimension is assumed |
+| 25 Nov 2026 | Accessory status is Pending (no line) or Added | Accessory lines are not tied to components, so there is no "all components covered" rule as for fabric |
+| 25 Nov 2026 | Accessory vendors are their own master, separate from fabric vendors | Nihal's answer |
 | 25 Nov 2026 | Every work tab of the Samples screen shows one row per sample. Process and Mark completed show both pieces on that row; the piece is chosen when sending, and by its own button when completing | Nihal's instruction; replaces the one-row-per-piece layout of 24 Nov |
 | 24 Nov 2026 | The fabric list of a closed sample cannot be changed, also not by authority All through the edit form | "Everything stops" on a closed sample |
 | 25 Nov 2026 | Fabrics tab shows one row per sample with a status: Pending (no fabric), Incomplete (a component has no fabric), Completed (every component has one). Completed samples stay listed; the tab's number counts those not Completed. Replaces the one-row-per-fabric layout of 24 Nov | Nihal's instruction |

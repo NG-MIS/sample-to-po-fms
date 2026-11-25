@@ -31,6 +31,8 @@ const MENU = [
       { to: '/tags', label: 'Tags' },
       { to: '/fabrics', label: 'Fabrics' },
       { to: '/fabric-vendors', label: 'Fabric vendors' },
+      { to: '/accessories', label: 'Accessories' },
+      { to: '/accessory-vendors', label: 'Accessory vendors' },
     ],
   },
 ]

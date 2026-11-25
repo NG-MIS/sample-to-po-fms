@@ -17,6 +17,19 @@ export const FABRIC_STATUS_LABEL = { pending: 'Pending', incomplete: 'Incomplete
 // The colour of each fabric status badge.
 export const FABRIC_STATUS_BADGE = { pending: 'pending', incomplete: 'maybe', completed: 'completed' }
 
+export const ACCESSORY_STATUS_LABEL = { pending: 'Pending', added: 'Added' }
+export const ACCESSORY_STATUS_BADGE = { pending: 'pending', added: 'completed' }
+// Accessory status of a sample: pending while it has no accessory line.
+export const accessoryStatus = (sample) => (sample.accessories.length === 0 ? 'pending' : 'added')
+
+// Approved for production: the final approval is Yes.
+export const isApproved = (sample) => sample.approvals.final?.decision === 'yes'
+
+// The next design number that would be given, or null while the starting
+// number has not been set in Masters.
+export const nextDesignNumber = (series) =>
+  series?.start_number ? (series.last_number ?? series.start_number - 1) + 1 : null
+
 // The components of a sample that no fabric line is for yet.
 export const componentsWithoutFabric = (sample) => {
   const covered = new Set(sample.fabrics.flatMap((line) => line.component_ids))
@@ -108,6 +121,7 @@ export async function loadSampleData(profile) {
     sampleTags,
     sampleFabrics,
     sampleFabricComponents,
+    sampleAccessories,
     entries,
     completions,
     stageImages,
@@ -120,6 +134,9 @@ export async function loadSampleData(profile) {
     tags,
     fabrics,
     fabricVendors,
+    accessories,
+    accessoryVendors,
+    designSeries,
     processes,
     vendors,
     people,
@@ -135,6 +152,7 @@ export async function loadSampleData(profile) {
     fetchRows('sample_tags', null),
     fetchRows('sample_fabrics'),
     fetchRows('sample_fabric_components', null),
+    fetchRows('sample_accessories'),
     fetchRows('sample_process_entries'),
     fetchRows('sample_piece_completions', null),
     fetchRows('sample_stage_images', null),
@@ -147,6 +165,9 @@ export async function loadSampleData(profile) {
     fetchRows('tags'),
     fetchRows('fabrics'),
     fetchRows('fabric_vendors'),
+    fetchRows('accessories'),
+    fetchRows('accessory_vendors'),
+    fetchRows('design_series', null),
     fetchRows('processes'),
     fetchRows('vendors'),
     fetchRows('app_users'),
@@ -162,6 +183,7 @@ export async function loadSampleData(profile) {
   const tagsBySample = groupBy(sampleTags, 'sample_id')
   const fabricsBySample = groupBy(sampleFabrics, 'sample_id')
   const componentsByFabricLine = groupBy(sampleFabricComponents, 'sample_fabric_id')
+  const accessoriesBySample = groupBy(sampleAccessories, 'sample_id')
   const entriesBySample = groupBy(entries, 'sample_id')
   const completionsBySample = groupBy(completions, 'sample_id')
   const imagesBySample = groupBy(stageImages, 'sample_id')
@@ -191,6 +213,7 @@ export async function loadSampleData(profile) {
         ...line,
         component_ids: (componentsByFabricLine.get(line.id) ?? []).map((link) => link.component_id),
       })),
+      accessories: accessoriesBySample.get(sample.id) ?? [],
       entries: entriesBySample.get(sample.id) ?? [],
       completions: keyed(completionsBySample.get(sample.id), 'piece'),
       stageImages: keyed(imagesBySample.get(sample.id), 'stage'),
@@ -204,6 +227,9 @@ export async function loadSampleData(profile) {
     tags,
     fabrics,
     fabricVendors,
+    accessories,
+    accessoryVendors,
+    designSeries: designSeries[0] ?? null,
     processes,
     vendors,
     people,
@@ -244,6 +270,7 @@ export function canWorkOn(sample, data, profile) {
 
 // Runs one of the sample database routines; a refusal comes back as an error.
 export async function callSampleAction(name, args) {
-  const { error } = await supabase.rpc(name, args)
+  const { data, error } = await supabase.rpc(name, args)
   if (error) throw error
+  return data
 }

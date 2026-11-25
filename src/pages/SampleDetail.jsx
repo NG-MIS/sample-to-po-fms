@@ -5,6 +5,7 @@ import ImageEditor from '../components/ImageEditor.jsx'
 import Modal, { ConfirmDialog } from '../components/Modal.jsx'
 import PickList from '../components/PickList.jsx'
 import { RemarksView } from '../components/Remarks.jsx'
+import { AccessoryDialog, AccessoryTable } from './SampleAccessories.jsx'
 import { FabricDialog, FabricTable } from './SampleFabrics.jsx'
 import { Field } from '../components/Field.jsx'
 import { useAuth } from '../lib/auth.jsx'
@@ -24,8 +25,11 @@ import {
   daysOut,
   isClosed,
   latestImage,
+  ACCESSORY_STATUS_BADGE,
+  ACCESSORY_STATUS_LABEL,
   FABRIC_STATUS_BADGE,
   FABRIC_STATUS_LABEL,
+  accessoryStatus,
   fabricStatus,
   pieceStatus,
   sampleReferences,
@@ -62,6 +66,8 @@ export default function SampleDetail({ sample, data, onChanged, onEdit, onClose 
       collection: nameMap(data.collections),
       fabric: nameMap(data.fabrics),
       fabricVendor: new Map(data.fabricVendors.map((vendor) => [vendor.id, vendor.code])),
+      accessory: nameMap(data.accessories),
+      accessoryVendor: new Map(data.accessoryVendors.map((vendor) => [vendor.id, vendor.code])),
     }),
     [data],
   )
@@ -177,6 +183,7 @@ export default function SampleDetail({ sample, data, onChanged, onEdit, onClose 
       <h3 className="section-title">Details</h3>
       <dl className="details details--three">
         <Detail label="Sample no">{sample.sample_no}</Detail>
+        <Detail label="Design no">{sample.design_no}</Detail>
         <Detail label="Creation date">{formatDate(sample.creation_date)}</Detail>
         <Detail label="Designer">{names.person.get(sample.designer_id)}</Detail>
         <Detail label="Components">{componentNames.join(', ')}</Detail>
@@ -250,6 +257,21 @@ export default function SampleDetail({ sample, data, onChanged, onEdit, onClose 
         )}
       </h3>
       <FabricTable sample={sample} lookups={names} />
+
+      <h3 className="section-title section-title--next section-title--action">
+        <span>
+          Accessories{' '}
+          <span className={`badge badge--${ACCESSORY_STATUS_BADGE[accessoryStatus(sample)]}`}>
+            {ACCESSORY_STATUS_LABEL[accessoryStatus(sample)]}
+          </span>
+        </span>
+        {canWork && (
+          <button type="button" className="btn btn--small" onClick={() => setDialog({ type: 'accessories' })}>
+            {sample.accessories.length ? 'Change accessories' : 'Add accessories'}
+          </button>
+        )}
+      </h3>
+      <AccessoryTable sample={sample} lookups={names} />
 
       <h3 className="section-title section-title--next">Pieces and process log</h3>
       <div className="piece-grid">
@@ -390,6 +412,9 @@ export default function SampleDetail({ sample, data, onChanged, onEdit, onClose 
       )}
       {dialog?.type === 'correct' && (
         <EntryDialog mode="correct" sample={sample} data={data} entry={dialog.entry} pieces={PIECES} onClose={() => setDialog(null)} onSaved={saved} />
+      )}
+      {dialog?.type === 'accessories' && (
+        <AccessoryDialog sample={sample} data={data} onClose={() => setDialog(null)} onSaved={saved} />
       )}
       {dialog?.type === 'fabrics' && (
         <FabricDialog sample={sample} data={data} onClose={() => setDialog(null)} onSaved={saved} />

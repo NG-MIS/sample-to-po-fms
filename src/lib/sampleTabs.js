@@ -1,9 +1,11 @@
 import {
   PIECES,
   STAGES,
+  accessoryStatus,
   canWorkOn,
   componentsWithoutFabric,
   fabricStatus,
+  isApproved,
   isClosed,
   pieceStatus,
   stageImagePath,
@@ -81,6 +83,21 @@ export function fabricRows(data, profile) {
       status: fabricStatus(sample),
       missing: componentsWithoutFabric(sample),
     }))
+}
+
+// Accessories: every open sample the person may work on, one row per sample.
+export function accessoryRows(data, profile) {
+  return data.samples
+    .filter((sample) => canWorkOn(sample, data, profile) && !isClosed(sample))
+    .map((sample) => ({ id: sample.id, sample, status: accessoryStatus(sample) }))
+}
+
+// Design number: samples approved for production (final approval Yes) that
+// have no design number yet, among the samples the person may work on.
+export function designRows(data, profile) {
+  return data.samples.filter(
+    (sample) => canWorkOn(sample, data, profile) && isApproved(sample) && !sample.design_no,
+  )
 }
 
 // Approval: samples that have no final approval yet and are not closed.

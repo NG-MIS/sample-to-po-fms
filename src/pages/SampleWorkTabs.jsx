@@ -5,6 +5,8 @@ import Modal from '../components/Modal.jsx'
 import { formatDate } from '../lib/format.js'
 import {
   BUCKET,
+  ACCESSORY_STATUS_BADGE,
+  ACCESSORY_STATUS_LABEL,
   DECISION_LABEL,
   FABRIC_STATUS_BADGE,
   FABRIC_STATUS_LABEL,
@@ -353,6 +355,121 @@ export function FabricTab({ rows, lookups, loading, onOpen, onEdit }) {
         rows={rows}
         loading={loading}
         emptyText="There is no open sample to add fabrics to."
+        searchPlaceholder="Search samples…"
+      />
+    </>
+  )
+}
+
+export function AccessoryTab({ rows, lookups, loading, onOpen, onEdit }) {
+  const columns = useMemo(
+    () => [
+      ...sampleColumns(lookups, onOpen, (row) => row.sample),
+      {
+        key: 'accessory_status',
+        header: 'ACCESSORY STATUS',
+        value: (row) => ACCESSORY_STATUS_LABEL[row.status],
+        render: (row) => (
+          <span className={`badge badge--${ACCESSORY_STATUS_BADGE[row.status]}`}>
+            {ACCESSORY_STATUS_LABEL[row.status]}
+          </span>
+        ),
+      },
+      {
+        key: 'accessories',
+        header: 'ACCESSORIES',
+        value: (row) => uniqueSorted(row.sample.accessories.map((line) => lookups.accessory.get(line.accessory_id))),
+      },
+      {
+        key: 'vendor_codes',
+        header: 'VENDOR CODES',
+        value: (row) => uniqueSorted(row.sample.accessories.map((line) => lookups.accessoryVendor.get(line.vendor_id))),
+      },
+      ...contextColumns(lookups, (row) => row.sample),
+      {
+        key: 'actions',
+        header: '',
+        align: 'right',
+        render: (row) => (
+          <button
+            type="button"
+            className={`btn btn--small ${row.status === 'pending' ? 'btn--primary' : ''}`}
+            onClick={() => onEdit(row.sample)}
+          >
+            {row.status === 'pending' ? 'Add accessories' : 'Change accessories'}
+          </button>
+        ),
+      },
+    ],
+    [lookups, onOpen, onEdit],
+  )
+
+  return (
+    <>
+      <p className="tab-note">
+        One row per open sample you look after. Pending: no accessory yet. Added: it has an accessory list. The number
+        on the tab counts the samples that are Pending.
+      </p>
+      <DataTable
+        tableId="samples-accessory-status"
+        title="Sample accessories"
+        columns={columns}
+        rows={rows}
+        loading={loading}
+        emptyText="There is no open sample to add accessories to."
+        searchPlaceholder="Search samples…"
+      />
+    </>
+  )
+}
+
+// ---------- Design number tab ----------
+
+export function DesignTab({ rows, lookups, loading, nextNumber, onOpen, onAssign }) {
+  const columns = useMemo(
+    () => [
+      ...sampleColumns(lookups, onOpen, (row) => row),
+      {
+        key: 'approved_on',
+        header: 'FINAL APPROVAL ON',
+        value: (row) => formatDate(row.approvals.final?.decided_at?.slice(0, 10)),
+        sortValue: (row) => row.approvals.final?.decided_at ?? '',
+      },
+      {
+        key: 'approved_by',
+        header: 'APPROVED BY',
+        value: (row) => lookups.person.get(row.approvals.final?.decided_by) ?? '',
+      },
+      ...contextColumns(lookups, (row) => row),
+      {
+        key: 'actions',
+        header: '',
+        align: 'right',
+        render: (row) => (
+          <button type="button" className="btn btn--small btn--primary" onClick={() => onAssign(row)}>
+            Assign design number
+          </button>
+        ),
+      },
+    ],
+    [lookups, onOpen, onAssign],
+  )
+
+  return (
+    <>
+      <p className="tab-note">
+        Samples with final approval Yes that have no design number yet.{' '}
+        {nextNumber
+          ? `The next design number is ${nextNumber}.`
+          : 'The starting design number has not been set yet: a person with authority All sets it in Masters, under Numbering.'}
+      </p>
+      <DataTable
+        tableId="samples-design-number"
+        title="Samples waiting for a design number"
+        columns={columns}
+        rows={rows}
+        loading={loading}
+        emptyText="No sample is waiting for a design number."
         searchPlaceholder="Search samples…"
       />
     </>

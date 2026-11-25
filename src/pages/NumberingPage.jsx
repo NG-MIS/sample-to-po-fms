@@ -22,8 +22,12 @@ const IMPORT_FIELDS = [
 export default function NumberingPage() {
   const { isAdmin } = useAuth()
   const { data, loading, error, reload } = useLoad(async () => {
-    const [rows, people] = await Promise.all([fetchRows('sample_series'), fetchRows('app_users')])
-    return { rows, people: nameMap(people) }
+    const [rows, people, design] = await Promise.all([
+      fetchRows('sample_series'),
+      fetchRows('app_users'),
+      fetchRows('design_series', null),
+    ])
+    return { rows, people: nameMap(people), design: design[0] ?? null }
   })
   const [editing, setEditing] = useState(null)
 
@@ -137,6 +141,7 @@ export default function NumberingPage() {
           )
         }
       />
+      {data && <DesignNumbers series={data.design} isAdmin={isAdmin} onSaved={reload} />}
       {editing && (
         <SeriesForm
           row={editing}
@@ -148,6 +153,74 @@ export default function NumberingPage() {
         />
       )}
     </>
+  )
+}
+
+// Design numbers: one plain running series for all samples. A sample gets
+// the next number from the Design no tab, after its final approval is Yes.
+function DesignNumbers({ series, isAdmin, onSaved }) {
+  const used = series?.last_number !== null && series?.last_number !== undefined
+  const [start, setStart] = useState(series?.start_number ? String(series.start_number) : '')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const next = series?.start_number ? (series.last_number ?? series.start_number - 1) + 1 : null
+
+  const save = async (event) => {
+    event.preventDefault()
+    const number = Number(start)
+    if (!/^\d{1,12}$/.test(start) || number < 1) return setError('Starting number must be a whole number, 1 or more.')
+    setBusy(true)
+    setError('')
+    const { error: failure } = await supabase.from('design_series').update({ start_number: number }).eq('id', true)
+    setBusy(false)
+    if (failure) setError(friendlyError(failure))
+    else onSaved()
+  }
+
+  return (
+    <section className="design-box" aria-label="Design numbers">
+      <h3 className="section-title">Design numbers</h3>
+      <p className="hint">
+        One running series of plain numbers. A sample gets the next one from the Design no tab of Samples, after its
+        final approval is Yes.
+      </p>
+      <dl className="details">
+        <div>
+          <dt>Starting number</dt>
+          <dd>{series?.start_number ?? <span className="hint">Not set</span>}</dd>
+        </div>
+        <div>
+          <dt>Last number given</dt>
+          <dd>{used ? series.last_number : <span className="hint">None yet</span>}</dd>
+        </div>
+        <div>
+          <dt>Next number</dt>
+          <dd>{next ?? <span className="hint">Not set</span>}</dd>
+        </div>
+      </dl>
+      {isAdmin && !used && (
+        <form className="design-form" onSubmit={save} noValidate>
+          <Field label="Starting number" htmlFor="design-start">
+            <input
+              id="design-start"
+              className="input"
+              inputMode="numeric"
+              value={start}
+              onChange={(event) => setStart(event.target.value.replace(/\D/g, ''))}
+            />
+          </Field>
+          <button type="submit" className="btn btn--primary" disabled={busy}>
+            {busy ? 'Setting…' : 'Set starting number'}
+          </button>
+        </form>
+      )}
+      {used && <p className="hint">Design numbers have already been given, so the starting number is locked.</p>}
+      {error && (
+        <p className="alert alert--error" role="alert">
+          {error}
+        </p>
+      )}
+    </section>
   )
 }
 

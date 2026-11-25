@@ -28,8 +28,49 @@ Last updated: 23 Nov 2026
 
 Nothing recorded yet. Add ideas here as they come up, with the date.
 
-## Accessories list of a sample (next)
+## The production side, as told by Nihal on 25 Nov 2026 (not built yet)
 
-Nihal: after fabrics, the same kind of list is needed for accessories, "slightly different". The
-differences are still to be given by Nihal. The fabric editor (`SampleFabrics.jsx`,
-`lib/sampleFabrics.js`) is the pattern to follow.
+Order agreed: wishlist, then CAD, then fabric and accessory masters, then the material list
+for the PO.
+
+**Wishlist**
+- A sample with final approval Yes is approved for production and goes to the wishlist.
+- Each wishlist entry needs size, ratio and the quantity to take into production. All three
+  are required.
+- The first entry of a sample is NEW, with an id like `LB-3001-NEW`. Later entries are
+  repeats: `LB-3001-REPEAT-1`, `-2`, and so on.
+- At the time of approval the approver may create the entries right there, several at once
+  (the first NEW, the rest REPEAT-1, REPEAT-2...). If they do not, the sample shows on a
+  separate screen as newly approved, waiting to be added to the wishlist.
+- An "Add to wishlist" screen adds repeats for samples that were in the wishlist before;
+  several lots can be created at one time.
+- One sample can have several production lots, even at the same time. Production refers to
+  design number and lot number everywhere.
+
+**Sizes and ratio**
+- Sizes 22 to 38, even sizes only: 9 pieces in a full set.
+- Two segments: 22-30 (5 pieces) and 32-38 (4 pieces).
+- Ratio = sets of 22-30 : sets of 32-38. 1:1 = 9 pieces (usual), 1:0 = 5, 2:1 = 14, 1:2 = 13.
+
+**CAD drawing**
+- For each fabric of a garment, all the parts cut from that fabric (for every component it is
+  used in) are drawn together in one CAD drawing. The fabric is layered, the drawing placed on
+  top, and the parts are cut.
+- The CAD department makes the drawings; a sample can have many.
+- Every wishlist entry must have at least one drawing assigned to it. A drawing existing for
+  the same sample, size and ratio is not enough: it must be assigned to the wishlist id. One
+  wishlist id can have several drawings.
+- Entries with no drawing show on a "Pending drawing" screen.
+
+**Final material list**
+- Fabrics are primary or secondary, and accessories are primary or secondary. The team
+  assigns this; the rule is still to come from Nihal.
+- The fabric and accessory lists entered during sampling are only a draft.
+- To raise a PO, every wishlist item needs its final material list. While making the CAD
+  drawing, the CAD department updates the final primary accessory list; there is exactly one
+  per wishlist id, even when it has several drawings.
+
+**Still open (ask Nihal)**
+- The rule for primary and secondary.
+- Whether a wishlist entry counts as "has its drawing" only when every fabric has one.
+- Costing: mentioned as related to CAD, not yet explained.
