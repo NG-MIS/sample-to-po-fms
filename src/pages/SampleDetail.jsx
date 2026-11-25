@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import ClickableImage from '../components/ClickableImage.jsx'
 import DataTable from '../components/DataTable.jsx'
+import Fold from '../components/Fold.jsx'
 import ImageEditor from '../components/ImageEditor.jsx'
 import Modal, { ConfirmDialog } from '../components/Modal.jsx'
 import PickList from '../components/PickList.jsx'
@@ -41,14 +42,56 @@ import {
 
 const DENIM_LABEL = { denim: 'Denim', non_denim: 'Non denim' }
 
-// Everything about one sample after it is created: details, stage images,
-// the two pieces and their process log, approval and remarks.
+// One sample in a popup. Used by the screens that are not the sample list.
 //   onChanged - reloads the data after something was saved
 //   onEdit    - optional; opens the edit form (authority All)
 export default function SampleDetail({ sample, data, onChanged, onEdit, onClose }) {
+  const { isAdmin } = useAuth()
+  return (
+    <Modal
+      title={`Sample ${sample.sample_no}`}
+      onClose={onClose}
+      width={1040}
+      footer={() => (
+        <>
+          {onEdit && isAdmin && (
+            <button type="button" className="btn" onClick={onEdit}>
+              Edit details
+            </button>
+          )}
+          <button type="button" className="btn btn--primary" onClick={onClose}>
+            Close
+          </button>
+        </>
+      )}
+    >
+      <SampleBody sample={sample} data={data} onChanged={onChanged} />
+    </Modal>
+  )
+}
+
+const REMARK_WORDS = { text: ['text', 'text'], voice: ['voice note', 'voice notes'], image: ['picture', 'pictures'] }
+
+// Everything about one sample after it is created, as sections that open and
+// close: details, stage images, fabrics, accessories, the two pieces and their
+// process log, approval and remarks. Every section starts closed; its bar
+// shows the important things. Shown in the popup and inside the sample list.
+export function SampleBody({ sample, data, onChanged }) {
   const { profile, isAdmin } = useAuth()
   const [dialog, setDialog] = useState(null)
   const [error, setError] = useState('')
+  const [openFolds, setOpenFolds] = useState(() => new Set())
+  const fold = (id) => ({
+    id,
+    open: openFolds.has(id),
+    onToggle: () =>
+      setOpenFolds((previous) => {
+        const next = new Set(previous)
+        if (next.has(id)) next.delete(id)
+        else next.add(id)
+        return next
+      }),
+  })
 
   const closed = isClosed(sample)
   const mayWork = canWorkOn(sample, data, profile)
@@ -151,24 +194,15 @@ export default function SampleDetail({ sample, data, onChanged, onEdit, onClose 
   const tags = sampleTags(sample, data)
   const openPieces = PIECES.filter((piece) => pieceStatus(sample, piece.value) !== 'completed')
 
+  const atVendor = sample.entries.filter((entry) => !entry.received_date).length
+  const remarkCounts = ['text', 'voice', 'image']
+    .map((kind) => [kind, sample.remarks.filter((remark) => remark.kind === kind).length])
+    .filter(([, count]) => count > 0)
+    .map(([kind, count]) => `${count} ${REMARK_WORDS[kind][count === 1 ? 0 : 1]}`)
+  const count = (number, one, many) => `${number} ${number === 1 ? one : many}`
+
   return (
-    <Modal
-      title={`Sample ${sample.sample_no}`}
-      onClose={onClose}
-      width={1040}
-      footer={() => (
-        <>
-          {onEdit && isAdmin && (
-            <button type="button" className="btn" onClick={onEdit}>
-              Edit details
-            </button>
-          )}
-          <button type="button" className="btn btn--primary" onClick={onClose}>
-            Close
-          </button>
-        </>
-      )}
-    >
+    <div className="sample-body" data-sample-body={sample.sample_no}>
       {error && (
         <p className="alert alert--error" role="alert">
           {error}
@@ -182,7 +216,13 @@ export default function SampleDetail({ sample, data, onChanged, onEdit, onClose 
         </p>
       )}
 
-      <h3 className="section-title">Details</h3>
+      <Fold
+        {...fold('details')}
+        title="Details"
+        summary={[names.person.get(sample.designer_id), names.productType.get(sample.product_type_id), names.collection.get(sample.collection_id), componentNames.join(', ')]
+          .filter(Boolean)
+          .join(' · ')}
+      >
       <dl className="details details--three">
         <Detail label="Sample no">{sample.sample_no}</Detail>
         <Detail label="Design no">{sample.design_no}</Detail>
@@ -238,10 +278,19 @@ export default function SampleDetail({ sample, data, onChanged, onEdit, onClose 
           )}
         </Detail>
       </dl>
+      </Fold>
 
-      <h3 className="section-title section-title--next">
-        Stage images <span className="hint">the highest one available is shown as the sample&rsquo;s picture</span>
-      </h3>
+      <Fold
+        {...fold('images')}
+        title="Stage images"
+        summary={STAGES.map((stage) => (
+          <span key={stage.key} className={`badge badge--${stageImagePath(sample, stage.key) ? 'completed' : 'pending'}`}>
+            {stage.label}
+            {stageImagePath(sample, stage.key) ? '' : ': none'}
+          </span>
+        ))}
+      >
+      <p className="hint">The highest one available is shown as the sample&rsquo;s picture.</p>
       <div className="stage-grid">
         {STAGES.map((stage) => (
           <StageTile
@@ -255,38 +304,67 @@ export default function SampleDetail({ sample, data, onChanged, onEdit, onClose 
           />
         ))}
       </div>
+      </Fold>
 
-      <h3 className="section-title section-title--next section-title--action">
-        <span>
-          Fabrics{' '}
-          <span className={`badge badge--${FABRIC_STATUS_BADGE[fabricStatus(sample)]}`}>
-            {FABRIC_STATUS_LABEL[fabricStatus(sample)]}
-          </span>
-        </span>
-        {canWork && (
-          <button type="button" className="btn btn--small" onClick={() => setDialog({ type: 'fabrics' })}>
-            {sample.fabrics.length ? 'Change fabrics' : 'Add fabrics'}
-          </button>
-        )}
-      </h3>
+      <Fold
+        {...fold('fabrics')}
+        title="Fabrics"
+        summary={
+          <>
+            <span className={`badge badge--${FABRIC_STATUS_BADGE[fabricStatus(sample)]}`}>
+              {FABRIC_STATUS_LABEL[fabricStatus(sample)]}
+            </span>
+            {sample.fabrics.length > 0 && count(sample.fabrics.length, 'fabric', 'fabrics')}
+          </>
+        }
+        action={
+          canWork && (
+            <button type="button" className="btn btn--small" onClick={() => setDialog({ type: 'fabrics' })}>
+              {sample.fabrics.length ? 'Change fabrics' : 'Add fabrics'}
+            </button>
+          )
+        }
+      >
       <FabricTable sample={sample} lookups={names} />
+      </Fold>
 
-      <h3 className="section-title section-title--next section-title--action">
-        <span>
-          Accessories{' '}
-          <span className={`badge badge--${ACCESSORY_STATUS_BADGE[accessoryStatus(sample)]}`}>
-            {ACCESSORY_STATUS_LABEL[accessoryStatus(sample)]}
-          </span>
-        </span>
-        {canWork && (
-          <button type="button" className="btn btn--small" onClick={() => setDialog({ type: 'accessories' })}>
-            {sample.accessories.length ? 'Change accessories' : 'Add accessories'}
-          </button>
-        )}
-      </h3>
+      <Fold
+        {...fold('accessories')}
+        title="Accessories"
+        summary={
+          <>
+            <span className={`badge badge--${ACCESSORY_STATUS_BADGE[accessoryStatus(sample)]}`}>
+              {ACCESSORY_STATUS_LABEL[accessoryStatus(sample)]}
+            </span>
+            {sample.accessories.length > 0 && count(sample.accessories.length, 'accessory', 'accessories')}
+          </>
+        }
+        action={
+          canWork && (
+            <button type="button" className="btn btn--small" onClick={() => setDialog({ type: 'accessories' })}>
+              {sample.accessories.length ? 'Change accessories' : 'Add accessories'}
+            </button>
+          )
+        }
+      >
       <AccessoryTable sample={sample} lookups={names} />
+      </Fold>
 
-      <h3 className="section-title section-title--next">Pieces and process log</h3>
+      <Fold
+        {...fold('pieces')}
+        title="Pieces and process log"
+        summary={
+          <>
+            {PIECES.map((piece) => (
+              <span key={piece.value} className={`badge badge--${pieceStatus(sample, piece.value)}`}>
+                {piece.label}: {PIECE_STATUS_LABEL[pieceStatus(sample, piece.value)]}
+              </span>
+            ))}
+            {sample.entries.length > 0 && count(sample.entries.length, 'process', 'processes')}
+            {atVendor > 0 && `, ${atVendor} at vendor`}
+          </>
+        }
+      >
       <div className="piece-grid">
         {PIECES.map((piece) => {
           const status = pieceStatus(sample, piece.value)
@@ -339,8 +417,25 @@ export default function SampleDetail({ sample, data, onChanged, onEdit, onClose 
         rows={sample.entries}
         emptyText="Nothing has been sent to a process yet."
       />
+      </Fold>
 
-      <h3 className="section-title section-title--next">Approval</h3>
+      <Fold
+        {...fold('approval')}
+        title="Approval"
+        summary={
+          <>
+            {Object.entries(APPROVAL_STAGES).map(([stage, info]) => {
+              const approval = sample.approvals[stage]
+              return (
+                <span key={stage} className={`badge badge--${approval ? approval.decision : 'pending'}`}>
+                  {info.label.replace(' approval', '')}: {approval ? DECISION_LABEL[approval.decision] : 'Not given'}
+                </span>
+              )
+            })}
+            {sample.approvals.changesRequested > 0 && `Changes requested: ${sample.approvals.changesRequested}`}
+          </>
+        }
+      >
       <div className="piece-grid">
         {Object.entries(APPROVAL_STAGES).map(([stage, info]) => {
           const approval = sample.approvals[stage]
@@ -413,9 +508,11 @@ export default function SampleDetail({ sample, data, onChanged, onEdit, onClose 
           )
         })}
       </div>
+      </Fold>
 
-      <h3 className="section-title section-title--next">Remarks</h3>
+      <Fold {...fold('remarks')} title="Remarks" summary={remarkCounts.length ? remarkCounts.join(', ') : 'None'}>
       <RemarksView bucket={BUCKET} remarks={sample.remarks} people={names.person} />
+      </Fold>
 
       {dialog?.type === 'send' && (
         <EntryDialog mode="send" sample={sample} data={data} piece={dialog.piece} pieces={openPieces} onClose={() => setDialog(null)} onSaved={saved} />
@@ -455,7 +552,7 @@ export default function SampleDetail({ sample, data, onChanged, onEdit, onClose 
           onConfirm={() => runConfirmed('reopen_sample_piece', { p_sample_id: sample.id, p_piece: dialog.piece })}
         />
       )}
-    </Modal>
+    </div>
   )
 }
 

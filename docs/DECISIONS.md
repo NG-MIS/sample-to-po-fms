@@ -96,6 +96,8 @@ Newest first. A changed decision is not deleted: a new entry is added that repla
 | 23 Nov 2026 | Sample files are private; a file can be viewed only by people who can see its sample | Concept images are design work and should not leak |
 | 23 Nov 2026 | Reference on a sample: one choice from a References list in Masters, plus one picture, both optional | Nihal chose a list he maintains himself |
 | 23 Nov 2026 | Remarks on a sample: typed notes, voice notes and pictures, any number of each, all optional | Nihal's request |
+| 26 Nov 2026 | Samples screen is accordion style: the list as collapsible bars, and each section inside a sample collapsible; everything starts collapsed, with the important statuses on the closed bar | Nihal: "Both", "all collapsed" |
+| 26 Nov 2026 | On a bar list, Columns only chooses what the closed bar shows; search, sort, filter, group and export use every detail | Otherwise a short bar would hide details from search and export |
 | 25 Nov 2026 | One PO = one wishlist item + one vendor, with all that vendor's items | Nihal: "in one po, there are items for only one wishlist" |
 | 25 Nov 2026 | A material list is Updated when "Confirm list" is pressed, Ordered when every item has a PO or is Not required; primary fabric first, the other three lists show as pending after it | Nihal's flow |
 | 25 Nov 2026 | Fabric to order = Msrmnt / pcs in layer x qty, plus one tolerance % from the master, rounded up to the next 10, in metres | Nihal: "always round up in 10s", "single... but can be updated in master" |

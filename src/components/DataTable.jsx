@@ -16,6 +16,10 @@ import { useIsPhone } from '../lib/screen.js'
 // tableId - a short name for this table, used to remember which columns
 //           the person chose to show (in their own browser).
 // title   - the name of the list, used as the heading and file name of exports.
+// renderExpanded(row) - optional. Turns the list into collapsible bars: each row is one bar
+//           showing the chosen columns, and clicking it opens what this gives, right under it.
+//           rowLabel(row) names the bar for screen readers; defaultHidden lists the column
+//           keys left off the bar until the person adds them with Columns.
 // onRowClick(row) - optional. When given, clicking anywhere on a row (or card) calls it.
 //           Clicks on buttons, links and pictures inside the row keep their own job.
 // columns: [{
@@ -50,6 +54,12 @@ function compare(a, b) {
   if (typeof a === 'number' && typeof b === 'number') return a - b
   return collator.compare(String(a), String(b))
 }
+
+const Chevron = ({ open }) => (
+  <svg className={`chevron ${open ? 'chevron--open' : ''}`} width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+    <path d="M4 2l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+)
 
 const FilterIcon = () => (
   <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
@@ -418,6 +428,9 @@ export default function DataTable({
   rows,
   rowKey = 'id',
   onRowClick,
+  renderExpanded,
+  rowLabel = (row) => String(row[rowKey]),
+  defaultHidden = [],
   toolbar,
   loading = false,
   emptyText = 'Nothing here yet.',
@@ -433,18 +446,23 @@ export default function DataTable({
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState(null)
   const [filters, setFilters] = useState({})
-  const [hidden, setHidden] = useState(() => new Set(memoryKey ? recall(memoryKey, []) : []))
+  const [hidden, setHidden] = useState(() => new Set(memoryKey ? recall(memoryKey, defaultHidden) : defaultHidden))
   const [group, setGroup] = useState(() => (memoryKey ? recall(`${memoryKey}:group`, []) : []))
   const [foldedGroups, setFoldedGroups] = useState(() => new Set())
+  const [openRows, setOpenRows] = useState(() => new Set()) // the bars that are open
   const [panel, setPanel] = useState(null) // null | 'columns' | 'phone' | 'group' | 'export'
   const [exporting, setExporting] = useState('')
   const [exportError, setExportError] = useState('')
 
   const shownColumns = useMemo(() => columns.filter((column) => !hidden.has(column.key)), [columns, hidden])
+  // As bars, Columns only chooses what the closed bar shows: search, sort, filter,
+  // grouping and export still work on every column.
+  const bars = Boolean(renderExpanded)
+  const workColumns = bars ? columns : shownColumns
   const filterCount = Object.keys(filters).length
   const groupColumns = useMemo(
-    () => group.map((key) => shownColumns.find((column) => column.key === key && column.value)).filter(Boolean),
-    [group, shownColumns],
+    () => group.map((key) => workColumns.find((column) => column.key === key && column.value)).filter(Boolean),
+    [group, workColumns],
   )
 
   const changeGroup = (next) => {
@@ -456,6 +474,7 @@ export default function DataTable({
   const changeHidden = (next) => {
     setHidden(next)
     if (memoryKey) remember(memoryKey, [...next])
+    if (bars) return
     // A hidden column must not keep filtering or sorting rows out of sight.
     setFilters((previous) => Object.fromEntries(Object.entries(previous).filter(([key]) => !next.has(key))))
     setSort((previous) => (previous && next.has(previous.key) ? null : previous))
@@ -463,7 +482,7 @@ export default function DataTable({
   }
 
   const visible = useMemo(() => {
-    const active = shownColumns.filter((column) => filters[column.key] && column.value)
+    const active = workColumns.filter((column) => filters[column.key] && column.value)
     const sets = active.map((column) => new Set(filters[column.key]))
     let out = rows.filter((row) =>
       active.every((column, index) => asList(column.value(row)).some((item) => sets[index].has(item))),
@@ -471,11 +490,11 @@ export default function DataTable({
 
     const q = search.trim().toLowerCase()
     if (q) {
-      const searchable = shownColumns.filter((column) => column.value)
+      const searchable = workColumns.filter((column) => column.value)
       out = out.filter((row) => searchable.some((column) => asText(column.value(row)).toLowerCase().includes(q)))
     }
 
-    const sortColumn = sort && shownColumns.find((column) => column.key === sort.key)
+    const sortColumn = sort && workColumns.find((column) => column.key === sort.key)
     if (sortColumn) {
       const get =
         sortColumn.sortValue ||
@@ -495,7 +514,7 @@ export default function DataTable({
       })
     }
     return out
-  }, [rows, shownColumns, filters, search, sort])
+  }, [rows, workColumns, filters, search, sort])
 
   // What is drawn: plain rows, or group headings with their rows underneath.
   // With respectFolds off, it gives every row in on-screen order (used for export).
@@ -536,7 +555,7 @@ export default function DataTable({
   const display = useMemo(() => arrange(true), [visible, groupColumns, foldedGroups])
 
   const runExport = async (kind) => {
-    const exportColumns = shownColumns.filter((column) => column.header && typeof column.value === 'function')
+    const exportColumns = workColumns.filter((column) => column.header && typeof column.value === 'function')
     const headers = exportColumns.map((column) => column.header)
     const data = arrange(false)
       .filter((item) => item.type === 'row')
@@ -571,6 +590,19 @@ export default function DataTable({
     const column = groupColumns[0]
     if (!column) return
     setFoldedGroups(new Set(visible.map((row) => `/${asText(column.value(row)) || BLANK}`)))
+  }
+
+  const toggleRow = (key) =>
+    setOpenRows((previous) => {
+      const next = new Set(previous)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  const barClick = (row) => (event) => {
+    if (event.target.closest('button, a, input, select, label, audio')) return
+    if (window.getSelection()?.toString()) return
+    toggleRow(row[rowKey])
   }
 
   const rowClick = (row) =>
@@ -611,7 +643,7 @@ export default function DataTable({
             onChange={(event) => setSearch(event.target.value)}
           />
         </div>
-        {isPhone && (
+        {(isPhone || bars) && (
           <button
             type="button"
             ref={phoneRef}
@@ -688,7 +720,7 @@ export default function DataTable({
       )}
       {panel === 'group' && (
         <GroupPicker
-          columns={shownColumns}
+          columns={workColumns}
           group={groupColumns.map((column) => column.key)}
           onChange={changeGroup}
           onFoldAll={foldAllGroups}
@@ -699,7 +731,7 @@ export default function DataTable({
       )}
       {panel === 'phone' && (
         <PhoneSortFilter
-          columns={shownColumns}
+          columns={workColumns}
           rows={rows}
           sort={sort}
           filters={filters}
@@ -710,7 +742,54 @@ export default function DataTable({
         />
       )}
 
-      {isPhone ? (
+      {bars ? (
+        <ul className="bars">
+          {display.map((item) => {
+            if (item.type === 'group') {
+              return (
+                <li key={`group${item.id}`} className={`group-head group-head--${item.level + 1}`}>
+                  <GroupHead item={item} onToggle={toggleGroup} />
+                </li>
+              )
+            }
+            const key = item.row[rowKey]
+            const open = openRows.has(key)
+            return (
+              <li key={key} className={`bar ${open ? 'bar--open' : ''}`} data-bar={rowLabel(item.row)}>
+                <div className="bar-head" onClick={barClick(item.row)}>
+                  <button
+                    type="button"
+                    className="bar-toggle"
+                    aria-expanded={open}
+                    aria-label={`${open ? 'Close' : 'Open'} ${rowLabel(item.row)}`}
+                    onClick={() => toggleRow(key)}
+                  >
+                    <Chevron open={open} />
+                  </button>
+                  {shownColumns.map((column) => {
+                    // a detail with nothing in it is left off the bar
+                    if (column.header && column.value && asText(column.value(item.row)) === '') return null
+                    const content = column.render ? column.render(item.row) : asText(column.value?.(item.row))
+                    if (content === null || content === undefined || content === '' || content === false) return null
+                    return column.header ? (
+                      <div key={column.key} className="bar-field" data-field={column.key}>
+                        <span className="bar-label">{column.header}</span>
+                        <span className="bar-value">{content}</span>
+                      </div>
+                    ) : (
+                      <div key={column.key} className="bar-actions">
+                        {content}
+                      </div>
+                    )
+                  })}
+                </div>
+                {open && <div className="bar-body">{renderExpanded(item.row)}</div>}
+              </li>
+            )
+          })}
+          {visible.length === 0 && <li className="table-empty">{emptyMessage}</li>}
+        </ul>
+      ) : isPhone ? (
         <ul className="cards">
           {display.map((item) =>
             item.type === 'group' ? (

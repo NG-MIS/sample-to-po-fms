@@ -584,7 +584,7 @@ Rules the database enforces, whatever the screens do:
 | Components | List, add, edit and import | Built |
 | Product types | List, add, edit and import | Built |
 | Collections | List, add, edit and import | Built |
-| Samples | List with search, sort and filter; new sample form; edit (authority All). Opening a sample shows details, stage images, the two pieces with their process log, approval and remarks, with the buttons that person is allowed to use | Built |
+| Samples | The All samples tab is a list of collapsible bars: a closed bar shows the picture, sample number and the important details and statuses; clicking it opens the sample right under it. An opened sample has seven collapsible sections (details, stage images, fabrics, accessories, pieces and process log, approval, remarks), all closed at first, each bar showing its summary. Search, sort, filter, group and export work on every detail; Columns chooses what the closed bar shows. New sample form; edit (authority All). The work tabs stay as tables and open a sample in a popup with the same sections | Built |
 | Process log | Every process entry of every sample in one list; clicking a row opens the sample | Built |
 | Processes | List, add, edit and import | Built |
 | Vendors | List, add, edit and import | Built |
@@ -598,7 +598,7 @@ All in `src/components`. A screen never builds its own version of these.
 
 | Block | What it does |
 |---|---|
-| `DataTable` | Table with search box, click-to-sort headings, a Sheets-style filter on every column, a column selector, grouping by up to two levels, and export to PDF, Excel and CSV. Turns into cards on a phone |
+| `DataTable` | With `renderExpanded` it draws collapsible bars instead of a table (used by All samples). Otherwise: table with search box, click-to-sort headings, a Sheets-style filter on every column, a column selector, grouping by up to two levels, and export to PDF, Excel and CSV. Turns into cards on a phone |
 | `Modal` | Popup box for forms. Handles Esc, click outside, and "Discard changes?" when there is unsaved work |
 | `ConfirmDialog` | Yes/no question on top of everything (inside `Modal.jsx`) |
 | `ImageViewer` | Picture popup: full screen, copy link, open in new tab, close |
@@ -612,6 +612,7 @@ All in `src/components`. A screen never builds its own version of these.
 | `Popover` | Floating panel under a button, used by pick-lists and column filters |
 | `Field`, `Tick`, `Badge` | Labelled form row, tick box, coloured yes/no label |
 | `Tabs` | A row of tabs, each with a count of what is waiting |
+| `Fold` | A section that opens and closes; its bar always shows the title, a short summary and an optional button |
 | `Layout`, `PageHead` | Menu on the left with folding groups (a drawer on a phone), signed-in person on top, screen heading |
 
 Shared helpers in `src/lib`: database connection, sign-in state, Esc handling, picture links
@@ -657,6 +658,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 26 Nov 2026 | Samples screen made accordion style: All samples is a list of collapsible bars, and an opened sample has collapsible sections that all start closed and show their summary |
 | 25 Nov 2026 | Material lists and purchase orders built: four lists per wishlist item, Confirm list, Not required, one PO per wishlist item and vendor, open orders, PO PDF, Colours master, PO numbering and fabric tolerance in Numbering, pcs of each size in Sizes and ratios. Added by `supabase/migrations/20261125180234_material_lists_and_purchase_orders.sql` |
 | 25 Nov 2026 | CAD drawings and the primary accessory list built, with department CAD, CAD particulars master and single sizes in the Sizes and ratios master. Added by `supabase/migrations/20261125112929_cad_drawings_and_primary_accessories.sql` |
 | 25 Nov 2026 | Wishlist built: Sizes and ratios master, wishlist entries at final approval or later, Wishlist screen with Newly approved and Add repeat. Added by `supabase/migrations/20261125081337_wishlist_and_size_ratios.sql` |

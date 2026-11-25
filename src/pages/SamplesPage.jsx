@@ -31,6 +31,9 @@ import {
   pieceStatus,
   sampleReferences,
   sampleTags,
+  ACCESSORY_STATUS_BADGE,
+  ACCESSORY_STATUS_LABEL,
+  accessoryStatus,
 } from '../lib/sampleData.js'
 import { accessoryPayload, checkAccessoryLines, toAccessoryLines } from '../lib/sampleAccessories.js'
 import { checkFabricLines, fabricPayload, toFabricLines } from '../lib/sampleFabrics.js'
@@ -44,7 +47,7 @@ import {
   processRows,
 } from '../lib/sampleTabs.js'
 import { supabase } from '../lib/supabase.js'
-import SampleDetail, { ApprovalDialog, EntryDialog } from './SampleDetail.jsx'
+import SampleDetail, { ApprovalDialog, EntryDialog, SampleBody } from './SampleDetail.jsx'
 import { AccessoryDialog, AccessoryLinesEditor } from './SampleAccessories.jsx'
 import { FabricDialog, FabricLinesEditor } from './SampleFabrics.jsx'
 import {
@@ -95,6 +98,9 @@ const DENIM_OPTIONS = [
   { value: 'non_denim', label: 'Non denim' },
 ]
 const DENIM_LABEL = { denim: 'Denim', non_denim: 'Non denim' }
+// The All samples tab shows each sample as a bar that opens. These details are
+// left off the bar to keep it short; the person can add them back with Columns.
+const BAR_HIDDEN = ['sl_no', 'creation_date', 'components', 'pcs_type', 'denim_type', 'changes_requested', 'reference', 'tags', 'fabrics', 'accessories', 'remarks', 'entered_by', 'timestamp']
 // PCS type is worked out from the number of components: 2 components = 2PCS.
 const pcsType = (componentIds) => (componentIds.length ? `${componentIds.length}PCS` : '')
 
@@ -224,11 +230,7 @@ export default function SamplesPage() {
         key: 'sample_no',
         header: 'SAMPLE NO',
         value: (row) => row.sample_no,
-        render: (row) => (
-          <button type="button" className="link link--strong" onClick={() => setViewingId(row.id)}>
-            {row.sample_no}
-          </button>
-        ),
+        render: (row) => <strong>{row.sample_no}</strong>,
       },
       {
         key: 'creation_date',
@@ -334,6 +336,16 @@ export default function SamplesPage() {
         value: (row) =>
           [...new Set(row.accessories.map((line) => lookups.accessory.get(line.accessory_id)).filter(Boolean))].sort(),
       },
+      {
+        key: 'accessory_status',
+        header: 'ACCESSORY STATUS',
+        value: (row) => ACCESSORY_STATUS_LABEL[accessoryStatus(row)],
+        render: (row) => (
+          <span className={`badge badge--${ACCESSORY_STATUS_BADGE[accessoryStatus(row)]}`}>
+            {ACCESSORY_STATUS_LABEL[accessoryStatus(row)]}
+          </span>
+        ),
+      },
       { key: 'wishlist', header: 'WISHLIST', value: (row) => row.wishlist.map((entry) => entry.wishlist_no) },
       {
         key: 'remarks',
@@ -357,18 +369,14 @@ export default function SamplesPage() {
         key: 'actions',
         header: '',
         align: 'right',
-        render: (row) => (
-          <span className="row-actions">
-            <button type="button" className="btn btn--small" onClick={() => setViewingId(row.id)}>
-              Open
-            </button>
-            {isAdmin && (
+        render: (row) =>
+          isAdmin && (
+            <span className="row-actions">
               <button type="button" className="btn btn--small" onClick={() => setEditing(row)}>
                 Edit
               </button>
-            )}
-          </span>
-        ),
+            </span>
+          ),
       },
     ]
   }, [lookups, isAdmin, data])
@@ -430,10 +438,13 @@ export default function SamplesPage() {
       )}
       {tab === 'all' && (
       <DataTable
-        tableId="samples"
+        tableId="samples-bars"
         title="Samples"
         columns={columns}
         rows={samples}
+        rowLabel={(row) => row.sample_no}
+        defaultHidden={BAR_HIDDEN}
+        renderExpanded={(row) => <SampleBody sample={row} data={data} onChanged={reload} />}
         loading={loading}
         emptyText="No sample has been created yet."
         searchPlaceholder="Search samples…"
