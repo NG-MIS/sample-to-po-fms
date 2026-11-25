@@ -20,6 +20,30 @@ export const isTypedValue = (value) => typeof value === 'string' && value.starts
 export const typedName = (value) => value.slice(NEW.length)
 export const typedValue = (name) => NEW + name
 
+const sameText = (a, b) => a.toLowerCase() === b.toLowerCase()
+
+// Options of a list that also takes typed names: the active entries, the ones
+// already in use here, and the names typed on this form.
+export function namedOptions(items, usedIds, typedNames) {
+  return [
+    ...items
+      .filter((item) => item.is_active || usedIds.includes(item.id))
+      .map((item) => ({ value: item.id, label: item.is_active ? item.name : `${item.name} (inactive)` })),
+    ...typedNames.map((name) => ({ value: NEW + name, label: `${name} (new)` })),
+  ].sort((a, b) => a.label.localeCompare(b.label))
+}
+
+// The wording of the "add" row for a typed name, or null when it is already there.
+export function addLabelFor(items, typedNames) {
+  return (typed) => {
+    const name = tidy(typed)
+    if (!name || name.length > 80) return null
+    const known =
+      items.some((item) => item.is_active && sameText(item.name, name)) || typedNames.some((other) => sameText(other, name))
+    return known ? null : `Add "${name}"`
+  }
+}
+
 // ---------- CAD rows (the drawing part, filled by the CAD department) ----------
 
 export const newCadRow = () => ({

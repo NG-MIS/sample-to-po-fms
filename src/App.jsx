@@ -6,6 +6,8 @@ import NumberingPage from './pages/NumberingPage.jsx'
 import ProcessLogPage from './pages/ProcessLogPage.jsx'
 import SamplesPage from './pages/SamplesPage.jsx'
 import CadPage from './pages/CadPage.jsx'
+import MaterialsPage from './pages/MaterialsPage.jsx'
+import PurchaseOrdersPage from './pages/PurchaseOrdersPage.jsx'
 import SizeRatiosPage from './pages/SizeRatiosPage.jsx'
 import WishlistPage from './pages/WishlistPage.jsx'
 import SimpleListPage from './pages/SimpleListPage.jsx'
@@ -87,6 +89,9 @@ export default function App() {
         />
         <Route path="/wishlist" element={<WishlistPage />} />
         <Route path="/cad" element={<CadPage />} />
+        <Route path="/materials" element={<MaterialsPage />} />
+        <Route path="/purchase-orders" element={<PurchaseOrdersPage />} />
+        <Route path="/colours" element={<SimpleListPage key="colours" table="colours" title="Colours" singular="colour" />} />
         <Route
           path="/cad-particulars"
           element={<SimpleListPage key="cad-particulars" table="cad_particulars" title="CAD particulars" singular="particular" />}

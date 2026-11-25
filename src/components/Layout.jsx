@@ -14,6 +14,8 @@ const MENU = [
       { to: '/process-log', label: 'Process log' },
       { to: '/wishlist', label: 'Wishlist' },
       { to: '/cad', label: 'CAD drawings' },
+      { to: '/materials', label: 'Material lists' },
+      { to: '/purchase-orders', label: 'Purchase orders' },
     ],
   },
   {
@@ -37,6 +39,7 @@ const MENU = [
       { to: '/accessory-vendors', label: 'Accessory vendors' },
       { to: '/sizes', label: 'Sizes and ratios' },
       { to: '/cad-particulars', label: 'CAD particulars' },
+      { to: '/colours', label: 'Colours' },
     ],
   },
 ]

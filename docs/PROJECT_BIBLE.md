@@ -303,7 +303,85 @@ combination. Set up by the CAD department, from the CAD table or the New CAD for
 The single sizes of each range (22-38 = 22, 24 ... 38) are kept in the Sizes and ratios master.
 The sampling accessory list of a sample (2.1b) is separate and unchanged.
 
-**Wishlist statuses so far:** CAD assigned, and Primary accessory list (Added or Pending).
+**Wishlist statuses so far:** CAD assigned, CAD accessory list (Added or Pending), and where
+each of the four material lists stands (2.6).
+
+### 2.6 Material lists of a wishlist item (built)
+
+Every wishlist item has four lists of what must be bought for it. Screen: Material lists.
+
+| List | How it is filled |
+|---|---|
+| Primary fabric | "Bring in from CADs" takes the drawing rows marked Primary of the CADs assigned to the item (fabric, Msrmnt, No. of pcs in layer, paina, vendor, rate). Rows with no fabric yet cannot be brought in. Lines can also be added by hand |
+| Secondary fabric | The same, from the rows marked Secondary |
+| Primary accessory | "Bring in primary accessory list" takes the list set up with the CADs for that sample + size + ratio (2.5). The person reviews it, changes it if needed, and adds vendor, rate and the Colour specific mark |
+| Secondary accessory | Entered by hand, same fields as the primary one. The primary accessory list is shown on top, to look at only |
+
+**Statuses of a list.** Pending until "Confirm list" is pressed. Updated once confirmed.
+Ordered when every material on it has a PO or is marked Not required. A list with nothing on
+it can be confirmed (nothing to order), and then counts as Ordered.
+
+**Order of work.** Primary fabric first. Once it is Ordered, the item appears on the other
+three pending tabs: primary accessory, secondary fabric, secondary accessory. (The secondary
+accessory pending screen is to be changed later.) The tab "All wishlist items" shows all
+four statuses; a status opens its list.
+
+**Changing a list.** A material can be changed or removed, also after the list is confirmed,
+until it is on a raised PO or marked Not required. From then on it is locked.
+
+**Not required.** Per material, after the list is confirmed. Reason: Already in-house, or
+Not required at all; optional remark. Only authority All can take the mark off again.
+
+**How much to order.**
+- Fabric, in metres: Msrmnt / No. of pcs in layer x wishlist quantity, plus the fabric
+  tolerance %, then rounded up to the next 10. Example: 9 / 18 x 900 = 450; with 5% = 472.5;
+  ordered 480. The tolerance is one percentage, set in Masters > Numbering by authority All;
+  a change applies to POs raised after it.
+- Accessories: the wishlist quantity is split by size using "Pcs of each size" from the
+  Sizes and ratios master (900 pcs at 22-38 1:1 = 100 of each size; 1300 at 1:2 = 100 each
+  of 22-30 and 200 each of 32-38). Each size group of the accessory is then multiplied out.
+  Quantity: total pieces. Dimension: pieces of each length x breadth. Length: pieces of each
+  length, or the whole length in inches, as the person chooses on the PO.
+
+**Who.** The people who can add images to the sample (its designer, or department authority
+over Sample; authority All) fill and confirm the lists, mark Not required and raise POs.
+Everyone who can see the sample can look.
+
+### 2.7 Purchase orders (built)
+
+Screen: Purchase orders (tabs: Purchase orders, PO lines). A PO is raised from a confirmed
+material list.
+
+- One PO = one wishlist item + one vendor. It carries every fabric (or every accessory) of
+  that wishlist item that is confirmed, still to order, and has that vendor. Fabric and
+  accessory POs are separate, as their vendors are separate masters.
+- PO number: automatic, `PO-` and the next number. The starting number is set once in
+  Masters > Numbering and is locked after the first PO. A cancelled PO keeps its number.
+- Quantity and rate come filled in from the list and can be changed before raising.
+
+| Field of a line | Rule |
+|---|---|
+| FABRIC NAME / ACCESSORY NAME, TYPE | From the list. Type is Primary or Secondary |
+| DIMENSION | Accessories only. Each length, or length x breadth, is its own line |
+| COLOURS NAME | Several, from the Colours master or typed new. Required for fabric, and for an accessory marked Colour specific. An accessory that is not colour specific has no colours |
+| NO. OF COLOURS | The count of colours picked |
+| QTY | One number = that quantity for every colour (100 with 3 colours = 300). Or one number per colour joined with +, like 100+200+300; the count must equal the number of colours |
+| TOTAL QTY, AMOUNT | Worked out. Fabric in metres, accessories in pieces or inches |
+| RATE | Required |
+| PROMISE DAYS, PROMISED DATE OF DELIVERY | Promised date = order date + promise days. Per line; what is typed on the first line fills the lines that have none of their own |
+| FOLDS, PAINA | Fabric only. Paina starts from the CAD row |
+
+The photo of the cloth is left out for now, to be added later.
+
+**Open order.** A free PO for anything: any vendor, any fabric or accessory (typed new if
+needed), remarks, and an optional link to a wishlist item or a sample. Raised by the people
+who look after samples, or the designer of any sample.
+
+**After raising.** Only authority All can change or cancel a PO. Cancelling asks for a
+reason; the materials of a cancelled PO can be ordered again. Every PO can be downloaded
+as a PDF.
+
+**Receiving of materials** against POs is the next step and is not built yet.
 
 ## 3. How it is built
 
@@ -457,6 +535,12 @@ revised approval rules by
 | `sample_approvals` | Every initial approval round of each sample, and its final approval |
 | `sample_approval_history` | Every approval ever given or changed |
 
+| `material_lists`, `material_items` | The four material lists of every wishlist item and what is on them, with the Not required mark |
+| `purchase_orders`, `po_lines` | Every PO and its lines; `purchase_settings` holds the PO number series and the fabric tolerance; `colours` is the Colours master |
+
+Material lists and POs are written only through `save_material_list`,
+`mark_material_not_required`, `save_purchase_order` and `cancel_purchase_order`.
+
 Like samples, all of these are written only through database routines that check who is
 asking: `send_sample_process`, `receive_sample_process`, `correct_sample_process`,
 `complete_sample_piece`, `reopen_sample_piece`, `set_sample_stage_image`, `set_sample_approval`.
@@ -483,17 +567,20 @@ Rules the database enforces, whatever the screens do:
 | Departments | List, add and edit | Built |
 | Designations | List, add and edit | Built |
 | Roles | List, add and edit | Built |
-| Numbering | List, add and edit series (series name, prefix and starting number). Also shows the design number series, where authority All sets its starting number | Built |
+| Numbering | List, add and edit series (series name, prefix and starting number). Also shows the design number series, where authority All sets its starting number, and Purchase orders: the starting PO number and the fabric tolerance % | Built |
 | References | List, add and edit, each with its picture (required when added by hand; an imported reference gets its picture afterwards) | Built |
 | Tags | List, add and edit. Shown with a # in front | Built |
 | Fabrics | List, add and edit the fabric names | Built |
 | Fabric vendors | List, add and edit: vendor name and vendor code (each code used once) | Built |
 | Accessories | List, add and edit the accessory names | Built |
 | Accessory vendors | List, add and edit: vendor name and vendor code (each code used once) | Built |
-| Sizes and ratios | List, add and edit the size and ratio combinations, with import | Built |
+| Sizes and ratios | List, add and edit the size and ratio combinations (pcs in a set, single sizes, pcs of each size), with import | Built |
 | Wishlist | Tabs: Wishlist (all entries), Newly approved, Add repeat. Add to wishlist and Add repeat popups; Edit for authority All | Built |
 | CAD drawings | Tabs: CAD drawings (each CAD as a table), Pending drawing, Fabric pending, All rows. New CAD, Copy as new CAD, Edit, Assign, Fill fabric, primary accessory list | Built |
 | CAD particulars | List, add and edit the names of drawing rows | Built |
+| Material lists | Tabs: one pending tab per list (primary fabric, primary accessory, secondary fabric, secondary accessory) and All wishlist items. Opens a list to fill, confirm, mark Not required and raise POs | Built |
+| Purchase orders | Tabs: Purchase orders, PO lines. View a PO, PDF, Open order; Change and Cancel for authority All | Built |
+| Colours | List, add and edit the colour names used on POs | Built |
 | Components | List, add, edit and import | Built |
 | Product types | List, add, edit and import | Built |
 | Collections | List, add, edit and import | Built |
@@ -502,7 +589,7 @@ Rules the database enforces, whatever the screens do:
 | Processes | List, add, edit and import | Built |
 | Vendors | List, add, edit and import | Built |
 
-The simple lists (departments, designations, roles, references, tags, fabrics, fabric vendors, accessories, accessory vendors, components, product types, collections, processes, vendors) share one screen file (`SimpleListPage`). The starter page from the
+The simple lists (departments, designations, roles, references, tags, fabrics, fabric vendors, accessories, accessory vendors, colours, components, product types, collections, processes, vendors) share one screen file (`SimpleListPage`). The starter page from the
 set-up has been replaced by these screens.
 
 ## 9. Reusable building blocks
@@ -570,6 +657,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 25 Nov 2026 | Material lists and purchase orders built: four lists per wishlist item, Confirm list, Not required, one PO per wishlist item and vendor, open orders, PO PDF, Colours master, PO numbering and fabric tolerance in Numbering, pcs of each size in Sizes and ratios. Added by `supabase/migrations/20261125180234_material_lists_and_purchase_orders.sql` |
 | 25 Nov 2026 | CAD drawings and the primary accessory list built, with department CAD, CAD particulars master and single sizes in the Sizes and ratios master. Added by `supabase/migrations/20261125112929_cad_drawings_and_primary_accessories.sql` |
 | 25 Nov 2026 | Wishlist built: Sizes and ratios master, wishlist entries at final approval or later, Wishlist screen with Newly approved and Add repeat. Added by `supabase/migrations/20261125081337_wishlist_and_size_ratios.sql` |
 | 25 Nov 2026 | Design numbers added (Design no tab, one plain series set in Numbering) and the accessory list of a sample (Accessories tab, Accessories and Accessory vendors masters). Added by `supabase/migrations/20261125072608_design_numbers_and_sample_accessories.sql` |

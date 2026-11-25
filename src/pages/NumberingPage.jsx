@@ -22,12 +22,13 @@ const IMPORT_FIELDS = [
 export default function NumberingPage() {
   const { isAdmin } = useAuth()
   const { data, loading, error, reload } = useLoad(async () => {
-    const [rows, people, design] = await Promise.all([
+    const [rows, people, design, purchase] = await Promise.all([
       fetchRows('sample_series'),
       fetchRows('app_users'),
       fetchRows('design_series', null),
+      fetchRows('purchase_settings', null),
     ])
-    return { rows, people: nameMap(people), design: design[0] ?? null }
+    return { rows, people: nameMap(people), design: design[0] ?? null, purchase: purchase[0] ?? null }
   })
   const [editing, setEditing] = useState(null)
 
@@ -142,6 +143,7 @@ export default function NumberingPage() {
         }
       />
       {data && <DesignNumbers series={data.design} isAdmin={isAdmin} onSaved={reload} />}
+      {data && <PurchaseSettings settings={data.purchase} isAdmin={isAdmin} onSaved={reload} />}
       {editing && (
         <SeriesForm
           row={editing}
@@ -215,6 +217,98 @@ function DesignNumbers({ series, isAdmin, onSaved }) {
         </form>
       )}
       {used && <p className="hint">Design numbers have already been given, so the starting number is locked.</p>}
+      {error && (
+        <p className="alert alert--error" role="alert">
+          {error}
+        </p>
+      )}
+    </section>
+  )
+}
+
+// Purchase orders: one running series of PO numbers (PO-1001, PO-1002, ...),
+// and how much more fabric is ordered than the drawing needs.
+function PurchaseSettings({ settings, isAdmin, onSaved }) {
+  const used = settings?.po_last_number !== null && settings?.po_last_number !== undefined
+  const [start, setStart] = useState(settings?.po_start_number ? String(settings.po_start_number) : '')
+  const [tolerance, setTolerance] = useState(settings ? String(Number(settings.fabric_tolerance)) : '0')
+  const [busy, setBusy] = useState('')
+  const [error, setError] = useState('')
+  const next = settings?.po_start_number ? (settings.po_last_number ?? settings.po_start_number - 1) + 1 : null
+
+  const update = async (which, values) => {
+    setBusy(which)
+    setError('')
+    const { error: failure } = await supabase.from('purchase_settings').update(values).eq('id', true)
+    setBusy('')
+    if (failure) setError(friendlyError(failure))
+    else onSaved()
+  }
+  const saveStart = (event) => {
+    event.preventDefault()
+    if (!/^\d{1,12}$/.test(start) || Number(start) < 1) return setError('Starting PO number must be a whole number, 1 or more.')
+    update('start', { po_start_number: Number(start) })
+  }
+  const saveTolerance = (event) => {
+    event.preventDefault()
+    if (!/^\d{1,3}(\.\d{1,2})?$/.test(tolerance) || Number(tolerance) > 100) {
+      return setError('Fabric tolerance must be a percentage from 0 to 100, with at most 2 decimals.')
+    }
+    update('tolerance', { fabric_tolerance: Number(tolerance) })
+  }
+
+  return (
+    <section className="design-box purchase-box" aria-label="Purchase orders">
+      <h3 className="section-title">Purchase orders</h3>
+      <p className="hint">
+        PO numbers are one running series: PO- and the next number. Fabric tolerance is how much more fabric is ordered
+        than the drawing needs, for emergencies; the quantity is then rounded up to the next 10.
+      </p>
+      <dl className="details">
+        <div>
+          <dt>Starting PO number</dt>
+          <dd>{settings?.po_start_number ? `PO-${settings.po_start_number}` : <span className="hint">Not set</span>}</dd>
+        </div>
+        <div>
+          <dt>Last PO given</dt>
+          <dd>{used ? `PO-${settings.po_last_number}` : <span className="hint">None yet</span>}</dd>
+        </div>
+        <div>
+          <dt>Next PO</dt>
+          <dd>{next ? `PO-${next}` : <span className="hint">Not set</span>}</dd>
+        </div>
+        <div>
+          <dt>Fabric tolerance</dt>
+          <dd>{settings ? `${Number(settings.fabric_tolerance)}%` : ''}</dd>
+        </div>
+      </dl>
+      {isAdmin && !used && (
+        <form className="design-form" onSubmit={saveStart} noValidate>
+          <Field label="Starting PO number" htmlFor="po-start">
+            <input id="po-start" className="input" inputMode="numeric" value={start} onChange={(event) => setStart(event.target.value.replace(/\D/g, ''))} />
+          </Field>
+          <button type="submit" className="btn btn--primary" disabled={busy !== ''}>
+            {busy === 'start' ? 'Setting…' : 'Set starting PO number'}
+          </button>
+        </form>
+      )}
+      {used && <p className="hint">PO numbers have already been given, so the starting number is locked.</p>}
+      {isAdmin && (
+        <form className="design-form" onSubmit={saveTolerance} noValidate>
+          <Field label="Fabric tolerance (%)" htmlFor="fabric-tolerance">
+            <input
+              id="fabric-tolerance"
+              className="input"
+              inputMode="decimal"
+              value={tolerance}
+              onChange={(event) => setTolerance(event.target.value.replace(/[^\d.]/g, ''))}
+            />
+          </Field>
+          <button type="submit" className="btn btn--primary" disabled={busy !== ''}>
+            {busy === 'tolerance' ? 'Setting…' : 'Set fabric tolerance'}
+          </button>
+        </form>
+      )}
       {error && (
         <p className="alert alert--error" role="alert">
           {error}

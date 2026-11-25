@@ -127,6 +127,12 @@ export async function loadSampleData(profile) {
     cadRows,
     cadWishlist,
     primaryLines,
+    materialLists,
+    materialItems,
+    purchaseOrders,
+    poLines,
+    colours,
+    purchaseSettings,
     entries,
     completions,
     stageImages,
@@ -165,6 +171,12 @@ export async function loadSampleData(profile) {
     fetchRows('cad_rows', 'position'),
     fetchRows('cad_wishlist', null),
     fetchRows('primary_accessory_lines', 'position'),
+    fetchRows('material_lists', null),
+    fetchRows('material_items', 'position'),
+    fetchRows('purchase_orders'),
+    fetchRows('po_lines', 'position'),
+    fetchRows('colours'),
+    fetchRows('purchase_settings', null),
     fetchRows('sample_process_entries'),
     fetchRows('sample_piece_completions', null),
     fetchRows('sample_stage_images', null),
@@ -203,6 +215,22 @@ export async function loadSampleData(profile) {
   const rowsByCad = groupBy(cadRows, 'cad_id')
   const wishlistByCad = groupBy(cadWishlist, 'cad_id')
   const primaryBySample = groupBy(primaryLines, 'sample_id')
+  const listsByEntry = groupBy(materialLists, 'wishlist_entry_id')
+  const itemsByEntry = groupBy(materialItems, 'wishlist_entry_id')
+  const linesByPo = groupBy(poLines, 'po_id')
+  const orders = purchaseOrders.map((po) => ({ ...po, lines: linesByPo.get(po.id) ?? [] }))
+  // the raised POs every material is on: item id -> [{ id, po_no }]
+  const ordersByItem = new Map()
+  orders
+    .filter((po) => po.status === 'raised')
+    .forEach((po) =>
+      po.lines.forEach((line) => {
+        if (!line.material_item_id) return
+        const list = ordersByItem.get(line.material_item_id) ?? []
+        if (!list.some((order) => order.id === po.id)) list.push({ id: po.id, po_no: po.po_no })
+        ordersByItem.set(line.material_item_id, list)
+      }),
+    )
   const entriesBySample = groupBy(entries, 'sample_id')
   const completionsBySample = groupBy(completions, 'sample_id')
   const imagesBySample = groupBy(stageImages, 'sample_id')
@@ -235,7 +263,14 @@ export async function loadSampleData(profile) {
       })),
       accessories: accessoriesBySample.get(sample.id) ?? [],
       // the wishlist entries of the sample: the NEW one first, then its repeats
-      wishlist: [...(wishlistBySample.get(sample.id) ?? [])].sort((a, b) => a.repeat_no - b.repeat_no),
+      // each with its four material lists and their items
+      wishlist: [...(wishlistBySample.get(sample.id) ?? [])]
+        .sort((a, b) => a.repeat_no - b.repeat_no)
+        .map((entry) => ({
+          ...entry,
+          lists: Object.fromEntries((listsByEntry.get(entry.id) ?? []).map((list) => [list.kind, list])),
+          materials: (itemsByEntry.get(entry.id) ?? []).map((item) => ({ ...item, orders: ordersByItem.get(item.id) ?? [] })),
+        })),
       // the CADs of the sample, each with its drawing rows and the wishlist items it is assigned to
       cads: [...(cadsBySample.get(sample.id) ?? [])]
         .sort((a, b) => a.seq - b.seq)
@@ -262,6 +297,9 @@ export async function loadSampleData(profile) {
     accessories,
     accessoryVendors,
     designSeries: designSeries[0] ?? null,
+    purchaseOrders: orders,
+    colours,
+    purchaseSettings: purchaseSettings[0] ?? null,
     sizeRatios,
     cadParticulars,
     processes,

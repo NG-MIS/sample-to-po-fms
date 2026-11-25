@@ -9,6 +9,7 @@ import { nameMap, useLoad } from '../lib/data.js'
 import { formatDate, formatDateTime, friendlyError } from '../lib/format.js'
 import { BUCKET, isApproved, latestImage, loadSampleData } from '../lib/sampleData.js'
 import { cadsOfEntry, primaryLinesFor } from '../lib/cad.js'
+import { KINDS, LIST_STATUS_BADGE, LIST_STATUS_LABEL, listStatus } from '../lib/materials.js'
 import { setsText, wishlistKind } from '../lib/wishlist.js'
 import SampleDetail from './SampleDetail.jsx'
 import { WishlistCorrectDialog, WishlistDialog } from './WishlistParts.jsx'
@@ -133,13 +134,23 @@ export default function WishlistPage() {
       },
       {
         key: 'primary_accessory',
-        header: 'PRIMARY ACCESSORY LIST',
+        header: 'CAD ACCESSORY LIST',
         value: (row) => (primaryLinesFor(row.sample, row.size_ratio_id).length ? 'Added' : 'Pending'),
         render: (row) => {
           const added = primaryLinesFor(row.sample, row.size_ratio_id).length > 0
           return <span className={`badge badge--${added ? 'completed' : 'pending'}`}>{added ? 'Added' : 'Pending'}</span>
         },
       },
+      // where each of its four material lists stands: Pending, Updated or Ordered
+      ...KINDS.map((kind) => ({
+        key: `list_${kind.key}`,
+        header: kind.short,
+        value: (row) => LIST_STATUS_LABEL[listStatus(row, kind.key)],
+        render: (row) => {
+          const status = listStatus(row, kind.key)
+          return <span className={`badge badge--${LIST_STATUS_BADGE[status]}`}>{LIST_STATUS_LABEL[status]}</span>
+        },
+      })),
       ...contextColumns(lookups, (row) => row.sample),
       { key: 'added_by', header: 'ADDED BY', value: (row) => lookups.person.get(row.created_by) ?? '' },
       {

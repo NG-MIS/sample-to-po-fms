@@ -32,9 +32,17 @@ Nothing recorded yet. Add ideas here as they come up, with the date.
 
 Order agreed: wishlist (built 25 Nov 2026, Project Bible 2.3), then CAD and the primary
 accessory list (built 25 Nov 2026, Project Bible 2.4 and 2.5), then the material lists and
-purchase orders below.
+purchase orders (built 25 Nov 2026, Project Bible 2.6 and 2.7).
 
-**Material lists and purchase orders (told on 25 Nov 2026, next to build)**
+**Still to come, as told so far**
+- Receiving of materials against POs.
+- The photo of the cloth on POs.
+- The rule for primary and secondary.
+- A change to the secondary accessory pending screen.
+- Costing.
+- Production lots and lot numbers.
+
+**Material lists and purchase orders (told on 25 Nov 2026; built, see Project Bible 2.6 and 2.7)**
 - Every wishlist item has four material lists: primary fabric, secondary fabric, primary
   accessory, secondary accessory.
 - Each list has two statuses: Updated (filled and confirmed) and Ordered (every item has a PO

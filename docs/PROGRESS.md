@@ -2,9 +2,18 @@
 
 What is done, what is being worked on, and what comes next. Updated with every change.
 
-Last updated: 24 Nov 2026
+Last updated: 25 Nov 2026
 
 ## Now
+
+Material lists and purchase orders are built (25 Nov 2026). Waiting for Nihal to try them.
+
+To try them, authority All sets two things in Masters > Numbering, under Purchase orders:
+the starting PO number (needed before the first PO) and the fabric tolerance %. Sizes and
+ratios now has "Pcs of each size"; the existing rows were filled in (1:2 and 2:1 by segment,
+the rest 1 of each). Fabric vendors and Accessory vendors must hold the vendors to order from.
+
+Earlier notes:
 
 Step 3 (process log, piece completion, stage images, approval) is built. Waiting for Nihal
 to try it against the real database.
@@ -61,15 +70,21 @@ Next to discuss: the CAD stage (CAD drawing and its approval).
 | 25 Nov 2026 | Design number assignment and the accessory list of a sample (31 database rule checks; 46 new screen checks, 475 pass in total) |
 | 25 Nov 2026 | Wishlist: Sizes and ratios master, entries at final approval or later, Wishlist screen (29 database rule checks; 43 new screen checks, 520 pass in total) |
 | 25 Nov 2026 | CAD drawings (table view, new, copy, assign to wishlist, fabric by sample people) and the primary accessory list with size groups (41 database rule checks; 69 new screen checks, 591 pass in total) |
+| 25 Nov 2026 | Material lists (four per wishlist item) and purchase orders, with open orders, PO PDF, Colours master, PO numbering and fabric tolerance (50 database rule checks; 88 new screen checks and 3 added to the wishlist checks, 682 pass in total) |
 
 ## Next, in order
 
-1. Nihal tries step 3 against the real database
-2. CAD stage
-4. CAD stage
-5. Purchase order stage
-6. Receiving stage
+1. Nihal tries material lists and purchase orders against the real database
+2. Receiving of materials against POs
+3. Costing (mentioned, not explained yet)
+4. Production lots and lot numbers
 
 ## Open questions
 
-- How does the CAD stage start: which samples go to CAD, and who makes and approves the drawing?
+- Is the wishlist quantity for all colours together, or for each colour? The PO form fills in the
+  quantity worked out for the wishlist quantity, and one number is multiplied by the number of colours.
+- The rule for which fabric or accessory is primary and which is secondary (Nihal: "i will share the rule later").
+- Several drawing rows with the same fabric come to the list as separate lines, and so as separate
+  PO lines. Should the same fabric from one vendor be added up into one line?
+- The photo of the cloth on POs (skipped for now).
+- How the secondary accessory pending screen is to change.

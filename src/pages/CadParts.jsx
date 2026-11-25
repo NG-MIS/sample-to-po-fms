@@ -5,6 +5,7 @@ import PickList from '../components/PickList.jsx'
 import {
   FABRIC_TYPES,
   FABRIC_TYPE_LABEL,
+  addLabelFor,
   cadFabricPayload,
   cadRowPayload,
   cadsForEntry,
@@ -16,6 +17,7 @@ import {
   formatPrimaryQty,
   groupSizes,
   isTypedValue,
+  namedOptions,
   newCadRow,
   newPrimaryLine,
   pickValue,
@@ -29,40 +31,16 @@ import {
   toCadRows,
   toPrimaryLines,
   typedName,
-  typedValue,
 } from '../lib/cad.js'
 import { friendlyError } from '../lib/format.js'
 import { QTY_TYPES, QTY_TYPE_LABEL } from '../lib/sampleAccessories.js'
 import { BUCKET, callSampleAction, latestImage } from '../lib/sampleData.js'
 import { defaultCombination, ratioOptions, sizeOptions } from '../lib/wishlist.js'
 
-const sameText = (a, b) => a.toLowerCase() === b.toLowerCase()
 const numberOnly = (value) => value.replace(/[^\d.]/g, '')
 const digitsOnly = (value) => value.replace(/\D/g, '')
 const formatNumber = (value) => (value === null || value === undefined ? '' : String(Number(value)))
 const formatRate = (value) => (value === null || value === undefined ? '' : Number(value).toFixed(2))
-
-// Options of a list that also takes typed names: the active entries, the ones
-// already in use here, and the names typed on this form.
-function namedOptions(items, usedIds, typedNames) {
-  return [
-    ...items
-      .filter((item) => item.is_active || usedIds.includes(item.id))
-      .map((item) => ({ value: item.id, label: item.is_active ? item.name : `${item.name} (inactive)` })),
-    ...typedNames.map((name) => ({ value: typedValue(name), label: `${name} (new)` })),
-  ].sort((a, b) => a.label.localeCompare(b.label))
-}
-
-// The wording of the "add" row for a typed name, or null when it is already there.
-function addLabelFor(items, typedNames) {
-  return (typed) => {
-    const name = cleanName(typed)
-    if (!name || name.length > 80) return null
-    const known =
-      items.some((item) => item.is_active && sameText(item.name, name)) || typedNames.some((other) => sameText(other, name))
-    return known ? null : `Add "${name}"`
-  }
-}
 
 // ---------- One CAD, shown as a table like the CAD sheet ----------
 
@@ -702,6 +680,124 @@ function SizeBoxes({ sizes, covered, firstFree, onPick, label, disabled }) {
   )
 }
 
+// ---------- One accessory with its qty type and size groups ----------
+// Used for the primary accessory list and for the accessory material lists.
+//   line     - { key, accessory_id, new_accessory, qty_type, groups }
+//   onChange - gets the changes to the line
+//   children - more fields of the line, shown under the size groups
+export function AccessoryLineEditor({ line, index, sizes, canEdit, accessoryOptions, addLabel, onChange, onRemove, children }) {
+  const covered = groupSizes(line.groups, sizes)
+  const setGroup = (groupKey, changes) =>
+    onChange({ groups: line.groups.map((group) => (group.key === groupKey ? { ...group, ...changes } : group)) })
+  return (
+    <div className="primary-line" data-primary-line={index + 1}>
+              <div className="primary-line-top">
+                <div className="fabric-cell">
+                  <label className="field-label" htmlFor={`primary-${line.key}-name`}>
+                    Accessory name<span className="field-required"> *</span>
+                  </label>
+                  <PickList
+                    id={`primary-${line.key}-name`}
+                    options={accessoryOptions}
+                    value={pickValue(line.accessory_id, line.new_accessory)}
+                    disabled={!canEdit}
+                    onChange={(value) =>
+                      onChange(isTypedValue(value) ? { accessory_id: null, new_accessory: typedName(value) } : { accessory_id: value, new_accessory: '' })
+                    }
+                    onCreate={(typed) => onChange({ accessory_id: null, new_accessory: cleanName(typed) })}
+                    createLabel={addLabel}
+                  />
+                </div>
+                <div className="fabric-cell">
+                  <label className="field-label" htmlFor={`primary-${line.key}-type`}>
+                    Qty type<span className="field-required"> *</span>
+                  </label>
+                  <PickList
+                    id={`primary-${line.key}-type`}
+                    options={QTY_TYPES}
+                    value={line.qty_type}
+                    clearable={false}
+                    disabled={!canEdit}
+                    onChange={(value) => onChange({ qty_type: value })}
+                  />
+                </div>
+                {canEdit && (
+                  <button
+                    type="button"
+                    className="btn btn--small fabric-remove"
+                    aria-label={`Remove accessory ${index + 1}`}
+                    onClick={onRemove}
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+              {line.groups.map((group, groupIndex) => {
+                const firstFree = covered.slice(0, groupIndex).reduce((sum, list) => sum + list.length, 0)
+                return (
+                  <div key={group.key} className="primary-group" data-primary-group={groupIndex + 1}>
+                    <div className="primary-group-sizes">
+                      <span className="field-label">Sizes {sizeSpan(covered[groupIndex])}</span>
+                      <SizeBoxes
+                        sizes={sizes}
+                        covered={covered[groupIndex]}
+                        firstFree={firstFree}
+                        disabled={!canEdit}
+                        label={`Sizes of group ${groupIndex + 1}, accessory ${index + 1}`}
+                        onPick={(size) => onChange({ groups: setGroupEnd(line.groups, groupIndex, size, sizes) })}
+                      />
+                    </div>
+                    <div className="primary-group-qty">
+                      <label className="field-label" htmlFor={`primary-${group.key}-pcs`}>
+                        {line.qty_type === 'quantity' || !line.qty_type ? 'Qty (pcs)' : 'No. of pcs'}
+                      </label>
+                      <input
+                        id={`primary-${group.key}-pcs`}
+                        className="input"
+                        inputMode="numeric"
+                        disabled={!canEdit}
+                        value={group.pcs}
+                        onChange={(event) => setGroup(group.key, { pcs: digitsOnly(event.target.value) })}
+                      />
+                    </div>
+                    {(line.qty_type === 'length' || line.qty_type === 'dimension') && (
+                      <div className="primary-group-qty">
+                        <label className="field-label" htmlFor={`primary-${group.key}-qty`}>
+                          Length (inch)
+                        </label>
+                        <input
+                          id={`primary-${group.key}-qty`}
+                          className="input"
+                          inputMode="decimal"
+                          disabled={!canEdit}
+                          value={group.qty}
+                          onChange={(event) => setGroup(group.key, { qty: numberOnly(event.target.value) })}
+                        />
+                      </div>
+                    )}
+                    {line.qty_type === 'dimension' && (
+                      <div className="primary-group-qty">
+                        <label className="field-label" htmlFor={`primary-${group.key}-breadth`}>
+                          Breadth (inch)
+                        </label>
+                        <input
+                          id={`primary-${group.key}-breadth`}
+                          className="input"
+                          inputMode="decimal"
+                          disabled={!canEdit}
+                          value={group.breadth}
+                          onChange={(event) => setGroup(group.key, { breadth: numberOnly(event.target.value) })}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+      {children}
+    </div>
+  )
+}
+
 // ---------- The primary accessory list of a sample + size (+ ratio) ----------
 
 export function PrimaryAccessoryDialog({ sample, sizeRatioId, data, canEdit, onClose, onSaved }) {
@@ -718,8 +814,6 @@ export function PrimaryAccessoryDialog({ sample, sizeRatioId, data, canEdit, onC
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const setLine = (key, changes) => setLines((previous) => previous.map((line) => (line.key === key ? { ...line, ...changes } : line)))
-  const setGroup = (line, groupKey, changes) =>
-    setLine(line.key, { groups: line.groups.map((group) => (group.key === groupKey ? { ...group, ...changes } : group)) })
   const dirty = JSON.stringify(primaryPayload(lines)) !== JSON.stringify(primaryPayload(toPrimaryLines(saved)))
 
   const typedNames = [...new Set(lines.map((line) => line.new_accessory).filter(Boolean))]
@@ -770,115 +864,19 @@ export function PrimaryAccessoryDialog({ sample, sizeRatioId, data, canEdit, onC
           piece. If it changes with the size, click the last size of the first group; the next group starts after it.
         </p>
         {lines.length === 0 && <p className="hint">No primary accessory has been added yet.</p>}
-        {lines.map((line, index) => {
-          const covered = groupSizes(line.groups, sizes)
-          return (
-            <div key={line.key} className="primary-line" data-primary-line={index + 1}>
-              <div className="primary-line-top">
-                <div className="fabric-cell">
-                  <label className="field-label" htmlFor={`primary-${line.key}-name`}>
-                    Accessory name<span className="field-required"> *</span>
-                  </label>
-                  <PickList
-                    id={`primary-${line.key}-name`}
-                    options={accessoryOptions}
-                    value={pickValue(line.accessory_id, line.new_accessory)}
-                    disabled={!canEdit}
-                    onChange={(value) =>
-                      setLine(line.key, isTypedValue(value) ? { accessory_id: null, new_accessory: typedName(value) } : { accessory_id: value, new_accessory: '' })
-                    }
-                    onCreate={(typed) => setLine(line.key, { accessory_id: null, new_accessory: cleanName(typed) })}
-                    createLabel={addLabel}
-                  />
-                </div>
-                <div className="fabric-cell">
-                  <label className="field-label" htmlFor={`primary-${line.key}-type`}>
-                    Qty type<span className="field-required"> *</span>
-                  </label>
-                  <PickList
-                    id={`primary-${line.key}-type`}
-                    options={QTY_TYPES}
-                    value={line.qty_type}
-                    clearable={false}
-                    disabled={!canEdit}
-                    onChange={(value) => setLine(line.key, { qty_type: value })}
-                  />
-                </div>
-                {canEdit && (
-                  <button
-                    type="button"
-                    className="btn btn--small fabric-remove"
-                    aria-label={`Remove accessory ${index + 1}`}
-                    onClick={() => setLines((previous) => previous.filter((item) => item.key !== line.key))}
-                  >
-                    Remove
-                  </button>
-                )}
-              </div>
-              {line.groups.map((group, groupIndex) => {
-                const firstFree = covered.slice(0, groupIndex).reduce((sum, list) => sum + list.length, 0)
-                return (
-                  <div key={group.key} className="primary-group" data-primary-group={groupIndex + 1}>
-                    <div className="primary-group-sizes">
-                      <span className="field-label">Sizes {sizeSpan(covered[groupIndex])}</span>
-                      <SizeBoxes
-                        sizes={sizes}
-                        covered={covered[groupIndex]}
-                        firstFree={firstFree}
-                        disabled={!canEdit}
-                        label={`Sizes of group ${groupIndex + 1}, accessory ${index + 1}`}
-                        onPick={(size) => setLine(line.key, { groups: setGroupEnd(line.groups, groupIndex, size, sizes) })}
-                      />
-                    </div>
-                    <div className="primary-group-qty">
-                      <label className="field-label" htmlFor={`primary-${group.key}-pcs`}>
-                        {line.qty_type === 'quantity' || !line.qty_type ? 'Qty (pcs)' : 'No. of pcs'}
-                      </label>
-                      <input
-                        id={`primary-${group.key}-pcs`}
-                        className="input"
-                        inputMode="numeric"
-                        disabled={!canEdit}
-                        value={group.pcs}
-                        onChange={(event) => setGroup(line, group.key, { pcs: digitsOnly(event.target.value) })}
-                      />
-                    </div>
-                    {(line.qty_type === 'length' || line.qty_type === 'dimension') && (
-                      <div className="primary-group-qty">
-                        <label className="field-label" htmlFor={`primary-${group.key}-qty`}>
-                          Length (inch)
-                        </label>
-                        <input
-                          id={`primary-${group.key}-qty`}
-                          className="input"
-                          inputMode="decimal"
-                          disabled={!canEdit}
-                          value={group.qty}
-                          onChange={(event) => setGroup(line, group.key, { qty: numberOnly(event.target.value) })}
-                        />
-                      </div>
-                    )}
-                    {line.qty_type === 'dimension' && (
-                      <div className="primary-group-qty">
-                        <label className="field-label" htmlFor={`primary-${group.key}-breadth`}>
-                          Breadth (inch)
-                        </label>
-                        <input
-                          id={`primary-${group.key}-breadth`}
-                          className="input"
-                          inputMode="decimal"
-                          disabled={!canEdit}
-                          value={group.breadth}
-                          onChange={(event) => setGroup(line, group.key, { breadth: numberOnly(event.target.value) })}
-                        />
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          )
-        })}
+        {lines.map((line, index) => (
+          <AccessoryLineEditor
+            key={line.key}
+            line={line}
+            index={index}
+            sizes={sizes}
+            canEdit={canEdit}
+            accessoryOptions={accessoryOptions}
+            addLabel={addLabel}
+            onChange={(changes) => setLine(line.key, changes)}
+            onRemove={() => setLines((previous) => previous.filter((item) => item.key !== line.key))}
+          />
+        ))}
         {canEdit && (
           <button type="button" className="btn" onClick={() => setLines((previous) => [...previous, newPrimaryLine(sizes)])}>
             Add accessory

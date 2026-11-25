@@ -15,6 +15,7 @@ const IMPORT_FIELDS = [
   { header: 'RATIO', required: false, hint: 'Two numbers with a colon, for example 1:1. Leave empty for a size that is not made in ratios.' },
   { header: 'PCS IN A SET', required: true, hint: 'A whole number, 1 or more.' },
   { header: 'SINGLE SIZES', required: true, hint: 'Every single size of the range, with commas between them, for example 22, 24, 26.' },
+  { header: 'PCS OF EACH SIZE', required: false, hint: 'How many pieces of each single size one set has, in the same order, for example 1, 1, 2. Empty means 1 of each.' },
   { header: 'ACTIVE', required: false, hint: 'Yes or No. Empty means Yes.' },
 ]
 
@@ -22,6 +23,17 @@ const RATIO = /^\d{1,2}:\d{1,2}$/
 const same = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase()
 // "22, 24 ,26" -> ['22', '24', '26']
 const readSizes = (text) => [...new Set((text || '').split(',').map((part) => part.trim()).filter(Boolean))]
+// "1, 1, 2" -> [1, 1, 2]. Empty -> 1 of each size. Gives { pieces } or { error }.
+function readSizePieces(text, sizes, piecesPerSet) {
+  const parts = (text || '').split(',').map((part) => part.trim()).filter(Boolean)
+  if (parts.length === 0 && sizes.length === piecesPerSet) return { pieces: sizes.map(() => 1) }
+  if (parts.length === 0) return { error: `Enter the pcs of each size: ${sizes.length} numbers that add up to ${piecesPerSet}.` }
+  if (parts.some((part) => !/^\d+$/.test(part) || Number(part) < 1)) return { error: 'Pcs of each size must be whole numbers, 1 or more, with commas between them.' }
+  if (parts.length !== sizes.length) return { error: `Pcs of each size has ${parts.length} numbers, but there are ${sizes.length} single sizes.` }
+  const pieces = parts.map(Number)
+  const sum = pieces.reduce((total, value) => total + value, 0)
+  return sum === piecesPerSet ? { pieces } : { error: `Pcs of each size adds up to ${sum}, but pcs in a set is ${piecesPerSet}.` }
+}
 
 // Says why a size + ratio cannot be saved next to the rows already there, or ''.
 function clash(rows, size, ratio, ownId) {
@@ -65,8 +77,10 @@ export default function SizeRatiosPage() {
     memo.rows ??= []
     const problem = clash([...rows, ...memo.rows], size, ratio, null)
     if (problem) return rows.some((row) => same(row.size, size) && (row.ratio ?? '') === (ratio ?? '')) ? { skip: 'Already in the list.' } : { error: problem }
+    const each = readSizePieces(cells['PCS OF EACH SIZE'], sizes, Number(cells['PCS IN A SET']))
+    if (each.error) return { error: each.error }
     memo.rows.push({ id: `file-${memo.rows.length}`, size, ratio })
-    return { record: { size, ratio, pieces_per_set: Number(cells['PCS IN A SET']), sizes, is_active: isActive } }
+    return { record: { size, ratio, pieces_per_set: Number(cells['PCS IN A SET']), sizes, size_pieces: each.pieces, is_active: isActive } }
   }
 
   const saveImported = async (record) => {
@@ -81,6 +95,7 @@ export default function SizeRatiosPage() {
       { key: 'ratio', header: 'RATIO', value: (row) => row.ratio ?? '' },
       { key: 'pieces', header: 'PCS IN A SET', align: 'right', value: (row) => row.pieces_per_set },
       { key: 'sizes', header: 'SINGLE SIZES', value: (row) => row.sizes.join(', ') },
+      { key: 'size_pieces', header: 'PCS OF EACH SIZE', value: (row) => (row.size_pieces ?? []).join(', ') },
       {
         key: 'status',
         header: 'STATUS',
@@ -172,6 +187,7 @@ function SizeRatioForm({ row, rows, onClose, onSaved }) {
   const [ratio, setRatio] = useState(row.ratio ?? '')
   const [pieces, setPieces] = useState(row.pieces_per_set ? String(row.pieces_per_set) : '')
   const [sizes, setSizes] = useState((row.sizes ?? []).join(', '))
+  const [sizePieces, setSizePieces] = useState((row.size_pieces ?? []).join(', '))
   const [isActive, setIsActive] = useState(row.is_active ?? true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -181,6 +197,7 @@ function SizeRatioForm({ row, rows, onClose, onSaved }) {
     ratio !== (row.ratio ?? '') ||
     pieces !== (row.pieces_per_set ? String(row.pieces_per_set) : '') ||
     sizes !== (row.sizes ?? []).join(', ') ||
+    sizePieces !== (row.size_pieces ?? []).join(', ') ||
     isActive !== (row.is_active ?? true)
 
   const save = async (event) => {
@@ -192,11 +209,13 @@ function SizeRatioForm({ row, rows, onClose, onSaved }) {
     if (!/^\d+$/.test(pieces) || Number(pieces) < 1) return setError('Pcs in a set must be a whole number, 1 or more.')
     const singleSizes = readSizes(sizes)
     if (singleSizes.length === 0) return setError('Enter the single sizes of this range, with commas between them.')
+    const each = readSizePieces(sizePieces, singleSizes, Number(pieces))
+    if (each.error) return setError(each.error)
     const problem = clash(rows, cleanSize, cleanRatio, row.id)
     if (problem) return setError(problem)
     setBusy(true)
     setError('')
-    const values = { size: cleanSize, ratio: cleanRatio, pieces_per_set: Number(pieces), sizes: singleSizes, is_active: isActive }
+    const values = { size: cleanSize, ratio: cleanRatio, pieces_per_set: Number(pieces), sizes: singleSizes, size_pieces: each.pieces, is_active: isActive }
     const { error: failure } = isNew
       ? await supabase.from('size_ratios').insert(values)
       : await supabase.from('size_ratios').update(values).eq('id', row.id)
@@ -253,6 +272,18 @@ function SizeRatioForm({ row, rows, onClose, onSaved }) {
           hint="Every single size of this range, in order, with commas between them. Used to split an accessory qty by size."
         >
           <input id="size-ratio-sizes" className="input" value={sizes} onChange={(event) => setSizes(event.target.value)} />
+        </Field>
+        <Field
+          label="Pcs of each size"
+          htmlFor="size-ratio-size-pieces"
+          hint="How many pieces of each single size one set has, in the same order. For 22-38 at 1:2 it is 1, 1, 1, 1, 1, 2, 2, 2, 2. Leave empty for 1 of each. Used to work out what to order."
+        >
+          <input
+            id="size-ratio-size-pieces"
+            className="input"
+            value={sizePieces}
+            onChange={(event) => setSizePieces(event.target.value.replace(/[^\d,\s]/g, ''))}
+          />
         </Field>
         <Tick
           id="size-ratio-active"

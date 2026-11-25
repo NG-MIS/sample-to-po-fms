@@ -96,6 +96,18 @@ Newest first. A changed decision is not deleted: a new entry is added that repla
 | 23 Nov 2026 | Sample files are private; a file can be viewed only by people who can see its sample | Concept images are design work and should not leak |
 | 23 Nov 2026 | Reference on a sample: one choice from a References list in Masters, plus one picture, both optional | Nihal chose a list he maintains himself |
 | 23 Nov 2026 | Remarks on a sample: typed notes, voice notes and pictures, any number of each, all optional | Nihal's request |
+| 25 Nov 2026 | One PO = one wishlist item + one vendor, with all that vendor's items | Nihal: "in one po, there are items for only one wishlist" |
+| 25 Nov 2026 | A material list is Updated when "Confirm list" is pressed, Ordered when every item has a PO or is Not required; primary fabric first, the other three lists show as pending after it | Nihal's flow |
+| 25 Nov 2026 | Fabric to order = Msrmnt / pcs in layer x qty, plus one tolerance % from the master, rounded up to the next 10, in metres | Nihal: "always round up in 10s", "single... but can be updated in master" |
+| 25 Nov 2026 | Accessory qty is split by size using the pieces of each size in a set, kept in Sizes and ratios | 1:2 and 2:1 give different pieces per size |
+| 25 Nov 2026 | PO qty: one number is for every colour; numbers joined with + are one per colour and must match the colour count. Colour specific applies to accessories only; fabric always names colours | Nihal's rule |
+| 25 Nov 2026 | Promise days per line; the first line's value fills the others, changeable | Nihal: "the first one become default but changeable" |
+| 25 Nov 2026 | Length accessories are ordered as pieces of each length or as one whole length in inches, chosen on the PO; dimension in pieces | Nihal: "sometime whole length and sometime pcs" |
+| 25 Nov 2026 | PO number is automatic, PO- and a running number, starting number set in Numbering; a cancelled PO keeps its number | Agreed |
+| 25 Nov 2026 | The people who update a sample's images confirm lists, mark Not required and raise POs; only authority All changes or cancels a raised PO, or takes off a Not required mark | Nihal: "currently the persons who updates the images", "yes, authority all" |
+| 25 Nov 2026 | An open order can be for anything, with remarks and an optional link to a wishlist item or sample | Nihal: "no, can be anything" |
+| 25 Nov 2026 | A confirmed list stays editable until a material is on a PO or Not required | Stated to Nihal with the build summary and accepted |
+| 25 Nov 2026 | The wishlist column for the CAD department's list is now headed CAD ACCESSORY LIST | PRIMARY ACCESSORY is the heading of the material list status |
 | 23 Nov 2026 | Only authority All can change a sample after it is saved; nobody can delete one | Nihal: "authority all can change, no one else" |
 | 23 Nov 2026 | Only people with the role Designer or authority All can create a sample | Nihal's rule |
 | 23 Nov 2026 | Creation date defaults to today; earlier dates allowed, future dates not ("today" is counted in India time) | Agreed |
