@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import ClickableImage from './ClickableImage.jsx'
+import ScreenSearch from './ScreenSearch.jsx'
 import { useAuth } from '../lib/auth.jsx'
 import { useEscape } from '../lib/escape.js'
-import { isMasterPath } from '../lib/masters.js'
+import { MASTERS, isMasterPath } from '../lib/masters.js'
 import { recall, remember } from '../lib/remember.js'
 import { useIsPhone } from '../lib/screen.js'
 
@@ -28,6 +29,13 @@ const MENU = [
   },
 ]
 
+// Every screen the search can find: the menu links, and each master by its own name.
+const SCREENS = [
+  ...MENU.flatMap((group) => group.links.map((link) => ({ to: link.to, label: link.label, group: group.title }))).filter((screen) => screen.to !== '/masters'),
+  ...MASTERS.map((master) => ({ to: master.path, label: master.label, group: 'Masters' })),
+]
+const openMenu = (setMenuOpen) => () => setMenuOpen(true)
+
 // The frame around every screen: menu on the left, signed-in person on top.
 // On a phone the menu is a drawer opened from the button in the top bar.
 export default function Layout({ children }) {
@@ -48,12 +56,15 @@ export default function Layout({ children }) {
   }
 
   useEscape(() => setMenuOpen(false), drawerOpen)
+  // Ctrl+K: on a phone the menu drawer opens first, so the search box is on screen.
+  const focusSearch = useMemo(() => openMenu(setMenuOpen), [])
 
   return (
     <div className="shell">
       {drawerOpen && <div className="side-backdrop" onClick={() => setMenuOpen(false)} />}
       <aside className={`side ${isPhone ? 'side--drawer' : ''} ${drawerOpen ? 'side--open' : ''}`}>
         <div className="side-brand">Sample to PO FMS</div>
+        <ScreenSearch screens={SCREENS} onFocusRequest={focusSearch} onGo={() => setMenuOpen(false)} />
         <nav aria-label="Main menu">
           {MENU.map((group) => {
             const isFolded = folded.has(group.title)

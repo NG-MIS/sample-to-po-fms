@@ -673,6 +673,7 @@ All in `src/components`. A screen never builds its own version of these.
 | `Popover` | Floating panel under a button, used by pick-lists and column filters |
 | `Field`, `Tick`, `Badge` | Labelled form row, tick box, coloured yes/no label |
 | `Tabs` | A row of tabs, each with a count of what is waiting |
+| `ScreenSearch` | Search box on top of the side menu that finds any screen, and each master, by name. Ctrl+K (Cmd+K on a Mac) jumps to it; arrow keys and Enter open a result |
 | `Fold` | A section that opens and closes; its bar always shows the title, a short summary and an optional button |
 | `Layout`, `PageHead` | Menu on the left with folding groups (a drawer on a phone), signed-in person on top, screen heading |
 
@@ -719,6 +720,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 26 Nov 2026 | Screen search added to the side menu, with the shortcut Ctrl+K |
 | 26 Nov 2026 | Receiving built: Fabric receiving and Accessory receiving screens, receipts in parts, lot numbers by colour from lot series, item name change at first receipt, receiving allowance, mark complete, follow-ups, departments Fabric store and Accessory store. Added by `supabase/migrations/20261126065917_po_receiving_lots_and_followups.sql` |
 | 26 Nov 2026 | Masters brought into one screen: the menu has a single Masters link, and every master is a tab on it, in alphabetical order (the list is in `src/lib/masters.js`). The old address of each master still opens its tab |
 | 26 Nov 2026 | CAD form: a new CAD table starts with 5 rows; rows left empty are dropped when it is saved |
