@@ -2,9 +2,12 @@ import { useMemo, useState } from 'react'
 import ClickableImage from '../components/ClickableImage.jsx'
 import Modal from '../components/Modal.jsx'
 import PickList from '../components/PickList.jsx'
+import { Tick } from '../components/Field.jsx'
 import {
   FABRIC_TYPES,
+  COLOUR_FOLLOWS,
   FABRIC_TYPE_LABEL,
+  colourText,
   addLabelFor,
   cadFabricPayload,
   cadRowPayload,
@@ -40,6 +43,7 @@ import { defaultCombination, ratioOptions, sizeOptions } from '../lib/wishlist.j
 const numberOnly = (value) => value.replace(/[^\d.]/g, '')
 const digitsOnly = (value) => value.replace(/\D/g, '')
 const formatNumber = (value) => (value === null || value === undefined ? '' : String(Number(value)))
+const componentName = (data, id) => data.components.find((component) => component.id === id)?.name ?? ''
 const formatRate = (value) => (value === null || value === undefined ? '' : Number(value).toFixed(2))
 
 // ---------- One CAD, shown as a table like the CAD sheet ----------
@@ -128,6 +132,8 @@ export function CadCard({ cad, sample, data, lookups, canCad, canFabric, onEdit,
                 <th>PAINA</th>
                 <th>NO. OF PCS IN LAYER</th>
                 <th>NO OF PANELS</th>
+                <th>COMPONENTS</th>
+                <th>EFFICIENCY</th>
                 <th>FABRIC</th>
                 <th>VENDOR</th>
                 <th>RATE</th>
@@ -142,6 +148,8 @@ export function CadCard({ cad, sample, data, lookups, canCad, canFabric, onEdit,
                   <td>{formatNumber(row.paina)}</td>
                   <td>{formatNumber(row.pcs_in_layer)}</td>
                   <td>{formatNumber(row.panels)}</td>
+                  <td>{(row.component_ids ?? []).map((id) => componentName(data, id)).join(', ')}</td>
+                  <td>{row.efficiency === null || row.efficiency === undefined ? '' : `${formatNumber(row.efficiency)}%`}</td>
                   <td>{lookups.fabric.get(row.fabric_id) ?? <span className="badge badge--pending">Pending</span>}</td>
                   <td>{data.fabricVendors.find((vendor) => vendor.id === row.vendor_id)?.code}</td>
                   <td>{formatRate(row.rate)}</td>
@@ -157,7 +165,8 @@ export function CadCard({ cad, sample, data, lookups, canCad, canFabric, onEdit,
 
 // ---------- The drawing rows of one CAD, as an editable table ----------
 
-function CadRowsEditor({ rows, onChange, particulars, typedNames, idPrefix }) {
+//   components - the components of the sample: [{ value, label }]
+function CadRowsEditor({ rows, onChange, particulars, typedNames, idPrefix, components }) {
   const setRow = (key, changes) => onChange(rows.map((row) => (row.key === key ? { ...row, ...changes } : row)))
   const usedIds = rows.map((row) => row.particular_id).filter(Boolean)
   const options = namedOptions(particulars, usedIds, typedNames)
@@ -174,6 +183,8 @@ function CadRowsEditor({ rows, onChange, particulars, typedNames, idPrefix }) {
             <th>PAINA</th>
             <th>NO. OF PCS IN LAYER</th>
             <th>NO OF PANELS</th>
+            <th>COMPONENTS *</th>
+            <th>EFFICIENCY %</th>
             <th aria-label="Remove" />
           </tr>
         </thead>
@@ -218,6 +229,20 @@ function CadRowsEditor({ rows, onChange, particulars, typedNames, idPrefix }) {
               <td data-label="No of panels">
                 <input className="input" inputMode="numeric" aria-label={`No of panels, row ${index + 1}`} value={row.panels} onChange={(event) => setRow(row.key, { panels: digitsOnly(event.target.value) })} />
               </td>
+              <td data-label="Components">
+                <PickList
+                  id={`${idPrefix}-${row.key}-components`}
+                  multiple
+                  options={components}
+                  value={row.component_ids}
+                  onChange={(value) => setRow(row.key, { component_ids: value })}
+                  placeholder={components.length === 0 ? 'Choose the sample first' : components.length === 1 ? components[0].label : 'Select…'}
+                  disabled={components.length === 0}
+                />
+              </td>
+              <td data-label="Efficiency %">
+                <input className="input" inputMode="decimal" aria-label={`Efficiency, row ${index + 1}`} value={row.efficiency} onChange={(event) => setRow(row.key, { efficiency: numberOnly(event.target.value) })} />
+              </td>
               <td>
                 <button
                   type="button"
@@ -256,6 +281,11 @@ export function CadForm({ cad, start, data, onClose, onSaved, onPrimary }) {
   )
   const [sampleId, setSampleId] = useState(cad?.sample_id ?? start?.sample?.id ?? null)
   const sample = data.samples.find((item) => item.id === sampleId)
+  const sampleComponentIds = useMemo(() => sample?.component_ids ?? [], [sample])
+  const componentOptions = sampleComponentIds
+    .map((id) => ({ value: id, label: componentName(data, id) }))
+    .sort((a, b) => a.label.localeCompare(b.label))
+  const picture = sample ? latestImage(sample) : null
 
   const initial = useMemo(() => {
     if (cad) {
@@ -281,6 +311,11 @@ export function CadForm({ cad, start, data, onClose, onSaved, onPrimary }) {
   const setTable = (key, changes) => setTables((previous) => previous.map((table) => (table.key === key ? { ...table, ...changes } : table)))
   const typedNames = [...new Set(tables.flatMap((table) => table.rows.map((row) => row.new_particular)).filter(Boolean))]
   const snapshot = (list) => JSON.stringify(list.map((table) => [table.size_ratio_id, cadRowPayload(table.rows)]))
+  // Components belong to a sample, so another sample starts with none picked.
+  const changeSample = (id) => {
+    setSampleId(id)
+    setTables((previous) => previous.map((table) => ({ ...table, rows: table.rows.map((row) => ({ ...row, component_ids: [] })) })))
+  }
   const dirty = sampleId !== (cad?.sample_id ?? start?.sample?.id ?? null) || snapshot(tables) !== snapshot(initial)
   const sampleOptions = approved
     .map((item) => ({ value: item.id, label: item.design_no ? `${item.sample_no} · design ${item.design_no}` : item.sample_no }))
@@ -292,7 +327,7 @@ export function CadForm({ cad, start, data, onClose, onSaved, onPrimary }) {
     for (const [index, table] of tables.entries()) {
       const name = tables.length > 1 ? `CAD ${index + 1}: ` : ''
       if (!table.size_ratio_id) return setError(`${name}Choose the size, and the ratio when the size has ratios.`)
-      const problem = checkCadRows(table.rows)
+      const problem = checkCadRows(table.rows, sampleComponentIds)
       if (problem) return setError(name + problem)
     }
     setBusy(true)
@@ -306,7 +341,7 @@ export function CadForm({ cad, start, data, onClose, onSaved, onPrimary }) {
           p_id: table.id,
           p_sample_id: sampleId,
           p_size_ratio_id: table.size_ratio_id,
-          p_rows: cadRowPayload(table.rows),
+          p_rows: cadRowPayload(table.rows, sampleComponentIds),
         })
         numbers.push(number)
         done.push(table.key)
@@ -349,11 +384,24 @@ export function CadForm({ cad, start, data, onClose, onSaved, onPrimary }) {
             value={sampleId}
             clearable={false}
             disabled={!isNew}
-            onChange={setSampleId}
+            onChange={changeSample}
             placeholder={sampleOptions.length ? 'Select…' : 'No sample has its final approval yet'}
           />
           {isNew && <p className="hint">Only samples whose final approval is Yes are listed.</p>}
         </div>
+        {sample && (
+          <div className="cad-form-picture" data-cad-picture>
+            {picture ? (
+              <ClickableImage bucket={BUCKET} path={picture.path} alt={`${sample.sample_no} ${picture.label.toLowerCase()} image`} size={110} />
+            ) : (
+              <span className="hint">No picture</span>
+            )}
+            <span className="hint">
+              {sample.sample_no}
+              {picture ? `, ${picture.label.toLowerCase()} image` : ''}
+            </span>
+          </div>
+        )}
 
         {tables.map((table, index) => {
           const ratios = table.size ? ratioOptions(data.sizeRatios, table.size, table.size_ratio_id) : []
@@ -439,6 +487,7 @@ export function CadForm({ cad, start, data, onClose, onSaved, onPrimary }) {
                 particulars={data.cadParticulars}
                 typedNames={typedNames}
                 idPrefix={`cad-${table.key}`}
+                components={componentOptions}
               />
               {isNew && tables.length > 1 && !saved && (
                 <button
@@ -687,10 +736,25 @@ function SizeBoxes({ sizes, covered, firstFree, onPick, label, disabled }) {
 //   line     - { key, accessory_id, new_accessory, qty_type, groups }
 //   onChange - gets the changes to the line
 //   children - more fields of the line, shown under the size groups
-export function AccessoryLineEditor({ line, index, sizes, canEdit, accessoryOptions, addLabel, onChange, onRemove, children }) {
+//   colours  - the Colours list, for naming the colour of a general accessory
+export function AccessoryLineEditor({ line, index, sizes, canEdit, accessoryOptions, addLabel, colours = [], onChange, onRemove, children }) {
   const covered = groupSizes(line.groups, sizes)
+  // With "same pcs per size group" ticked, the pieces typed in one group go to every group.
   const setGroup = (groupKey, changes) =>
-    onChange({ groups: line.groups.map((group) => (group.key === groupKey ? { ...group, ...changes } : group)) })
+    onChange({
+      groups: line.groups.map((group) =>
+        group.key === groupKey ? { ...group, ...changes } : line.same_pcs && 'pcs' in changes ? { ...group, pcs: changes.pcs } : group,
+      ),
+    })
+  const withSamePcs = (groups) => (line.same_pcs ? groups.map((group) => ({ ...group, pcs: groups[0].pcs })) : groups)
+  const colourOptions = [...new Set([...colours.filter((row) => row.is_active).map((row) => row.name), line.colour].filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b))
+    .map((name) => ({ value: name, label: name }))
+  const addColourLabel = (typed) => {
+    const name = cleanName(typed)
+    if (!name || name.length > 60) return null
+    return colourOptions.some((option) => option.label.toLowerCase() === name.toLowerCase()) ? null : `Add "${name}"`
+  }
   return (
     <div className="primary-line" data-primary-line={index + 1}>
               <div className="primary-line-top">
@@ -746,7 +810,7 @@ export function AccessoryLineEditor({ line, index, sizes, canEdit, accessoryOpti
                         firstFree={firstFree}
                         disabled={!canEdit}
                         label={`Sizes of group ${groupIndex + 1}, accessory ${index + 1}`}
-                        onPick={(size) => onChange({ groups: setGroupEnd(line.groups, groupIndex, size, sizes) })}
+                        onPick={(size) => onChange({ groups: withSamePcs(setGroupEnd(line.groups, groupIndex, size, sizes)) })}
                       />
                     </div>
                     <div className="primary-group-qty">
@@ -757,7 +821,7 @@ export function AccessoryLineEditor({ line, index, sizes, canEdit, accessoryOpti
                         id={`primary-${group.key}-pcs`}
                         className="input"
                         inputMode="numeric"
-                        disabled={!canEdit}
+                        disabled={!canEdit || (line.same_pcs && groupIndex > 0)}
                         value={group.pcs}
                         onChange={(event) => setGroup(group.key, { pcs: digitsOnly(event.target.value) })}
                       />
@@ -795,6 +859,53 @@ export function AccessoryLineEditor({ line, index, sizes, canEdit, accessoryOpti
                   </div>
                 )
               })}
+      <div className="primary-colour" data-primary-colour>
+        <Tick
+          id={`primary-${line.key}-same-pcs`}
+          label="Same pcs per size group"
+          checked={line.same_pcs}
+          disabled={!canEdit}
+          onChange={(value) => onChange({ same_pcs: value, groups: value ? line.groups.map((group) => ({ ...group, pcs: line.groups[0].pcs })) : line.groups })}
+        />
+        <Tick
+          id={`primary-${line.key}-colour-specific`}
+          label="Colour specific"
+          checked={line.colour_specific}
+          disabled={!canEdit}
+          onChange={(value) => onChange({ colour_specific: value, colour_follows: value ? line.colour_follows : null, colour: value ? '' : line.colour })}
+        />
+        {line.colour_specific ? (
+          <div className="fabric-cell">
+            <label className="field-label" htmlFor={`primary-${line.key}-follows`}>
+              Colour follows<span className="field-required"> *</span>
+            </label>
+            <PickList
+              id={`primary-${line.key}-follows`}
+              options={COLOUR_FOLLOWS}
+              value={line.colour_follows}
+              clearable={false}
+              disabled={!canEdit}
+              onChange={(value) => onChange({ colour_follows: value })}
+            />
+          </div>
+        ) : (
+          <div className="fabric-cell">
+            <label className="field-label" htmlFor={`primary-${line.key}-colour`}>
+              Colour it comes in
+            </label>
+            <PickList
+              id={`primary-${line.key}-colour`}
+              options={colourOptions}
+              value={line.colour || null}
+              disabled={!canEdit}
+              onChange={(value) => onChange({ colour: value ?? '' })}
+              onCreate={(typed) => onChange({ colour: cleanName(typed) })}
+              createLabel={addColourLabel}
+              placeholder="Optional"
+            />
+          </div>
+        )}
+      </div>
       {children}
     </div>
   )
@@ -875,6 +986,7 @@ export function PrimaryAccessoryDialog({ sample, sizeRatioId, data, canEdit, onC
             canEdit={canEdit}
             accessoryOptions={accessoryOptions}
             addLabel={addLabel}
+            colours={data.colours}
             onChange={(changes) => setLine(line.key, changes)}
             onRemove={() => setLines((previous) => previous.filter((item) => item.key !== line.key))}
           />
@@ -901,6 +1013,7 @@ export function PrimaryLineText({ line, sizes, accessoryName }) {
     <span>
       {accessoryName} ({QTY_TYPE_LABEL[line.qty_type]}):{' '}
       {line.groups.map((group, index) => `${sizeSpan(covered[index])}: ${formatPrimaryQty(line.qty_type, group)}`).join('; ')}
+      {colourText(line) ? `. ${colourText(line)}` : ''}
     </span>
   )
 }

@@ -56,6 +56,8 @@ export const newCadRow = () => ({
   paina: '',
   pcs_in_layer: '',
   panels: '',
+  component_ids: [],
+  efficiency: '',
 })
 
 // The saved rows of a CAD, ready for the editor. keepIds false = a copy for a new CAD.
@@ -70,24 +72,34 @@ export const toCadRows = (cad, keepIds = true) =>
     paina: text(row.paina),
     pcs_in_layer: text(row.pcs_in_layer),
     panels: text(row.panels),
+    component_ids: row.component_ids ?? [],
+    efficiency: text(row.efficiency),
   }))
 
 export const isBlankCadRow = (row) =>
   !row.particular_id &&
   !row.new_particular &&
   !row.fabric_type &&
-  [row.msrmnt, row.paina, row.pcs_in_layer, row.panels].every((value) => value.trim() === '')
+  row.component_ids.length === 0 &&
+  [row.msrmnt, row.paina, row.pcs_in_layer, row.panels, row.efficiency].every((value) => value.trim() === '')
 
 const decimal = (value) => /^\d{1,7}(\.\d{1,2})?$/.test(value.trim())
 const whole = (value) => /^\d{1,6}$/.test(value.trim())
 
+// The components of a row. A sample with a single component needs no picking.
+export const rowComponents = (row, sampleComponentIds) =>
+  row.component_ids.length === 0 && sampleComponentIds.length === 1 ? sampleComponentIds : row.component_ids
+
 // Says what is wrong with the rows of one CAD, or '' when they can be saved.
-export function checkCadRows(rows) {
+//   sampleComponentIds - the components of the sample the CAD is for
+export function checkCadRows(rows, sampleComponentIds = []) {
   const filled = rows.filter((row) => !isBlankCadRow(row))
   if (filled.length === 0) return 'A CAD needs at least one drawing row.'
   for (const row of filled) {
     if (!row.particular_id && !row.new_particular) return 'Every drawing row needs its particulars.'
     if (!row.fabric_type) return 'Choose the fabric type of every drawing row: Primary or Secondary.'
+    if (rowComponents(row, sampleComponentIds).length === 0) return 'Choose the components of every drawing row.'
+    if (row.efficiency.trim() !== '' && (!decimal(row.efficiency) || Number(row.efficiency) > 100)) return 'Efficiency is a percentage from 0 to 100.'
     if (row.msrmnt.trim() !== '' && !decimal(row.msrmnt)) return 'Msrmnt must be a number with at most 2 decimals.'
     if (row.paina.trim() !== '' && !decimal(row.paina)) return 'Paina must be a number with at most 2 decimals.'
     if (row.pcs_in_layer.trim() !== '' && !whole(row.pcs_in_layer)) return 'No. of pcs in layer must be a whole number.'
@@ -98,7 +110,7 @@ export function checkCadRows(rows) {
 
 const orNull = (value) => (value.trim() === '' ? null : value.trim())
 
-export const cadRowPayload = (rows) =>
+export const cadRowPayload = (rows, sampleComponentIds = []) =>
   rows
     .filter((row) => !isBlankCadRow(row))
     .map((row) => ({
@@ -110,6 +122,8 @@ export const cadRowPayload = (rows) =>
       paina: orNull(row.paina),
       pcs_in_layer: orNull(row.pcs_in_layer),
       panels: orNull(row.panels),
+      component_ids: rowComponents(row, sampleComponentIds),
+      efficiency: orNull(row.efficiency),
     }))
 
 // ---------- Fabric of the CAD rows (filled by the people who look after the sample) ----------
@@ -150,12 +164,42 @@ export const rowsWithoutFabric = (cad) => cad.rows.filter((row) => !row.fabric_i
 
 export const newPrimaryGroup = (upto) => ({ key: key('group'), upto, pcs: '', qty: '', breadth: '' })
 
+// How an accessory is coloured:
+//   general         - comes in one colour, which can be named (colour)
+//   colour specific - ordered colour by colour, following the base colour of
+//                     the garment or an alternate, contrasting colour (colour_follows)
+export const COLOUR_FOLLOWS = [
+  { value: 'base', label: 'Base colour' },
+  { value: 'alternate', label: 'Alternate colour' },
+]
+export const COLOUR_FOLLOWS_LABEL = { base: 'Base colour', alternate: 'Alternate colour' }
+const NO_COLOUR = { colour_specific: false, colour_follows: null, colour: '' }
+// The colour fields of a saved line, ready for the editor.
+export const colourFields = (line) => ({
+  colour_specific: Boolean(line.colour_specific),
+  colour_follows: line.colour_follows ?? null,
+  colour: line.colour ?? '',
+})
+// The colour fields as they are saved.
+export const colourPayload = (line) => ({
+  colour_specific: line.colour_specific,
+  colour_follows: line.colour_specific ? line.colour_follows : null,
+  colour: line.colour_specific ? null : line.colour.trim() || null,
+})
+// "Colour specific, base colour", "Gold" or "".
+export const colourText = (line) =>
+  line.colour_specific ? `Colour specific, ${(COLOUR_FOLLOWS_LABEL[line.colour_follows] ?? 'colour not chosen').toLowerCase()}` : (line.colour ?? '')
+// Every size group has the same number of pieces (and there is more than one group).
+export const hasSamePcs = (groups) => groups.length > 1 && groups.every((group) => String(group.pcs) !== '' && String(group.pcs) === String(groups[0].pcs))
+
 export const newPrimaryLine = (sizes) => ({
   key: key('primary'),
   accessory_id: null,
   new_accessory: '',
   qty_type: null,
   groups: [newPrimaryGroup(sizes[sizes.length - 1])],
+  ...NO_COLOUR,
+  same_pcs: false,
 })
 
 export const toPrimaryLines = (lines) =>
@@ -171,6 +215,8 @@ export const toPrimaryLines = (lines) =>
       qty: text(group.qty),
       breadth: text(group.breadth),
     })),
+    ...colourFields(line),
+    same_pcs: hasSamePcs(line.groups),
   }))
 
 // The single sizes each group of a line covers: [['22','24'], ['26','28','30'], ...].
@@ -200,6 +246,7 @@ export function checkPrimaryLines(lines) {
   for (const line of lines) {
     if (!line.accessory_id && !line.new_accessory) return 'Every accessory line needs an accessory name.'
     if (!line.qty_type) return 'Choose the qty type of every accessory: Quantity, Length or Dimension.'
+    if (line.colour_specific && !line.colour_follows) return 'For every colour specific accessory, choose Base colour or Alternate colour.'
     for (const group of line.groups) {
       if (!/^\d{1,6}$/.test(group.pcs.trim()) || Number(group.pcs) < 1) {
         return line.qty_type === 'quantity'
@@ -228,6 +275,7 @@ export const primaryPayload = (lines) =>
       qty: line.qty_type === 'quantity' ? null : group.qty.trim(),
       breadth: line.qty_type === 'dimension' ? group.breadth.trim() : null,
     })),
+    ...colourPayload(line),
   }))
 
 // The qty of one saved group as shown on screen: "6 pcs", "2 pcs × 6 inch", "3 pcs × 10 × 4 inch".

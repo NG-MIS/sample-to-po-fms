@@ -2,7 +2,7 @@
 // A wishlist item has four lists: primary fabric, secondary fabric,
 // primary accessory and secondary accessory.
 
-import { groupSizes, newPrimaryGroup, sizeSpan } from './cad.js'
+import { COLOUR_FOLLOWS_LABEL, colourFields, colourPayload, groupSizes, hasSamePcs, newPrimaryGroup, sizeSpan } from './cad.js'
 
 let counter = 0
 const key = (prefix) => `${prefix}-${++counter}`
@@ -249,6 +249,9 @@ export const newAccessoryItem = (sizes, changes = {}) => ({
   qty_type: null,
   groups: [newPrimaryGroup(sizes[sizes.length - 1])],
   colour_specific: false,
+  colour_follows: null,
+  colour: '',
+  same_pcs: false,
   vendor_id: null,
   rate: '',
   ...changes,
@@ -262,14 +265,21 @@ export const toAccessoryItems = (items) =>
     new_accessory: '',
     qty_type: item.qty_type,
     groups: editorGroups(item.groups),
-    colour_specific: item.colour_specific,
+    ...colourFields(item),
+    same_pcs: hasSamePcs(item.groups),
     vendor_id: item.accessory_vendor_id,
     rate: text(item.rate),
   }))
 
 // A line of the primary accessory list set up with the CADs, as a new item.
 export const accessoryItemFromPrimaryLine = (line, sizes) =>
-  newAccessoryItem(sizes, { accessory_id: line.accessory_id, qty_type: line.qty_type, groups: editorGroups(line.groups) })
+  newAccessoryItem(sizes, {
+    accessory_id: line.accessory_id,
+    qty_type: line.qty_type,
+    groups: editorGroups(line.groups),
+    ...colourFields(line),
+    same_pcs: hasSamePcs(line.groups),
+  })
 
 export function checkAccessoryRates(lines) {
   for (const line of lines) {
@@ -290,7 +300,7 @@ export const accessoryItemsPayload = (lines) =>
       qty: line.qty_type === 'quantity' ? null : group.qty.trim(),
       breadth: line.qty_type === 'dimension' ? group.breadth.trim() : null,
     })),
-    colour_specific: line.colour_specific,
+    ...colourPayload(line),
     vendor_id: line.vendor_id,
     rate: orNull(line.rate),
   }))
@@ -331,6 +341,7 @@ export const newPoLine = (changes = {}) => ({
   paina: '',
   required: '', // what the material list says is needed, shown beside the qty
   colourSpecific: null, // for a line from an accessory list: must it name colours
+  colourNote: '', // how the accessory is coloured, said in words
   lengthMode: null, // for a Length accessory: 'pcs' or 'inch'
   ...changes,
 })
@@ -354,6 +365,27 @@ export function poLinesForFabricItem(item, entry, tolerance) {
   ]
 }
 
+// How an accessory of a material list is coloured, in words.
+export const itemColourNote = (item) =>
+  item.colour_specific
+    ? item.colour_follows
+      ? `Colour specific: the colours follow the ${COLOUR_FOLLOWS_LABEL[item.colour_follows].toLowerCase()}`
+      : 'Colour specific'
+    : item.colour
+      ? `General, comes in ${item.colour}`
+      : ''
+
+// The colours of a PO line as shown on the PO: the colours ordered (with what
+// they follow), or the one colour a general accessory comes in.
+export function poLineColours(line, lookups) {
+  const item = lookups.item.get(line.material_item_id)
+  if (line.colours.length) {
+    const follows = item?.colour_specific && item.colour_follows ? ` (${COLOUR_FOLLOWS_LABEL[item.colour_follows].toLowerCase()})` : ''
+    return line.colours.join(', ') + follows
+  }
+  return item?.colour ?? ''
+}
+
 // The PO lines one accessory item starts with. A Length accessory is ordered
 // as pieces of each length (mode 'pcs') or as its whole length in inches.
 export function poLinesForAccessoryItem(item, entry, combination, mode = 'pcs') {
@@ -364,6 +396,7 @@ export function poLinesForAccessoryItem(item, entry, combination, mode = 'pcs') 
     item_type: levelOf(item.kind),
     rate: text(item.rate),
     colourSpecific: item.colour_specific,
+    colourNote: itemColourNote(item),
     lengthMode: item.qty_type === 'length' ? mode : null,
     required: accessoryRequiredText(item, combination, entry.qty),
   }
@@ -392,6 +425,7 @@ export const toPoLines = (po, itemsById) =>
       folds: line.folds ?? '',
       paina: text(line.paina),
       colourSpecific: item && po.kind === 'accessory' ? item.colour_specific : null,
+      colourNote: item && po.kind === 'accessory' ? itemColourNote(item) : '',
     })
   })
 

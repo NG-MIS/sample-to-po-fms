@@ -723,6 +723,10 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 26 Nov 2026 | CAD rows carry COMPONENTS (required, one or more of the sample's components; a sample with one component needs no picking) and EFFICIENCY %. The CAD form shows the sample's picture. Added by `supabase/migrations/20261126130457_cad_components_efficiency_and_accessory_colours.sql` |
+| 26 Nov 2026 | Accessories (the CAD primary accessory list and both accessory material lists) are either general (one colour, which can be named) or colour specific (following the Base colour or an Alternate colour); a "Same pcs per size group" tick types the pieces once. The PO says how each accessory is coloured |
+| 26 Nov 2026 | Column choices are now kept with the person in the database (`user_preferences`), so they survive a refresh, another browser or a phone. Added by `supabase/migrations/20261126130632_user_preferences.sql` |
+| 26 Nov 2026 | Samples: the image is the first detail on a bar; creating a sample shows a message with its number. Process log: Send to process from there. Pick-lists: Tab does what Enter does (takes the typed new name or the first match) and moves on |
 | 26 Nov 2026 | Fix: every picture upload failed with "permission denied for function can_receive" after the receiving step, because the receipt photo rule used a function signed-in people could not run. Fixed by `supabase/migrations/20261126101657_let_picture_rules_use_can_receive.sql`. Lesson: a function used in an access rule must be runnable by signed-in people, and picture uploads must be part of the rule checks |
 | 26 Nov 2026 | Samples screen and Process log given All, Completed and Running tabs. A sample is Completed when both its pieces are marked completed; a process is Completed when it has been received back |
 | 26 Nov 2026 | Sample bars lined up: every bar has the same details in the same places (an empty one shows a dash), with labels on one line and values starting at the same height |

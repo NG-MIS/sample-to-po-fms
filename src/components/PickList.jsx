@@ -8,6 +8,15 @@ import Popover from './Popover.jsx'
 //              `createLabel(text)` gives the wording of the "add" row for what was
 //              typed in the search box (or null when it cannot be added), and
 //              `onCreate(text)` is called when that row is picked.
+// Moves the cursor to the field after this one, as Tab does.
+function focusAfter(element) {
+  const fields = [...document.querySelectorAll('input, select, textarea, button, a[href], [tabindex]:not([tabindex="-1"])')].filter(
+    (field) => !field.disabled && field.tabIndex !== -1 && field.offsetParent !== null && !field.closest('.popover'),
+  )
+  const next = fields[fields.indexOf(element) + 1]
+  setTimeout(() => (next ?? element)?.focus(), 0)
+}
+
 export default function PickList({
   id,
   options,
@@ -87,9 +96,19 @@ export default function PickList({
             autoFocus
             onChange={(event) => setQuery(event.target.value)}
             onKeyDown={(event) => {
-              if (event.key !== 'Enter') return
+              // Enter and Tab both take what was typed: the new name when nothing
+              // matches, otherwise the first match. Tab then moves to the next field.
+              if (event.key !== 'Enter' && (event.key !== 'Tab' || event.shiftKey)) return
+              const byTab = event.key === 'Tab'
+              const from = buttonRef.current
               event.preventDefault()
               if (createText && shown.length === 0) create()
+              else if (!multiple && query.trim() !== '' && shown.length > 0) pick(shown[0].value)
+              if (byTab) {
+                setOpen(false)
+                setQuery('')
+                focusAfter(from)
+              }
             }}
           />
           <ul className="option-list" role="listbox" aria-multiselectable={multiple}>

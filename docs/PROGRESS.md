@@ -76,6 +76,7 @@ Next to discuss: the CAD stage (CAD drawing and its approval).
 | 25 Nov 2026 | Design number assignment and the accessory list of a sample (31 database rule checks; 46 new screen checks, 475 pass in total) |
 | 25 Nov 2026 | Wishlist: Sizes and ratios master, entries at final approval or later, Wishlist screen (29 database rule checks; 43 new screen checks, 520 pass in total) |
 | 25 Nov 2026 | CAD drawings (table view, new, copy, assign to wishlist, fabric by sample people) and the primary accessory list with size groups (41 database rule checks; 69 new screen checks, 591 pass in total) |
+| 26 Nov 2026 | CAD components and efficiency, accessory colour choice, same pcs per size group, sample picture on the CAD form, Send to process from the Process log, created message, image first, column choices kept per person, Tab in pick-lists (18 database rule checks; 853 screen checks pass in total) |
 | 26 Nov 2026 | All, Completed and Running tabs on Samples and Process log; sample bars lined up; data centred and wrapped on every list (815 screen checks pass in total) |
 | 26 Nov 2026 | Screen search in the side menu with Ctrl+K (14 new screen checks, 803 pass in total) |
 | 26 Nov 2026 | Receiving of POs: two receiving screens, receipts in parts, lot numbers, mark complete, follow-ups, lot series and receiving allowance in Numbering (45 database rule checks; 55 new screen checks, 789 pass in total) |

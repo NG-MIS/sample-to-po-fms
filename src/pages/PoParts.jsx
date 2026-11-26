@@ -14,6 +14,7 @@ import {
   newPoLine,
   orderableItems,
   poAmount,
+  poLineColours,
   poLineName,
   poLookups,
   poVendor,
@@ -317,6 +318,7 @@ export function PoForm({ entry, family, vendorId, open = false, po, data, onClos
                 )}
               </div>
               {line.required && <p className="hint po-line-required">Needed: {line.required}.</p>}
+              {line.colourNote && <p className="hint po-line-required" data-colour-note>{line.colourNote}.</p>}
               <div className="po-line-fields">
                 {kind === 'accessory' && (!fromItem || editing) && (
                   <div className="fabric-cell">
@@ -644,7 +646,7 @@ export function PoView({ po, data, isAdmin, onClose, onEdit, onChanged, onTrack 
                 <td>{TYPE_LABEL[line.item_type] ?? ''}</td>
                 {!fabric && <td>{line.dimension ?? ''}</td>}
                 <td>{line.colours.length || ''}</td>
-                <td>{line.colours.join(', ')}</td>
+                <td>{poLineColours(line, lookups)}</td>
                 <td>{line.qty_text}</td>
                 <td>
                   {formatQty(line.total_qty)} {line.unit}

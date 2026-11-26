@@ -110,6 +110,7 @@ export default function SamplesPage() {
   const [editing, setEditing] = useState(null) // null = closed, {} = new, sample = edit
   const [viewingId, setViewingId] = useState(null)
   const [notice, setNotice] = useState('')
+  const [created, setCreated] = useState(null) // the number of the sample just created
   const [work, setWork] = useState(null) // the action open from a work tab
   const [workError, setWorkError] = useState('')
   const [params, setParams] = useSearchParams()
@@ -233,6 +234,22 @@ export default function SamplesPage() {
     const { person, component, productType, collection } = lookups
     const componentNames = (row) => row.component_ids.map((id) => component.get(id)).filter(Boolean).sort()
     return [
+      {
+        key: 'image',
+        header: 'IMAGE',
+        value: (row) => latestImage(row)?.label ?? '',
+        render: (row) => {
+          const image = latestImage(row)
+          return (
+            <ClickableImage
+              bucket={BUCKET}
+              path={image?.path}
+              alt={`${row.sample_no} ${image?.label.toLowerCase() ?? ''} image`}
+              size={44}
+            />
+          )
+        },
+      },
       { key: 'sl_no', header: 'SL NO', value: (row) => row.sl_no, width: 80 },
       {
         key: 'sample_no',
@@ -252,22 +269,6 @@ export default function SamplesPage() {
       { key: 'denim_type', header: 'DENIM TYPE', value: (row) => DENIM_LABEL[row.denim_type] ?? '' },
       { key: 'product_type', header: 'PRODUCT TYPE', value: (row) => productType.get(row.product_type_id) ?? '' },
       { key: 'collection', header: 'COLLECTION', value: (row) => collection.get(row.collection_id) ?? '' },
-      {
-        key: 'image',
-        header: 'IMAGE',
-        value: (row) => latestImage(row)?.label ?? '',
-        render: (row) => {
-          const image = latestImage(row)
-          return (
-            <ClickableImage
-              bucket={BUCKET}
-              path={image?.path}
-              alt={`${row.sample_no} ${image?.label.toLowerCase() ?? ''} image`}
-              size={44}
-            />
-          )
-        },
-      },
       ...[1, 2].map((piece) => ({
         key: `piece_${piece}`,
         header: piece === 1 ? '1ST PIECE' : '2ND PIECE',
@@ -538,6 +539,28 @@ export default function SamplesPage() {
           onClose={() => setViewingId(null)}
         />
       )}
+      {created && (
+        <Modal
+          title="Sample created"
+          onClose={() => setCreated(null)}
+          width={380}
+          footer={() => (
+            <button type="button" className="btn btn--primary" autoFocus onClick={() => setCreated(null)}>
+              OK
+            </button>
+          )}
+        >
+          <div className="created-box" role="status">
+            <span className="created-tick" aria-hidden="true">
+              ✓
+            </span>
+            <p>The sample was created. Its sample number is</p>
+            <p className="created-number" data-created-number>
+              {created}
+            </p>
+          </div>
+        </Modal>
+      )}
       {editing && (
         <SampleForm
           sample={editing}
@@ -547,6 +570,7 @@ export default function SamplesPage() {
             const wasNew = !editing.id
             setEditing(null)
             setNotice(wasNew ? `Sample ${sampleNo} created.` : `Sample ${sampleNo} updated.`)
+            if (wasNew) setCreated(sampleNo)
             await reload()
           }}
         />

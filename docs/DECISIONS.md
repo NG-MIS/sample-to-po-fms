@@ -96,6 +96,9 @@ Newest first. A changed decision is not deleted: a new entry is added that repla
 | 23 Nov 2026 | Sample files are private; a file can be viewed only by people who can see its sample | Concept images are design work and should not leak |
 | 23 Nov 2026 | Reference on a sample: one choice from a References list in Masters, plus one picture, both optional | Nihal chose a list he maintains himself |
 | 23 Nov 2026 | Remarks on a sample: typed notes, voice notes and pictures, any number of each, all optional | Nihal's request |
+| 26 Nov 2026 | Components and efficiency % are entered on every row of a CAD, not once per CAD | Nihal: "every row" |
+| 26 Nov 2026 | An accessory is general (single colour, can be named) or colour specific (follows Base colour or Alternate colour); the same on primary and secondary lists | Nihal's explanation; "not only in primary secondary also" |
+| 26 Nov 2026 | Column choices are kept per person in the database, not only in the browser | They were being lost on refresh for Nihal |
 | 26 Nov 2026 | Samples and Process log have tabs All, Completed, Running; a sample counts as Completed when both pieces are completed | Nihal: "Both pieces completed" |
 | 26 Nov 2026 | Data on every list is centred and wraps | Nihal: "add text wrap and center for screen datas" |
 | 26 Nov 2026 | The app is published on Vercel, from the GitHub project | Nihal: "vercel" |

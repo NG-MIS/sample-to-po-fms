@@ -2620,3 +2620,50 @@ td.material-actions .btn + .btn {
     text-align: left;
   }
 }
+
+/* ---------- CAD form picture, and the colour choice of an accessory ---------- */
+
+.cad-form-picture {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 12px;
+}
+.primary-colour {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px 18px;
+  padding-top: 8px;
+  margin-top: 4px;
+  border-top: 1px dashed var(--border-strong);
+}
+.primary-colour .fabric-cell {
+  flex: 0 1 220px;
+}
+.primary-colour .field {
+  margin-bottom: 0;
+}
+
+.created-box {
+  text-align: center;
+  padding: 6px 0 2px;
+}
+.created-tick {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 22px;
+  font-weight: 700;
+}
+.created-number {
+  margin: 4px 0 0;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}

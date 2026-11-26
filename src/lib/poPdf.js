@@ -1,6 +1,6 @@
 import { fileBaseName } from './exportFiles.js'
 import { formatDate } from './format.js'
-import { PO_KIND_LABEL, formatMoney, formatQty, poAmount } from './materials.js'
+import { PO_KIND_LABEL, formatMoney, formatQty, poAmount, poLineColours } from './materials.js'
 
 const TYPE_LABEL = { primary: 'Primary', secondary: 'Secondary' }
 
@@ -51,7 +51,7 @@ export async function exportPoPdf(po, lookups) {
     TYPE_LABEL[line.item_type] ?? '',
     ...(fabric ? [] : [line.dimension ?? '']),
     line.colours.length || '',
-    line.colours.join(', '),
+    poLineColours(line, lookups),
     line.qty_text,
     `${formatQty(line.total_qty)} ${line.unit}`,
     formatMoney(line.rate),

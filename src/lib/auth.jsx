@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { loadRemembered } from './remember.js'
 import { supabase } from './supabase.js'
 
 const AuthContext = createContext(null)
@@ -33,7 +34,9 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     if (!userId) return undefined
     let cancelled = false
-    loadProfile(userId).then((profile) => {
+    loadProfile(userId).then(async (profile) => {
+      // the person's saved screen choices are needed before any list is drawn
+      if (profile) await loadRemembered(profile.id)
       if (!cancelled) setProfileState({ userId, profile })
     })
     return () => {

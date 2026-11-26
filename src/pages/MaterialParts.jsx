@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react'
 import Modal from '../components/Modal.jsx'
 import PickList from '../components/PickList.jsx'
-import { Field, Tick } from '../components/Field.jsx'
+import { Field } from '../components/Field.jsx'
 import {
   addLabelFor,
   cadsOfEntry,
   checkPrimaryLines,
+  colourText,
   formatPrimaryQty,
   namedOptions,
   primaryLinesFor,
@@ -320,6 +321,7 @@ export function MaterialListDialog({ entry, sample, kind, data, canEdit, isAdmin
               {primaryShown.map((line) => (
                 <li key={line.id}>
                   <strong>{accessoryName(line.accessory_id)}</strong> ({QTY_TYPE_LABEL[line.qty_type]}): {accessoryGroupsText(line, sizes, formatPrimaryQty)}
+                  {colourText(line) ? `. ${colourText(line)}` : ''}
                 </li>
               ))}
             </ul>
@@ -490,6 +492,7 @@ export function MaterialListDialog({ entry, sample, kind, data, canEdit, isAdmin
                 canEdit={!fixed}
                 accessoryOptions={accessoryOptions}
                 addLabel={addLabel}
+                colours={data.colours}
                 onChange={(changes) => setLine(line.key, changes)}
                 onRemove={() => removeLine(line.key)}
               >
@@ -520,13 +523,6 @@ export function MaterialListDialog({ entry, sample, kind, data, canEdit, isAdmin
                       onChange={(event) => setLine(line.key, { rate: numberOnly(event.target.value) })}
                     />
                   </div>
-                  <Tick
-                    id={`material-${line.key}-colour`}
-                    label="Colour specific"
-                    checked={line.colour_specific}
-                    disabled={fixed}
-                    onChange={(value) => setLine(line.key, { colour_specific: value })}
-                  />
                   <div className="material-need">
                     <span className="field-label">Needed for {entry.qty} pcs</span>
                     <span data-needed>{whole ? accessoryRequiredText(line, combination, entry.qty) : <span className="hint">—</span>}</span>

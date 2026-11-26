@@ -6,8 +6,11 @@ import { PageHead } from '../components/Layout.jsx'
 import { useAuth } from '../lib/auth.jsx'
 import { nameMap, useLoad } from '../lib/data.js'
 import { formatDate, formatDateTime, friendlyError } from '../lib/format.js'
-import { PIECE_LABEL, daysOut, loadSampleData } from '../lib/sampleData.js'
-import SampleDetail from './SampleDetail.jsx'
+import Modal from '../components/Modal.jsx'
+import PickList from '../components/PickList.jsx'
+import { Field } from '../components/Field.jsx'
+import { PIECES, PIECE_LABEL, canWorkOn, daysOut, isClosed, loadSampleData } from '../lib/sampleData.js'
+import SampleDetail, { EntryDialog } from './SampleDetail.jsx'
 
 // Every process entry of every sample the person can see, in one list.
 // Tabs: All, Completed (received back), Running (still at the vendor).
@@ -15,12 +18,22 @@ export default function ProcessLogPage() {
   const { profile } = useAuth()
   const { data, loading, error, reload } = useLoad(() => loadSampleData(profile))
   const [viewingId, setViewingId] = useState(null)
+  const [sending, setSending] = useState(null) // null, or { sampleId } while a process is being sent from here
+  const [notice, setNotice] = useState('')
 
   const rows = useMemo(
     () => (data?.samples ?? []).flatMap((sample) => sample.entries.map((entry) => ({ ...entry, sample }))),
     [data],
   )
   const viewing = data?.samples.find((sample) => sample.id === viewingId)
+  // The samples this person may send to a process: theirs to work on, not closed,
+  // with at least one piece not yet completed.
+  const openPieces = (sample) => PIECES.filter((piece) => !sample.completions[piece.value])
+  const sendable = useMemo(
+    () => (data?.samples ?? []).filter((sample) => canWorkOn(sample, data, profile) && !isClosed(sample) && openPieces(sample).length > 0),
+    [data, profile],
+  )
+  const sendingSample = sending && sendable.find((sample) => sample.id === sending.sampleId)
   const [params, setParams] = useSearchParams()
   const lists = useMemo(
     () => ({ all: rows, completed: rows.filter((row) => row.received_date), running: rows.filter((row) => !row.received_date) }),
@@ -89,10 +102,15 @@ export default function ProcessLogPage() {
 
   return (
     <>
-      <PageHead title="Process log" note="Open a sample to send it to a process, receive it back or mark a piece completed." />
+      <PageHead title="Process log" note="Send a sample to a process from here, or open a sample to receive it back or mark a piece completed." />
       {error && (
         <p className="alert alert--error" role="alert">
           {friendlyError(error)}
+        </p>
+      )}
+      {notice && (
+        <p className="alert alert--ok" role="status">
+          {notice}
         </p>
       )}
       <Tabs tabs={tabs} value={tab} label="Process log views" onChange={(key) => setParams(key === 'all' ? {} : { tab: key }, { replace: true })} />
@@ -109,7 +127,60 @@ export default function ProcessLogPage() {
         onRowClick={(row) => setViewingId(row.sample.id)}
         emptyText={tab === 'all' ? 'Nothing has been sent to a process yet.' : tab === 'completed' ? 'Nothing has been received back yet.' : 'Nothing is at a vendor right now.'}
         searchPlaceholder="Search the process log…"
+        toolbar={
+          sendable.length > 0 && (
+            <div className="toolbar-actions">
+              <button
+                type="button"
+                className="btn btn--primary"
+                onClick={() => {
+                  setNotice('')
+                  setSending({ sampleId: null })
+                }}
+              >
+                Send to process
+              </button>
+            </div>
+          )
+        }
       />
+      {sending && !sendingSample && (
+        <Modal
+          title="Send to process"
+          onClose={() => setSending(null)}
+          width={420}
+          footer={(requestClose) => (
+            <button type="button" className="btn" onClick={requestClose}>
+              Cancel
+            </button>
+          )}
+        >
+          <Field label="Sample" htmlFor="send-sample" required hint="Samples you can work on, with a piece that is not completed yet.">
+            <PickList
+              id="send-sample"
+              options={sendable.map((sample) => ({ value: sample.id, label: sample.sample_no })).sort((a, b) => a.label.localeCompare(b.label))}
+              value={null}
+              clearable={false}
+              onChange={(sampleId) => setSending({ sampleId })}
+            />
+          </Field>
+        </Modal>
+      )}
+      {sendingSample && (
+        <EntryDialog
+          mode="send"
+          sample={sendingSample}
+          data={data}
+          pieces={openPieces(sendingSample)}
+          onClose={() => setSending(null)}
+          onSaved={async () => {
+            const sampleNo = sendingSample.sample_no
+            setSending(null)
+            await reload()
+            setNotice(`${sampleNo} sent to process.`)
+          }}
+        />
+      )}
       {viewing && (
         <SampleDetail sample={viewing} data={data} onChanged={reload} onClose={() => setViewingId(null)} />
       )}

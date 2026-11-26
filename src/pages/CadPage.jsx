@@ -62,6 +62,7 @@ export default function CadPage() {
     () => ({
       person: nameMap(data?.people),
       particular: nameMap(data?.cadParticulars),
+      component: nameMap(data?.components),
       fabric: nameMap(data?.fabrics),
       vendor: new Map((data?.fabricVendors ?? []).map((vendor) => [vendor.id, vendor.code])),
       combination: new Map((data?.sizeRatios ?? []).map((row) => [row.id, row])),
@@ -200,6 +201,8 @@ export default function CadPage() {
       { key: 'paina', header: 'PAINA', align: 'right', value: (row) => (row.paina === null ? '' : Number(row.paina)) },
       { key: 'pcs_in_layer', header: 'NO. OF PCS IN LAYER', align: 'right', value: (row) => row.pcs_in_layer ?? '' },
       { key: 'panels', header: 'NO OF PANELS', align: 'right', value: (row) => row.panels ?? '' },
+      { key: 'components', header: 'COMPONENTS', value: (row) => (row.component_ids ?? []).map((id) => lookups.component.get(id) ?? '') },
+      { key: 'efficiency', header: 'EFFICIENCY %', align: 'right', value: (row) => (row.efficiency === null || row.efficiency === undefined ? '' : Number(row.efficiency)) },
       { key: 'fabric', header: 'FABRIC', value: (row) => lookups.fabric.get(row.fabric_id) ?? '' },
       { key: 'vendor', header: 'VENDOR CODE', value: (row) => lookups.vendor.get(row.vendor_id) ?? '' },
       { key: 'rate', header: 'RATE', align: 'right', value: (row) => (row.rate === null ? '' : Number(row.rate).toFixed(2)) },
