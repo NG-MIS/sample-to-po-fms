@@ -522,7 +522,7 @@ function PoCancelDialog({ po, onClose, onDone }) {
 
 // ---------- Looking at one PO ----------
 
-export function PoView({ po, data, isAdmin, onClose, onEdit, onChanged }) {
+export function PoView({ po, data, isAdmin, onClose, onEdit, onChanged, onTrack }) {
   const lookups = useMemo(() => poLookups(data), [data])
   const [cancelling, setCancelling] = useState(false)
   const [error, setError] = useState('')
@@ -559,6 +559,11 @@ export function PoView({ po, data, isAdmin, onClose, onEdit, onChanged }) {
                 Change
               </button>
             </>
+          )}
+          {onTrack && po.status === 'raised' && (
+            <button type="button" className="btn" onClick={onTrack}>
+              Receiving and follow-ups
+            </button>
           )}
           <button type="button" className="btn btn--primary" onClick={pdf}>
             PDF

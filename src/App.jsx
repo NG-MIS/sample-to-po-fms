@@ -9,6 +9,7 @@ import SamplesPage from './pages/SamplesPage.jsx'
 import CadPage from './pages/CadPage.jsx'
 import MaterialsPage from './pages/MaterialsPage.jsx'
 import PurchaseOrdersPage from './pages/PurchaseOrdersPage.jsx'
+import ReceivingPage from './pages/ReceivingPage.jsx'
 import MastersPage from './pages/MastersPage.jsx'
 import SizeRatiosPage from './pages/SizeRatiosPage.jsx'
 import WishlistPage from './pages/WishlistPage.jsx'
@@ -46,6 +47,8 @@ export default function App() {
         <Route path="/cad" element={<CadPage />} />
         <Route path="/materials" element={<MaterialsPage />} />
         <Route path="/purchase-orders" element={<PurchaseOrdersPage />} />
+        <Route path="/fabric-receiving" element={<ReceivingPage key="fabric" kind="fabric" />} />
+        <Route path="/accessory-receiving" element={<ReceivingPage key="accessory" kind="accessory" />} />
         {/* Every master is a tab of the one Masters screen */}
         <Route path="/masters" element={<Navigate to={MASTERS[0].path} replace />} />
         <Route element={<MastersLayout />}>

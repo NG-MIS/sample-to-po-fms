@@ -35,7 +35,7 @@ accessory list (built 25 Nov 2026, Project Bible 2.4 and 2.5), then the material
 purchase orders (built 25 Nov 2026, Project Bible 2.6 and 2.7).
 
 **Still to come, as told so far**
-- Receiving of materials against POs.
+- What happens to received lots next (stock, issue to production).
 - The photo of the cloth on POs.
 - The rule for primary and secondary.
 - A change to the secondary accessory pending screen.

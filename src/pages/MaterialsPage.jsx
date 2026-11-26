@@ -8,7 +8,7 @@ import { useAuth } from '../lib/auth.jsx'
 import { nameMap, useLoad } from '../lib/data.js'
 import { friendlyError } from '../lib/format.js'
 import { cadsOfEntry } from '../lib/cad.js'
-import { KINDS, KIND_LABEL, LIST_STATUS_LABEL, listProgress, listStatus } from '../lib/materials.js'
+import { KINDS, KIND_LABEL, LIST_STATUS_LABEL, listOrdered, listProgress, listStatus } from '../lib/materials.js'
 import { BUCKET, canWorkOn, latestImage, loadSampleData } from '../lib/sampleData.js'
 import { ListStatusBadge, MaterialListDialog } from './MaterialParts.jsx'
 import { PoForm } from './PoParts.jsx'
@@ -55,7 +55,7 @@ export default function MaterialsPage() {
     KINDS.forEach(({ key }) => {
       lists[key] = entries.filter(
         (entry) =>
-          listStatus(entry, key) !== 'ordered' && (key === 'primary_fabric' || listStatus(entry, 'primary_fabric') === 'ordered'),
+          !listOrdered(entry, key) && (key === 'primary_fabric' || listOrdered(entry, 'primary_fabric')),
       )
     })
     return lists

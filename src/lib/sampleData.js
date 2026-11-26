@@ -1,5 +1,6 @@
 import { fetchRows } from './data.js'
 import { todayLocal } from './format.js'
+import { lineDone } from './receiving.js'
 import { supabase } from './supabase.js'
 
 // Everything the sample screens need, loaded once and shared by the
@@ -133,6 +134,10 @@ export async function loadSampleData(profile) {
     poLines,
     colours,
     purchaseSettings,
+    lotSeries,
+    poReceipts,
+    poReceiptItems,
+    poFollowups,
     entries,
     completions,
     stageImages,
@@ -177,6 +182,10 @@ export async function loadSampleData(profile) {
     fetchRows('po_lines', 'position'),
     fetchRows('colours'),
     fetchRows('purchase_settings', null),
+    fetchRows('lot_series'),
+    fetchRows('po_receipts'),
+    fetchRows('po_receipt_items', null),
+    fetchRows('po_followups'),
     fetchRows('sample_process_entries'),
     fetchRows('sample_piece_completions', null),
     fetchRows('sample_stage_images', null),
@@ -218,7 +227,18 @@ export async function loadSampleData(profile) {
   const listsByEntry = groupBy(materialLists, 'wishlist_entry_id')
   const itemsByEntry = groupBy(materialItems, 'wishlist_entry_id')
   const linesByPo = groupBy(poLines, 'po_id')
-  const orders = purchaseOrders.map((po) => ({ ...po, lines: linesByPo.get(po.id) ?? [] }))
+  // every PO with its lines (each with what has been received of it), receipts and follow-ups
+  const allowance = purchaseSettings[0]?.receive_allowance ?? 0
+  const receiptItemsByLine = groupBy(poReceiptItems, 'po_line_id')
+  const receiptItemsByReceipt = groupBy(poReceiptItems, 'receipt_id')
+  const receiptsByPo = groupBy(poReceipts, 'po_id')
+  const followupsByPo = groupBy(poFollowups, 'po_id')
+  const orders = purchaseOrders.map((po) => ({
+    ...po,
+    lines: (linesByPo.get(po.id) ?? []).map((line) => ({ ...line, receiptItems: receiptItemsByLine.get(line.id) ?? [] })),
+    receipts: (receiptsByPo.get(po.id) ?? []).map((receipt) => ({ ...receipt, items: receiptItemsByReceipt.get(receipt.id) ?? [] })),
+    followups: followupsByPo.get(po.id) ?? [],
+  }))
   // the raised POs every material is on: item id -> [{ id, po_no }]
   const ordersByItem = new Map()
   orders
@@ -227,7 +247,10 @@ export async function loadSampleData(profile) {
       po.lines.forEach((line) => {
         if (!line.material_item_id) return
         const list = ordersByItem.get(line.material_item_id) ?? []
-        if (!list.some((order) => order.id === po.id)) list.push({ id: po.id, po_no: po.po_no })
+        const order = list.find((item) => item.id === po.id) ?? { id: po.id, po_no: po.po_no, received: true }
+        // received: every line of this material on the PO has come, or was closed short
+        order.received = order.received && lineDone(line, allowance)
+        if (!list.includes(order)) list.push(order)
         ordersByItem.set(line.material_item_id, list)
       }),
     )
@@ -241,6 +264,7 @@ export async function loadSampleData(profile) {
   const sampleDepartment = departments.find((department) => sameName(department.name, 'sample'))?.id
   const managementDepartment = departments.find((department) => sameName(department.name, 'management'))?.id
   const cadDepartment = departments.find((department) => sameName(department.name, 'cad'))?.id
+  const departmentId = (name) => departments.find((department) => sameName(department.name, name))?.id
   const designerRole = roles.find((role) => sameName(role.name, 'designer'))?.id
   const designerIds = new Set(userRoles.filter((link) => link.role_id === designerRole).map((link) => link.user_id))
 
@@ -300,6 +324,7 @@ export async function loadSampleData(profile) {
     purchaseOrders: orders,
     colours,
     purchaseSettings: purchaseSettings[0] ?? null,
+    lotSeries,
     sizeRatios,
     cadParticulars,
     processes,
@@ -316,6 +341,11 @@ export async function loadSampleData(profile) {
       management: isAll || (Boolean(managementDepartment) && profile.department_id === managementDepartment),
       // Makes CADs, assigns them to wishlist items and sets up primary accessory lists.
       cad: isAll || (Boolean(cadDepartment) && profile.department_id === cadDepartment),
+      // Receives material: the Fabric store for fabric POs, the Accessory store for accessory POs.
+      receive: {
+        fabric: isAll || (Boolean(departmentId('fabric store')) && profile.department_id === departmentId('fabric store')),
+        accessory: isAll || (Boolean(departmentId('accessory store')) && profile.department_id === departmentId('accessory store')),
+      },
     },
   }
 }

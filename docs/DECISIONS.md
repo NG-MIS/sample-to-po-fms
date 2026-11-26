@@ -96,6 +96,13 @@ Newest first. A changed decision is not deleted: a new entry is added that repla
 | 23 Nov 2026 | Sample files are private; a file can be viewed only by people who can see its sample | Concept images are design work and should not leak |
 | 23 Nov 2026 | Reference on a sample: one choice from a References list in Masters, plus one picture, both optional | Nihal chose a list he maintains himself |
 | 23 Nov 2026 | Remarks on a sample: typed notes, voice notes and pictures, any number of each, all optional | Nihal's request |
+| 26 Nov 2026 | Material is received by departments Fabric store and Accessory store, on two separate screens | Nihal: "we will make fabric store and accessory store department", "fabric and accessory screen should be different" |
+| 26 Nov 2026 | A PO can be received in parts; quantity is recorded for each colour; bill number, bill date and received date are entered, photo optional | Nihal's answers |
+| 26 Nov 2026 | One lot number per PO item, given at first receipt and kept across parts; colours get letters (1234-A, 1234-B); no colours still gets -A; the person picks the series, from separate fabric and accessory lot series in Numbering | Nihal's answers |
+| 26 Nov 2026 | The item name can be changed at the first receipt only; the PO keeps the ordered name | Nihal: "sometime vendor can send not the same item but similar" |
+| 26 Nov 2026 | Receiving allowance 10% from the master, changeable; within it a colour closes on its own; Mark complete closes a short item; more than ordered is accepted and flagged excess (when over by more than the allowance) | Nihal's answers; the excess threshold is Claude's choice |
+| 26 Nov 2026 | Follow-ups by both the people who raise the PO and the store people; a new promised date in a follow-up replaces the PO's for counting late | Nihal: "both" |
+| 26 Nov 2026 | A received PO cannot be changed or cancelled; only authority All removes a receipt or reopens a completed item | Stated to Nihal with the build summary and accepted |
 | 26 Nov 2026 | Masters are tabs of one Masters screen, sorted alphabetically; no master links in the side menu | Nihal's request |
 | 26 Nov 2026 | A new CAD table starts with 5 rows and empty rows are discarded on save | Nihal's request |
 | 26 Nov 2026 | Samples screen is accordion style: the list as collapsible bars, and each section inside a sample collapsible; everything starts collapsed, with the important statuses on the closed bar | Nihal: "Both", "all collapsed" |

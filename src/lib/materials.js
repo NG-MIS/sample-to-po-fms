@@ -28,8 +28,8 @@ export const NOT_REQUIRED_REASONS = [
 ]
 export const NOT_REQUIRED_LABEL = { in_house: 'Already in-house', not_needed: 'Not required at all' }
 
-export const LIST_STATUS_LABEL = { pending: 'Pending', updated: 'Updated', ordered: 'Ordered' }
-export const LIST_STATUS_BADGE = { pending: 'pending', updated: 'maybe', ordered: 'completed' }
+export const LIST_STATUS_LABEL = { pending: 'Pending', updated: 'Updated', ordered: 'Ordered', received: 'Received' }
+export const LIST_STATUS_BADGE = { pending: 'pending', updated: 'maybe', ordered: 'ordered', received: 'completed' }
 
 export const UNIT_LABEL = { mtr: 'mtr', pcs: 'pcs', inch: 'inch' }
 
@@ -45,10 +45,16 @@ export const isLocked = (item) => itemState(item) !== 'open'
 // Pending - the list has not been confirmed yet.
 // Updated - confirmed, with at least one item still to order.
 // Ordered - confirmed, and every item has a PO or is marked not required.
+// Received - ordered, and everything on a PO has come (or was closed short).
 export function listStatus(entry, kind) {
   if (!isConfirmed(entry, kind)) return 'pending'
-  return itemsOf(entry, kind).every(isLocked) ? 'ordered' : 'updated'
+  const items = itemsOf(entry, kind)
+  if (!items.every(isLocked)) return 'updated'
+  const onOrder = items.filter((item) => itemState(item) === 'ordered')
+  return onOrder.length > 0 && onOrder.every((item) => item.orders.every((order) => order.received)) ? 'received' : 'ordered'
 }
+// Ordered or received: nothing on the list still waits for a PO.
+export const listOrdered = (entry, kind) => ['ordered', 'received'].includes(listStatus(entry, kind))
 
 // "2 of 3 dealt with", for a confirmed list.
 export function listProgress(entry, kind) {

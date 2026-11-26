@@ -9,6 +9,8 @@ import { formatDate, formatDateTime, friendlyError } from '../lib/format.js'
 import { PO_KIND_LABEL, formatQty, poAmount, poLineName, poLookups, poVendor } from '../lib/materials.js'
 import { loadSampleData } from '../lib/sampleData.js'
 import { PoForm, PoView } from './PoParts.jsx'
+import { PoStandingBadge, PoTrackDialog } from './ReceivingParts.jsx'
+import { PO_RECEIVE_LABEL, poReceiveStatus } from '../lib/receiving.js'
 
 const STATUS_LABEL = { raised: 'Raised', cancelled: 'Cancelled' }
 const TYPE_LABEL = { primary: 'Primary', secondary: 'Secondary' }
@@ -23,6 +25,7 @@ export default function PurchaseOrdersPage() {
   const [viewingId, setViewingId] = useState(null)
   const [editingId, setEditingId] = useState(null)
   const [adding, setAdding] = useState(false)
+  const [trackingId, setTrackingId] = useState(null)
   const [notice, setNotice] = useState('')
   const [params, setParams] = useSearchParams()
 
@@ -33,6 +36,8 @@ export default function PurchaseOrdersPage() {
   const canOpen = Boolean(data) && (data.access.manages || data.samples.some((sample) => sample.designer_id === profile.id))
   const viewing = orders.find((po) => po.id === viewingId)
   const editing = orders.find((po) => po.id === editingId)
+  const tracking = orders.find((po) => po.id === trackingId)
+  const allowance = data?.purchaseSettings?.receive_allowance ?? 0
 
   const tabs = [
     { key: 'orders', label: 'Purchase orders', count: orders.length },
@@ -76,11 +81,17 @@ export default function PurchaseOrdersPage() {
         value: (row) => STATUS_LABEL[row.status],
         render: (row) => <span className={`badge badge--${row.status === 'raised' ? 'completed' : 'skip'}`}>{STATUS_LABEL[row.status]}</span>,
       },
+      {
+        key: 'receiving',
+        header: 'RECEIVING',
+        value: (row) => PO_RECEIVE_LABEL[poReceiveStatus(row, allowance)],
+        render: (row) => <PoStandingBadge po={row} allowance={allowance} />,
+      },
       { key: 'remarks', header: 'REMARKS', value: (row) => row.remarks ?? '' },
       { key: 'raised_by', header: 'RAISED BY', value: (row) => lookups.person.get(row.created_by)?.name ?? '' },
       { key: 'raised_on', header: 'RAISED ON', value: (row) => formatDateTime(row.created_at), sortValue: (row) => row.created_at },
     ],
-    [poColumns, lookups],
+    [poColumns, lookups, allowance],
   )
 
   const lineColumns = useMemo(
@@ -156,8 +167,9 @@ export default function PurchaseOrdersPage() {
           toolbar={openButton}
         />
       )}
-      {viewing && !editing && (
+      {viewing && !editing && !tracking && (
         <PoView
+          onTrack={() => setTrackingId(viewing.id)}
           po={viewing}
           data={data}
           isAdmin={isAdmin}
@@ -179,6 +191,19 @@ export default function PurchaseOrdersPage() {
             await reload()
             setEditingId(null)
             setNotice(`${number} changed.`)
+          }}
+        />
+      )}
+      {tracking && (
+        <PoTrackDialog
+          po={tracking}
+          data={data}
+          profile={profile}
+          isAdmin={isAdmin}
+          onClose={() => setTrackingId(null)}
+          onChanged={async (message) => {
+            await reload()
+            setNotice(message)
           }}
         />
       )}

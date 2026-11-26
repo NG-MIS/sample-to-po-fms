@@ -381,7 +381,57 @@ who look after samples, or the designer of any sample.
 reason; the materials of a cancelled PO can be ordered again. Every PO can be downloaded
 as a PDF.
 
-**Receiving of materials** against POs is the next step and is not built yet.
+**Receiving of materials** against POs is in 2.8.
+
+### 2.8 Receiving, lot numbers and follow-ups (built)
+
+Screens: Fabric receiving and Accessory receiving (separate, one per kind). Tabs on each:
+Pending, Late, Partly received, Received, All lots. Opening a PO shows its items colour by
+colour, its receipts and its follow-ups.
+
+**Who.** Department "Fabric store" receives fabric POs, department "Accessory store" receives
+accessory POs (both fixed department names); authority All can do both. The store
+departments can see every sample, as Management and CAD do.
+
+**A receipt.** For one PO; a PO can have many (it can come in parts).
+
+| Field | Rule |
+|---|---|
+| RECEIVED DATE | Required. Not in the future, not before the order date |
+| BILL NUMBER, BILL DATE | Required |
+| PHOTO | Optional |
+| QUANTITY | For each colour of each item; fill only what came now. An item with no colours has one row |
+| LOT NUMBER SERIES | Asked only when an item is received for the first time |
+| ITEM RECEIVED | At the first receipt of an item its name can be changed to what actually came (from the Fabrics or Accessories list, or typed new). The PO keeps the ordered name; the lot shows both |
+
+**Lot numbers.** Every PO item gets one number at its first receipt, from the lot series
+the person picks, and keeps it however many parts it comes in. Each colour gets a letter in
+the order the colours are written on the PO: FB-1234-A, FB-1234-B. An item with no colours
+is -A. Lot series are kept in Masters > Numbering, separately for fabric and accessories:
+series name, prefix, starting number; prefix and starting number lock once used.
+
+**When something is complete.**
+- Receiving allowance: one percentage in Masters > Numbering, 10% to start.
+- A colour is Received once what has come is at least the ordered quantity less the
+  allowance (91 of 100 at 10%). An item is Received when all its colours are.
+- More than ordered is accepted. More than the allowance over is flagged Excess.
+- "Mark complete" closes an item that is partly received and will not get more: Short
+  received. Nothing more can then be received against it; authority All can open it again.
+- A PO is Pending (nothing came), Partly received, or Received (every item received or
+  closed short).
+
+**Follow-ups.** Date, what the vendor said, and a new promised date when given. Added by the
+store people of that kind, whoever raised the PO, and the people who may raise POs for its
+sample. The promised date of a PO is the one from the latest follow-up that gave one,
+otherwise the latest promised date on the PO. A PO is Late when today is past it and the
+PO is not fully received.
+
+**After receiving.** A PO with a receipt can no longer be changed or cancelled. Only
+authority All can remove a wrong receipt (its quantities stop counting; lot numbers given
+stay). The wishlist and Material lists show a list as Received once everything ordered on
+it has come or was closed short. Purchase orders shows the receiving status of each PO and
+opens the same receiving and follow-ups view.
+
 
 ## 3. How it is built
 
@@ -538,6 +588,12 @@ revised approval rules by
 | `material_lists`, `material_items` | The four material lists of every wishlist item and what is on them, with the Not required mark |
 | `purchase_orders`, `po_lines` | Every PO and its lines; `purchase_settings` holds the PO number series and the fabric tolerance; `colours` is the Colours master |
 
+| `po_receipts`, `po_receipt_items` | Every receipt against a PO and the quantity of each colour; the lot number and received item are kept on the PO line |
+| `po_followups` | Follow-ups with the vendor |
+| `lot_series` | The lot number series for fabric and accessories |
+
+Receiving is written only through `save_po_receipt`, `delete_po_receipt`, `complete_po_line` and `add_po_followup`.
+
 Material lists and POs are written only through `save_material_list`,
 `mark_material_not_required`, `save_purchase_order` and `cancel_purchase_order`.
 
@@ -570,7 +626,7 @@ Masters link.
 | Departments | List, add and edit | Built |
 | Designations | List, add and edit | Built |
 | Roles | List, add and edit | Built |
-| Numbering | List, add and edit series (series name, prefix and starting number). Also shows the design number series, where authority All sets its starting number, and Purchase orders: the starting PO number and the fabric tolerance % | Built |
+| Numbering | List, add and edit series (series name, prefix and starting number). Also shows the design number series, where authority All sets its starting number, Purchase orders (the starting PO number, the fabric tolerance % and the receiving allowance %), and the lot number series for fabric and accessories | Built |
 | References | List, add and edit, each with its picture (required when added by hand; an imported reference gets its picture afterwards) | Built |
 | Tags | List, add and edit. Shown with a # in front | Built |
 | Fabrics | List, add and edit the fabric names | Built |
@@ -582,7 +638,9 @@ Masters link.
 | CAD drawings | Tabs: CAD drawings (each CAD as a table), Pending drawing, Fabric pending, All rows. New CAD, Copy as new CAD, Edit, Assign, Fill fabric, primary accessory list | Built |
 | CAD particulars | List, add and edit the names of drawing rows | Built |
 | Material lists | Tabs: one pending tab per list (primary fabric, primary accessory, secondary fabric, secondary accessory) and All wishlist items. Opens a list to fill, confirm, mark Not required and raise POs | Built |
-| Purchase orders | Tabs: Purchase orders, PO lines. View a PO, PDF, Open order; Change and Cancel for authority All | Built |
+| Purchase orders | Tabs: Purchase orders, PO lines. View a PO, PDF, Open order; Change and Cancel for authority All; receiving status and the receiving and follow-ups view | Built |
+| Fabric receiving | Fabric POs. Tabs: Pending, Late, Partly received, Received, All lots. Receive material, follow-ups, mark complete | Built |
+| Accessory receiving | The same for accessory POs | Built |
 | Colours | List, add and edit the colour names used on POs | Built |
 | Components | List, add, edit and import | Built |
 | Product types | List, add, edit and import | Built |
@@ -661,6 +719,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 26 Nov 2026 | Receiving built: Fabric receiving and Accessory receiving screens, receipts in parts, lot numbers by colour from lot series, item name change at first receipt, receiving allowance, mark complete, follow-ups, departments Fabric store and Accessory store. Added by `supabase/migrations/20261126065917_po_receiving_lots_and_followups.sql` |
 | 26 Nov 2026 | Masters brought into one screen: the menu has a single Masters link, and every master is a tab on it, in alphabetical order (the list is in `src/lib/masters.js`). The old address of each master still opens its tab |
 | 26 Nov 2026 | CAD form: a new CAD table starts with 5 rows; rows left empty are dropped when it is saved |
 | 26 Nov 2026 | Samples screen made accordion style: All samples is a list of collapsible bars, and an opened sample has collapsible sections that all start closed and show their summary |

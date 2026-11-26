@@ -17,6 +17,8 @@ const MENU = [
       { to: '/cad', label: 'CAD drawings' },
       { to: '/materials', label: 'Material lists' },
       { to: '/purchase-orders', label: 'Purchase orders' },
+      { to: '/fabric-receiving', label: 'Fabric receiving' },
+      { to: '/accessory-receiving', label: 'Accessory receiving' },
     ],
   },
   {
