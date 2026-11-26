@@ -28,7 +28,7 @@ import { useIsPhone } from '../lib/screen.js'
 //                     Leave it out for columns such as pictures and buttons.
 //   render(row)     - optional, what to draw in the cell (defaults to the value)
 //   sortValue(row)  - optional, what to sort by when it differs from the value (e.g. a date)
-//   align, width    - optional
+//   width           - optional (every cell is centred and wraps its text)
 // }]
 // A column with no header (such as the row buttons) is always shown.
 
@@ -164,7 +164,7 @@ function HeaderCell({ column, rows, sort, allowed, onSort, onFilter }) {
 
   if (!canUse) {
     return (
-      <th style={{ width: column.width, textAlign: column.align }} scope="col">
+      <th style={{ width: column.width }} scope="col">
         <span className="th-plain">{column.header}</span>
       </th>
     )
@@ -172,7 +172,7 @@ function HeaderCell({ column, rows, sort, allowed, onSort, onFilter }) {
 
   return (
     <th
-      style={{ width: column.width, textAlign: column.align }}
+      style={{ width: column.width }}
       scope="col"
       aria-sort={sortDir === 'asc' ? 'ascending' : sortDir === 'desc' ? 'descending' : 'none'}
     >
@@ -854,7 +854,7 @@ export default function DataTable({
                     onClick={rowClick(item.row)}
                   >
                     {shownColumns.map((column) => (
-                      <td key={column.key} style={{ textAlign: column.align }}>
+                      <td key={column.key}>
                         {column.render ? column.render(item.row) : asText(column.value?.(item.row))}
                       </td>
                     ))}

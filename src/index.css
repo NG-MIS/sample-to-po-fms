@@ -2546,3 +2546,33 @@ td.material-actions .btn + .btn {
   font-size: 13px;
   opacity: 0.75;
 }
+
+/* ---------- Data on every list: centred, and long text wraps ---------- */
+
+.table th,
+.table td {
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+.table td {
+  max-width: 320px;
+}
+.th {
+  justify-content: center;
+}
+.th-label {
+  text-align: center;
+  white-space: normal;
+}
+.table td .row-actions,
+.table td .cell-with-image {
+  justify-content: center;
+}
+.bar-field {
+  align-items: center;
+  text-align: center;
+}
+.card-value {
+  overflow-wrap: anywhere;
+}

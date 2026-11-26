@@ -512,6 +512,9 @@ from the Supabase dashboard, but only if another project is paused first.
 
 ### Look and feel
 
+On every list the headings and the data are centred, and long text wraps onto more lines
+instead of being cut or pushing the list wide.
+
 Soft emerald theme in the family of the Lycra Tracker project: pale green background,
 white glass-style panels with a faint green edge, deep green side menu, emerald accents,
 rounded corners. All colours are set in one place at the top of `src/index.css`, so the
@@ -720,6 +723,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 26 Nov 2026 | Standing rule added and built into the shared list: the data on every list is centred and long text wraps (headings too) |
 | 26 Nov 2026 | `vercel.json` added so the app can be published on Vercel: every address is served by the app, so a refresh or a saved link does not show "not found". Vercel needs the two settings from `.env.local`, and Supabase needs the published address under Authentication > URL Configuration |
 | 26 Nov 2026 | Screen search added to the side menu, with the shortcut Ctrl+K |
 | 26 Nov 2026 | Receiving built: Fabric receiving and Accessory receiving screens, receipts in parts, lot numbers by colour from lot series, item name change at first receipt, receiving allowance, mark complete, follow-ups, departments Fabric store and Accessory store. Added by `supabase/migrations/20261126065917_po_receiving_lots_and_followups.sql` |

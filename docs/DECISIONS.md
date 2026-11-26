@@ -96,6 +96,7 @@ Newest first. A changed decision is not deleted: a new entry is added that repla
 | 23 Nov 2026 | Sample files are private; a file can be viewed only by people who can see its sample | Concept images are design work and should not leak |
 | 23 Nov 2026 | Reference on a sample: one choice from a References list in Masters, plus one picture, both optional | Nihal chose a list he maintains himself |
 | 23 Nov 2026 | Remarks on a sample: typed notes, voice notes and pictures, any number of each, all optional | Nihal's request |
+| 26 Nov 2026 | Data on every list is centred and wraps | Nihal: "add text wrap and center for screen datas" |
 | 26 Nov 2026 | The app is published on Vercel, from the GitHub project | Nihal: "vercel" |
 | 26 Nov 2026 | Material is received by departments Fabric store and Accessory store, on two separate screens | Nihal: "we will make fabric store and accessory store department", "fabric and accessory screen should be different" |
 | 26 Nov 2026 | A PO can be received in parts; quantity is recorded for each colour; bill number, bill date and received date are entered, photo optional | Nihal's answers |
