@@ -720,6 +720,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 26 Nov 2026 | `vercel.json` added so the app can be published on Vercel: every address is served by the app, so a refresh or a saved link does not show "not found". Vercel needs the two settings from `.env.local`, and Supabase needs the published address under Authentication > URL Configuration |
 | 26 Nov 2026 | Screen search added to the side menu, with the shortcut Ctrl+K |
 | 26 Nov 2026 | Receiving built: Fabric receiving and Accessory receiving screens, receipts in parts, lot numbers by colour from lot series, item name change at first receipt, receiving allowance, mark complete, follow-ups, departments Fabric store and Accessory store. Added by `supabase/migrations/20261126065917_po_receiving_lots_and_followups.sql` |
 | 26 Nov 2026 | Masters brought into one screen: the menu has a single Masters link, and every master is a tab on it, in alphabetical order (the list is in `src/lib/masters.js`). The old address of each master still opens its tab |
