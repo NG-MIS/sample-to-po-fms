@@ -649,7 +649,7 @@ Masters link.
 | Product types | List, add, edit and import | Built |
 | Collections | List, add, edit and import | Built |
 | Samples | The All samples tab is a list of collapsible bars: a closed bar shows the picture, sample number and the important details and statuses; clicking it opens the sample right under it. An opened sample has seven collapsible sections (details, stage images, fabrics, accessories, pieces and process log, approval, remarks), all closed at first, each bar showing its summary. Search, sort, filter, group and export work on every detail; Columns chooses what the closed bar shows. New sample form; edit (authority All). The work tabs stay as tables and open a sample in a popup with the same sections | Built |
-| Process log | Every process entry of every sample in one list; clicking a row opens the sample | Built |
+| Process log | Every process entry of every sample, in tabs All, Completed (received back) and Running (still at the vendor); clicking a row opens the sample | Built |
 | Processes | List, add, edit and import | Built |
 | Vendors | List, add, edit and import | Built |
 
@@ -723,6 +723,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 26 Nov 2026 | Samples screen and Process log given All, Completed and Running tabs. A sample is Completed when both its pieces are marked completed; a process is Completed when it has been received back |
 | 26 Nov 2026 | Sample bars lined up: every bar has the same details in the same places (an empty one shows a dash), with labels on one line and values starting at the same height |
 | 26 Nov 2026 | Standing rule added and built into the shared list: the data on every list is centred and long text wraps (headings too) |
 | 26 Nov 2026 | `vercel.json` added so the app can be published on Vercel: every address is served by the app, so a refresh or a saved link does not show "not found". Vercel needs the two settings from `.env.local`, and Supabase needs the published address under Authentication > URL Configuration |

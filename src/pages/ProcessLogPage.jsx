@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import DataTable from '../components/DataTable.jsx'
+import Tabs from '../components/Tabs.jsx'
 import { PageHead } from '../components/Layout.jsx'
 import { useAuth } from '../lib/auth.jsx'
 import { nameMap, useLoad } from '../lib/data.js'
@@ -8,7 +10,7 @@ import { PIECE_LABEL, daysOut, loadSampleData } from '../lib/sampleData.js'
 import SampleDetail from './SampleDetail.jsx'
 
 // Every process entry of every sample the person can see, in one list.
-// Filter STATUS to "At vendor" to see everything that is out right now.
+// Tabs: All, Completed (received back), Running (still at the vendor).
 export default function ProcessLogPage() {
   const { profile } = useAuth()
   const { data, loading, error, reload } = useLoad(() => loadSampleData(profile))
@@ -19,6 +21,17 @@ export default function ProcessLogPage() {
     [data],
   )
   const viewing = data?.samples.find((sample) => sample.id === viewingId)
+  const [params, setParams] = useSearchParams()
+  const lists = useMemo(
+    () => ({ all: rows, completed: rows.filter((row) => row.received_date), running: rows.filter((row) => !row.received_date) }),
+    [rows],
+  )
+  const tabs = [
+    { key: 'all', label: 'All', count: lists.all.length },
+    { key: 'completed', label: 'Completed', count: lists.completed.length },
+    { key: 'running', label: 'Running', count: lists.running.length },
+  ]
+  const tab = lists[params.get('tab')] ? params.get('tab') : 'all'
 
   const columns = useMemo(() => {
     const person = nameMap(data?.people)
@@ -82,14 +95,19 @@ export default function ProcessLogPage() {
           {friendlyError(error)}
         </p>
       )}
+      <Tabs tabs={tabs} value={tab} label="Process log views" onChange={(key) => setParams(key === 'all' ? {} : { tab: key }, { replace: true })} />
+      <p className="tab-note">
+        {tab === 'all' ? 'Every process entry.' : tab === 'completed' ? 'Processes that have been received back.' : 'Processes still at the vendor, not received back yet.'}
+      </p>
       <DataTable
+        key={tab}
         tableId="process-log"
-        title="Process log"
+        title={tab === 'all' ? 'Process log' : tab === 'completed' ? 'Process log, completed' : 'Process log, running'}
         columns={columns}
-        rows={rows}
+        rows={lists[tab]}
         loading={loading}
         onRowClick={(row) => setViewingId(row.sample.id)}
-        emptyText="Nothing has been sent to a process yet."
+        emptyText={tab === 'all' ? 'Nothing has been sent to a process yet.' : tab === 'completed' ? 'Nothing has been received back yet.' : 'Nothing is at a vendor right now.'}
         searchPlaceholder="Search the process log…"
       />
       {viewing && (

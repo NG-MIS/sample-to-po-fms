@@ -152,8 +152,16 @@ export default function SamplesPage() {
     [data, profile],
   )
   const worksOnSamples = Boolean(data?.access.manages || data?.designerIds.has(profile.id))
+  // Completed: both pieces are marked completed. Running: at least one is not.
+  const byPieces = useMemo(() => {
+    const completed = samples.filter((sample) => sample.completions[1] && sample.completions[2])
+    return { all: samples, completed, running: samples.filter((sample) => !completed.includes(sample)) }
+  }, [samples])
+
   const tabs = [
     { key: 'all', label: 'All samples', count: samples.length },
+    { key: 'completed', label: 'Completed', count: byPieces.completed.length },
+    { key: 'running', label: 'Running', count: byPieces.running.length },
     (worksOnSamples || waiting.process.length > 0) && { key: 'process', label: 'Process', count: waiting.process.length },
     data?.access.manages && { key: 'complete', label: 'Mark completed', count: waiting.complete.length },
     (worksOnSamples || waiting.images.length > 0) && { key: 'images', label: 'Images', count: waiting.images.length },
@@ -436,17 +444,18 @@ export default function SamplesPage() {
       {tab === 'approval' && (
         <ApprovalTab rows={waiting.approval} lookups={lookups} loading={loading} onOpen={openSample} onApprove={approveFrom} />
       )}
-      {tab === 'all' && (
+      {byPieces[tab] && (
       <DataTable
+        key={tab}
         tableId="samples-bars"
-        title="Samples"
+        title={tab === 'all' ? 'Samples' : tab === 'completed' ? 'Completed samples' : 'Running samples'}
         columns={columns}
-        rows={samples}
+        rows={byPieces[tab]}
         rowLabel={(row) => row.sample_no}
         defaultHidden={BAR_HIDDEN}
         renderExpanded={(row) => <SampleBody sample={row} data={data} onChanged={reload} />}
         loading={loading}
-        emptyText="No sample has been created yet."
+        emptyText={tab === 'all' ? 'No sample has been created yet.' : tab === 'completed' ? 'No sample has both its pieces completed yet.' : 'No sample is running.'}
         searchPlaceholder="Search samples…"
         toolbar={
           canCreate && (
