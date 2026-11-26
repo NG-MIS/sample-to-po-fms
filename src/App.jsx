@@ -1,6 +1,7 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Outlet, Route, Routes } from 'react-router-dom'
 import Layout from './components/Layout.jsx'
 import { useAuth } from './lib/auth.jsx'
+import { MASTERS } from './lib/masters.js'
 import SignIn, { NoAccess, SetPassword } from './pages/SignIn.jsx'
 import NumberingPage from './pages/NumberingPage.jsx'
 import ProcessLogPage from './pages/ProcessLogPage.jsx'
@@ -8,6 +9,7 @@ import SamplesPage from './pages/SamplesPage.jsx'
 import CadPage from './pages/CadPage.jsx'
 import MaterialsPage from './pages/MaterialsPage.jsx'
 import PurchaseOrdersPage from './pages/PurchaseOrdersPage.jsx'
+import MastersPage from './pages/MastersPage.jsx'
 import SizeRatiosPage from './pages/SizeRatiosPage.jsx'
 import WishlistPage from './pages/WishlistPage.jsx'
 import SimpleListPage from './pages/SimpleListPage.jsx'
@@ -20,6 +22,12 @@ const ACCESSORY_VENDOR_CODE = { ...VENDOR_CODE }
 
 // Reference pictures live with the other sample pictures.
 const REFERENCE_PICTURE = { bucket: 'samples', folder: 'reference' }
+
+const MastersLayout = () => (
+  <MastersPage>
+    <Outlet />
+  </MastersPage>
+)
 
 export default function App() {
   const { session, profile, loading, recovery, finishRecovery, signOut } = useAuth()
@@ -34,98 +42,102 @@ export default function App() {
       <Routes>
         <Route path="/samples" element={<SamplesPage />} />
         <Route path="/process-log" element={<ProcessLogPage />} />
-        <Route path="/numbering" element={<NumberingPage />} />
-        <Route
-          path="/processes"
-          element={<SimpleListPage key="processes" table="processes" title="Processes" singular="process" />}
-        />
-        <Route
-          path="/vendors"
-          element={<SimpleListPage key="vendors" table="vendors" title="Vendors" singular="vendor" />}
-        />
-        <Route
-          path="/components"
-          element={<SimpleListPage key="components" table="components" title="Components" singular="component" />}
-        />
-        <Route
-          path="/product-types"
-          element={
-            <SimpleListPage key="product-types" table="product_types" title="Product types" singular="product type" />
-          }
-        />
-        <Route
-          path="/collections"
-          element={<SimpleListPage key="collections" table="collections" title="Collections" singular="collection" />}
-        />
-        <Route
-          path="/references"
-          element={
-            <SimpleListPage
-              key="references"
-              table="sample_reference_options"
-              title="References"
-              singular="reference"
-              picture={REFERENCE_PICTURE}
-            />
-          }
-        />
-        <Route
-          path="/fabrics"
-          element={<SimpleListPage key="fabrics" table="fabrics" title="Fabrics" singular="fabric" />}
-        />
-        <Route
-          path="/fabric-vendors"
-          element={
-            <SimpleListPage
-              key="fabric-vendors"
-              table="fabric_vendors"
-              title="Fabric vendors"
-              singular="fabric vendor"
-              nameLabel="Vendor name"
-              nameHeader="VENDOR NAME"
-              extra={VENDOR_CODE}
-            />
-          }
-        />
         <Route path="/wishlist" element={<WishlistPage />} />
         <Route path="/cad" element={<CadPage />} />
         <Route path="/materials" element={<MaterialsPage />} />
         <Route path="/purchase-orders" element={<PurchaseOrdersPage />} />
-        <Route path="/colours" element={<SimpleListPage key="colours" table="colours" title="Colours" singular="colour" />} />
-        <Route
-          path="/cad-particulars"
-          element={<SimpleListPage key="cad-particulars" table="cad_particulars" title="CAD particulars" singular="particular" />}
-        />
-        <Route path="/sizes" element={<SizeRatiosPage />} />
-        <Route
-          path="/accessories"
-          element={<SimpleListPage key="accessories" table="accessories" title="Accessories" singular="accessory" />}
-        />
-        <Route
-          path="/accessory-vendors"
-          element={
-            <SimpleListPage
-              key="accessory-vendors"
-              table="accessory_vendors"
-              title="Accessory vendors"
-              singular="accessory vendor"
-              nameLabel="Vendor name"
-              nameHeader="VENDOR NAME"
-              extra={ACCESSORY_VENDOR_CODE}
-            />
-          }
-        />
-        <Route path="/tags" element={<SimpleListPage key="tags" table="tags" title="Tags" singular="tag" hash />} />
-        <Route path="/users" element={<UsersPage />} />
-        <Route
-          path="/departments"
-          element={<SimpleListPage key="departments" table="departments" title="Departments" singular="department" />}
-        />
-        <Route
-          path="/designations"
-          element={<SimpleListPage key="designations" table="designations" title="Designations" singular="designation" />}
-        />
-        <Route path="/roles" element={<SimpleListPage key="roles" table="roles" title="Roles" singular="role" />} />
+        {/* Every master is a tab of the one Masters screen */}
+        <Route path="/masters" element={<Navigate to={MASTERS[0].path} replace />} />
+        <Route element={<MastersLayout />}>
+          <Route path="/numbering" element={<NumberingPage />} />
+          <Route
+            path="/processes"
+            element={<SimpleListPage key="processes" table="processes" title="Processes" singular="process" />}
+          />
+          <Route
+            path="/vendors"
+            element={<SimpleListPage key="vendors" table="vendors" title="Vendors" singular="vendor" />}
+          />
+          <Route
+            path="/components"
+            element={<SimpleListPage key="components" table="components" title="Components" singular="component" />}
+          />
+          <Route
+            path="/product-types"
+            element={
+              <SimpleListPage key="product-types" table="product_types" title="Product types" singular="product type" />
+            }
+          />
+          <Route
+            path="/collections"
+            element={<SimpleListPage key="collections" table="collections" title="Collections" singular="collection" />}
+          />
+          <Route
+            path="/references"
+            element={
+              <SimpleListPage
+                key="references"
+                table="sample_reference_options"
+                title="References"
+                singular="reference"
+                picture={REFERENCE_PICTURE}
+              />
+            }
+          />
+          <Route
+            path="/fabrics"
+            element={<SimpleListPage key="fabrics" table="fabrics" title="Fabrics" singular="fabric" />}
+          />
+          <Route
+            path="/fabric-vendors"
+            element={
+              <SimpleListPage
+                key="fabric-vendors"
+                table="fabric_vendors"
+                title="Fabric vendors"
+                singular="fabric vendor"
+                nameLabel="Vendor name"
+                nameHeader="VENDOR NAME"
+                extra={VENDOR_CODE}
+              />
+            }
+          />
+          <Route path="/colours" element={<SimpleListPage key="colours" table="colours" title="Colours" singular="colour" />} />
+          <Route
+            path="/cad-particulars"
+            element={<SimpleListPage key="cad-particulars" table="cad_particulars" title="CAD particulars" singular="particular" />}
+          />
+          <Route path="/sizes" element={<SizeRatiosPage />} />
+          <Route
+            path="/accessories"
+            element={<SimpleListPage key="accessories" table="accessories" title="Accessories" singular="accessory" />}
+          />
+          <Route
+            path="/accessory-vendors"
+            element={
+              <SimpleListPage
+                key="accessory-vendors"
+                table="accessory_vendors"
+                title="Accessory vendors"
+                singular="accessory vendor"
+                nameLabel="Vendor name"
+                nameHeader="VENDOR NAME"
+                extra={ACCESSORY_VENDOR_CODE}
+              />
+            }
+          />
+          <Route path="/tags" element={<SimpleListPage key="tags" table="tags" title="Tags" singular="tag" hash />} />
+          <Route path="/users" element={<UsersPage />} />
+          <Route
+            path="/departments"
+            element={<SimpleListPage key="departments" table="departments" title="Departments" singular="department" />}
+          />
+          <Route
+            path="/designations"
+            element={<SimpleListPage key="designations" table="designations" title="Designations" singular="designation" />}
+          />
+          <Route path="/roles" element={<SimpleListPage key="roles" table="roles" title="Roles" singular="role" />} />
+        </Route>
         <Route path="*" element={<Navigate to="/samples" replace />} />
       </Routes>
     </Layout>

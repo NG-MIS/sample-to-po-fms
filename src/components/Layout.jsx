@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import ClickableImage from './ClickableImage.jsx'
 import { useAuth } from '../lib/auth.jsx'
 import { useEscape } from '../lib/escape.js'
+import { isMasterPath } from '../lib/masters.js'
 import { recall, remember } from '../lib/remember.js'
 import { useIsPhone } from '../lib/screen.js'
 
@@ -20,27 +21,8 @@ const MENU = [
   },
   {
     title: 'Masters',
-    links: [
-      { to: '/users', label: 'User master' },
-      { to: '/departments', label: 'Departments' },
-      { to: '/designations', label: 'Designations' },
-      { to: '/roles', label: 'Roles' },
-      { to: '/numbering', label: 'Numbering' },
-      { to: '/components', label: 'Components' },
-      { to: '/product-types', label: 'Product types' },
-      { to: '/collections', label: 'Collections' },
-      { to: '/processes', label: 'Processes' },
-      { to: '/vendors', label: 'Vendors' },
-      { to: '/references', label: 'References' },
-      { to: '/tags', label: 'Tags' },
-      { to: '/fabrics', label: 'Fabrics' },
-      { to: '/fabric-vendors', label: 'Fabric vendors' },
-      { to: '/accessories', label: 'Accessories' },
-      { to: '/accessory-vendors', label: 'Accessory vendors' },
-      { to: '/sizes', label: 'Sizes and ratios' },
-      { to: '/cad-particulars', label: 'CAD particulars' },
-      { to: '/colours', label: 'Colours' },
-    ],
+    // one screen; every master is a tab on it
+    links: [{ to: '/masters', label: 'Masters', isOn: isMasterPath }],
   },
 ]
 
@@ -49,6 +31,7 @@ const MENU = [
 export default function Layout({ children }) {
   const { profile, signOut } = useAuth()
   const isPhone = useIsPhone()
+  const { pathname } = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
   const drawerOpen = isPhone && menuOpen
   // Which menu groups the person has folded away (remembered in their browser).
@@ -90,7 +73,7 @@ export default function Layout({ children }) {
                     <NavLink
                       key={link.to}
                       to={link.to}
-                      className={({ isActive }) => `side-link ${isActive ? 'side-link--on' : ''}`}
+                      className={({ isActive }) => `side-link ${(link.isOn ? link.isOn(pathname) : isActive) ? 'side-link--on' : ''}`}
                       onClick={() => setMenuOpen(false)}
                     >
                       {link.label}

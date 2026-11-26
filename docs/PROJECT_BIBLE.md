@@ -560,6 +560,9 @@ Rules the database enforces, whatever the screens do:
 
 ## 8. Screens
 
+All the masters below are tabs of one screen, Masters, sorted alphabetically. The menu has one
+Masters link.
+
 | Screen | What it does | Status |
 |---|---|---|
 | Sign-in | Sign in, first-time set-up, forgot password, choose new password | Built |
@@ -658,6 +661,8 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 26 Nov 2026 | Masters brought into one screen: the menu has a single Masters link, and every master is a tab on it, in alphabetical order (the list is in `src/lib/masters.js`). The old address of each master still opens its tab |
+| 26 Nov 2026 | CAD form: a new CAD table starts with 5 rows; rows left empty are dropped when it is saved |
 | 26 Nov 2026 | Samples screen made accordion style: All samples is a list of collapsible bars, and an opened sample has collapsible sections that all start closed and show their summary |
 | 25 Nov 2026 | Material lists and purchase orders built: four lists per wishlist item, Confirm list, Not required, one PO per wishlist item and vendor, open orders, PO PDF, Colours master, PO numbering and fabric tolerance in Numbering, pcs of each size in Sizes and ratios. Added by `supabase/migrations/20261125180234_material_lists_and_purchase_orders.sql` |
 | 25 Nov 2026 | CAD drawings and the primary accessory list built, with department CAD, CAD particulars master and single sizes in the Sizes and ratios master. Added by `supabase/migrations/20261125112929_cad_drawings_and_primary_accessories.sql` |

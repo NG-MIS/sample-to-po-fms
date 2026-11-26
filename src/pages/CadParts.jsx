@@ -240,7 +240,9 @@ function CadRowsEditor({ rows, onChange, particulars, typedNames, idPrefix }) {
 }
 
 let tableCounter = 0
-const newTable = (changes = {}) => ({ key: `table-${++tableCounter}`, id: null, size: null, size_ratio_id: null, rows: [newCadRow()], ...changes })
+// A new table starts with 5 empty rows; the ones left empty are dropped when it is saved.
+const blankRows = () => Array.from({ length: 5 }, newCadRow)
+const newTable = (changes = {}) => ({ key: `table-${++tableCounter}`, id: null, size: null, size_ratio_id: null, rows: blankRows(), ...changes })
 
 // ---------- New CAD (one or several tables at once), or edit one CAD ----------
 //   cad    - the CAD being edited, or null for new
@@ -265,7 +267,7 @@ export function CadForm({ cad, start, data, onClose, onSaved, onPrimary }) {
       newTable({
         size: combinationOf(sizeRatioId)?.size ?? null,
         size_ratio_id: sizeRatioId,
-        rows: from ? toCadRows(from, false) : [newCadRow()],
+        rows: from ? toCadRows(from, false) : blankRows(),
       }),
     ]
     // The form starts from what it was opened with.
