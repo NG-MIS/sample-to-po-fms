@@ -459,6 +459,8 @@ export default function DataTable({
   // grouping and export still work on every column.
   const bars = Boolean(renderExpanded)
   const workColumns = bars ? columns : shownColumns
+  const barFields = shownColumns.filter((column) => column.header)
+  const barActions = shownColumns.filter((column) => !column.header && column.render)
   const filterCount = Object.keys(filters).length
   const groupColumns = useMemo(
     () => group.map((key) => workColumns.find((column) => column.key === key && column.value)).filter(Boolean),
@@ -743,7 +745,7 @@ export default function DataTable({
       )}
 
       {bars ? (
-        <ul className="bars">
+        <ul className={`bars ${barActions.length ? 'bars--actions' : ''}`}>
           {display.map((item) => {
             if (item.type === 'group') {
               return (
@@ -756,7 +758,7 @@ export default function DataTable({
             const open = openRows.has(key)
             return (
               <li key={key} className={`bar ${open ? 'bar--open' : ''}`} data-bar={rowLabel(item.row)}>
-                <div className="bar-head" onClick={barClick(item.row)}>
+                <div className="bar-head" style={{ '--bar-columns': barFields.length }} onClick={barClick(item.row)}>
                   <button
                     type="button"
                     className="bar-toggle"
@@ -766,22 +768,19 @@ export default function DataTable({
                   >
                     <Chevron open={open} />
                   </button>
-                  {shownColumns.map((column) => {
-                    // a detail with nothing in it is left off the bar
-                    if (column.header && column.value && asText(column.value(item.row)) === '') return null
-                    const content = column.render ? column.render(item.row) : asText(column.value?.(item.row))
-                    if (content === null || content === undefined || content === '' || content === false) return null
-                    return column.header ? (
-                      <div key={column.key} className="bar-field" data-field={column.key}>
+                  {/* every bar has the same fields in the same places, so they line up down the list */}
+                  {barFields.map((column) => {
+                    const empty = column.value ? asText(column.value(item.row)) === '' : false
+                    const content = empty ? null : column.render ? column.render(item.row) : asText(column.value?.(item.row))
+                    const nothing = content === null || content === undefined || content === '' || content === false
+                    return (
+                      <div key={column.key} className={`bar-field ${nothing ? 'bar-field--empty' : ''}`} data-field={column.key}>
                         <span className="bar-label">{column.header}</span>
-                        <span className="bar-value">{content}</span>
-                      </div>
-                    ) : (
-                      <div key={column.key} className="bar-actions">
-                        {content}
+                        <span className="bar-value">{nothing ? null : content}</span>
                       </div>
                     )
                   })}
+                  {barActions.length > 0 && <div className="bar-actions">{barActions.map((column) => <span key={column.key}>{column.render(item.row)}</span>)}</div>}
                 </div>
                 {open && <div className="bar-body">{renderExpanded(item.row)}</div>}
               </li>

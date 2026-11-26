@@ -723,6 +723,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 26 Nov 2026 | Sample bars lined up: every bar has the same details in the same places (an empty one shows a dash), with labels on one line and values starting at the same height |
 | 26 Nov 2026 | Standing rule added and built into the shared list: the data on every list is centred and long text wraps (headings too) |
 | 26 Nov 2026 | `vercel.json` added so the app can be published on Vercel: every address is served by the app, so a refresh or a saved link does not show "not found". Vercel needs the two settings from `.env.local`, and Supabase needs the published address under Authentication > URL Configuration |
 | 26 Nov 2026 | Screen search added to the side menu, with the shortcut Ctrl+K |

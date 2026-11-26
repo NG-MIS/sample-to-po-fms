@@ -2302,12 +2302,16 @@ td.material-actions .btn + .btn {
   box-shadow: 0 2px 10px rgba(8, 128, 93, 0.1);
 }
 .bar-head {
-  display: flex;
-  flex-wrap: wrap;
+  /* the same columns on every bar, so each detail lines up down the list */
+  display: grid;
+  grid-template-columns: 28px repeat(var(--bar-columns, 1), minmax(0, 1fr));
   align-items: center;
-  gap: 8px 18px;
+  gap: 8px 10px;
   padding: 8px 12px;
   cursor: pointer;
+}
+.bars--actions .bar-head {
+  grid-template-columns: 28px repeat(var(--bar-columns, 1), minmax(0, 1fr)) 64px;
 }
 .bar-head:hover {
   background: var(--surface-2);
@@ -2329,7 +2333,10 @@ td.material-actions .btn + .btn {
   flex-direction: column;
   gap: 2px;
   min-width: 0;
-  max-width: 260px;
+}
+.bar-field--empty .bar-value::before {
+  content: '—';
+  color: var(--border-strong);
 }
 .bar-label {
   font-size: 10px;
@@ -2341,7 +2348,8 @@ td.material-actions .btn + .btn {
   overflow-wrap: anywhere;
 }
 .bar-actions {
-  margin-left: auto;
+  display: flex;
+  justify-content: flex-end;
 }
 .bar-body {
   padding: 10px 12px 12px;
@@ -2401,17 +2409,17 @@ td.material-actions .btn + .btn {
   border-top: 1px solid var(--border);
 }
 @media (max-width: 720px) {
-  .bar-head {
-    display: grid;
+  .bar-head,
+  .bars--actions .bar-head {
     grid-template-columns: auto 1fr 1fr;
     gap: 8px 12px;
   }
-  .bar-field {
-    max-width: none;
+  .bar-field--empty {
+    display: none;
   }
   .bar-actions {
     grid-column: 1 / -1;
-    margin-left: 0;
+    justify-content: flex-start;
   }
   .fold-head {
     flex-wrap: wrap;
@@ -2575,4 +2583,40 @@ td.material-actions .btn + .btn {
 }
 .card-value {
   overflow-wrap: anywhere;
+}
+
+/* Bars: labels on one line across the bar, values starting at the same height */
+.bar-head {
+  align-items: start;
+}
+.bar-toggle,
+.bar-actions {
+  align-self: center;
+}
+.bar-label {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-height: 26px;
+  line-height: 1.25;
+}
+.bar-value {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+}
+@media (max-width: 720px) {
+  .bar-label {
+    min-height: 0;
+    justify-content: flex-start;
+  }
+  .bar-value {
+    min-height: 0;
+    justify-content: flex-start;
+  }
+  .bar-field {
+    align-items: flex-start;
+    text-align: left;
+  }
 }
