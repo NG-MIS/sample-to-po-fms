@@ -723,6 +723,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 26 Nov 2026 | Fix: every picture upload failed with "permission denied for function can_receive" after the receiving step, because the receipt photo rule used a function signed-in people could not run. Fixed by `supabase/migrations/20261126101657_let_picture_rules_use_can_receive.sql`. Lesson: a function used in an access rule must be runnable by signed-in people, and picture uploads must be part of the rule checks |
 | 26 Nov 2026 | Samples screen and Process log given All, Completed and Running tabs. A sample is Completed when both its pieces are marked completed; a process is Completed when it has been received back |
 | 26 Nov 2026 | Sample bars lined up: every bar has the same details in the same places (an empty one shows a dash), with labels on one line and values starting at the same height |
 | 26 Nov 2026 | Standing rule added and built into the shared list: the data on every list is centred and long text wraps (headings too) |
