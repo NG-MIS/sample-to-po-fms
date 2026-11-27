@@ -283,6 +283,16 @@ count of rows), and the button for the primary accessory list.
   assigned to that item on saving, so the item leaves the list. The form says so. If the
   sample, size or ratio is changed in the form, it is saved but not assigned, and says so.
   With several CAD tables in the form, the first one of the item's size and ratio is assigned.
+- **Approved samples not in the wishlist yet.** A sample with final approval Yes, no wishlist
+  item and no CAD is also listed in Pending drawing ("Not in the wishlist yet"), with New CAD
+  only; the size is chosen in the form. It leaves the list once its first CAD is made. A
+  wishlist item added later shows as usual until a CAD is assigned to it.
+- **Used counter.** Each CAD shows "Used in material lists: N": the number of wishlist items
+  whose fabric material list was made from its drawing rows (each item counted once). It is
+  worked out on the screen from the material lists, nothing extra is stored.
+- **Message boxes.** Creating a CAD and saving an assignment show a message box with the CAD
+  number (or wishlist id) in large type, like "Sample created". One shared component
+  (`DoneBox`) is used for all of them.
 - Once assigned, a CAD keeps its size and ratio, and so does the wishlist item.
 - **Fabric pending** tab: CADs with rows that still have no fabric, for the people who look
   after the sample.
@@ -727,6 +737,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 27 Nov 2026 | Pending drawing also lists approved samples with no wishlist item and no CAD; each CAD shows how many material lists used it; message boxes after creating a CAD and after assigning. Screen change only, no database change |
 | 27 Nov 2026 | New CAD opened from a Pending drawing item is assigned to that wishlist item on saving. Screen change only, no database change |
 | 26 Nov 2026 | CAD rows carry COMPONENTS (required, one or more of the sample's components; a sample with one component needs no picking) and EFFICIENCY %. The CAD form shows the sample's picture. Added by `supabase/migrations/20261126130457_cad_components_efficiency_and_accessory_colours.sql` |
 | 26 Nov 2026 | Accessories (the CAD primary accessory list and both accessory material lists) are either general (one colour, which can be named) or colour specific (following the Base colour or an Alternate colour); a "Same pcs per size group" tick types the pieces once. The PO says how each accessory is coloured |

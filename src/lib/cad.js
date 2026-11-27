@@ -298,6 +298,13 @@ export const primaryLinesFor = (sample, sizeRatioId) =>
 // The CADs assigned to one wishlist item.
 export const cadsOfEntry = (sample, entry) => sample.cads.filter((cad) => cad.wishlist_ids.includes(entry.id))
 
+// How many times a CAD has been used: the wishlist items whose fabric material list
+// was made from its drawing rows.
+export const cadUsedIn = (sample, cad) => {
+  const rowIds = new Set(cad.rows.map((row) => row.id))
+  return sample.wishlist.filter((entry) => (entry.materials ?? []).some((item) => item.cad_row_id && rowIds.has(item.cad_row_id)))
+}
+
 // The CADs that could be assigned to a wishlist item: same sample, size and ratio.
 export const cadsForEntry = (sample, entry) => sample.cads.filter((cad) => cad.size_ratio_id === entry.size_ratio_id)
 

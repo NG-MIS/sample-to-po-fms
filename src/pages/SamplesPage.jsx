@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import ClickableImage from '../components/ClickableImage.jsx'
 import DataTable from '../components/DataTable.jsx'
+import DoneBox from '../components/DoneBox.jsx'
 import ImageUpload from '../components/ImageUpload.jsx'
 import Modal, { ConfirmDialog } from '../components/Modal.jsx'
 import PickList from '../components/PickList.jsx'
@@ -540,26 +541,7 @@ export default function SamplesPage() {
         />
       )}
       {created && (
-        <Modal
-          title="Sample created"
-          onClose={() => setCreated(null)}
-          width={380}
-          footer={() => (
-            <button type="button" className="btn btn--primary" autoFocus onClick={() => setCreated(null)}>
-              OK
-            </button>
-          )}
-        >
-          <div className="created-box" role="status">
-            <span className="created-tick" aria-hidden="true">
-              ✓
-            </span>
-            <p>The sample was created. Its sample number is</p>
-            <p className="created-number" data-created-number>
-              {created}
-            </p>
-          </div>
-        </Modal>
+        <DoneBox title="Sample created" text="The sample was created. Its sample number is" number={created} onClose={() => setCreated(null)} />
       )}
       {editing && (
         <SampleForm

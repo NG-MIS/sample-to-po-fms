@@ -11,6 +11,7 @@ import {
   addLabelFor,
   cadFabricPayload,
   cadRowPayload,
+  cadUsedIn,
   cadsForEntry,
   cadsOfEntry,
   checkCadFabricRows,
@@ -55,6 +56,7 @@ export function CadCard({ cad, sample, data, lookups, canCad, canFabric, onEdit,
   const primary = primaryLinesFor(sample, cad.size_ratio_id)
   const assigned = sample.wishlist.filter((entry) => cad.wishlist_ids.includes(entry.id))
   const missing = rowsWithoutFabric(cad).length
+  const usedIn = cadUsedIn(sample, cad)
 
   return (
     <section className="cad-card" data-cad={cad.cad_no} aria-label={`CAD ${cad.cad_no}`}>
@@ -67,6 +69,9 @@ export function CadCard({ cad, sample, data, lookups, canCad, canFabric, onEdit,
               {entry.wishlist_no}
             </span>
           ))}
+        </span>
+        <span className="cad-used" data-cad-used title={usedIn.map((entry) => entry.wishlist_no).join(', ') || 'No material list has been made from this CAD yet'}>
+          Used in material lists: <strong>{usedIn.length}</strong>
         </span>
         <span className="row-actions">
           {canFabric && (
@@ -680,7 +685,8 @@ export function CadAssignDialog({ cad, entry, sample, lookups, onClose, onSaved 
     try {
       if (byCad) await callSampleAction('set_cad_wishlist', { p_cad_id: cad.id, p_wishlist_ids: picked })
       else await callSampleAction('set_wishlist_cads', { p_wishlist_id: entry.id, p_cad_ids: picked })
-      await onSaved()
+      const names = options.filter((option) => picked.includes(option.value)).map((option) => option.label.replace(/ \(.*\)$/, ''))
+      await onSaved({ byCad, number: byCad ? cad.cad_no : entry.wishlist_no, names })
     } catch (failure) {
       setError(friendlyError(failure))
       setBusy(false)
