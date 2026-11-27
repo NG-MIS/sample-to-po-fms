@@ -5,6 +5,8 @@ Newest first. A changed decision is not deleted: a new entry is added that repla
 
 | Date | Decision | Reason |
 |---|---|---|
+| 27 Nov 2026 | A wishlist item uses every CAD of the same sample, size and ratio, all together, with no assigning (replaces the 25 Nov rule that a CAD must be assigned) | Nihal: "should fetch their respective drawings, no need to assign further"; "all together" |
+| 27 Nov 2026 | A CAD or wishlist item keeps its size and ratio once a material list exists for it (replaces "once assigned") | With no assigning, the material list is the first thing that depends on the size |
 | 27 Nov 2026 | An approved sample with no wishlist item leaves Pending drawing once it has its first CAD | Nihal agreed; a wishlist item added later still shows until a CAD is assigned to it |
 | 27 Nov 2026 | A CAD's used counter counts wishlist items whose fabric material list was made from it, each once | Shows how many times a drawing has been used |
 | 25 Nov 2026 | The CAD department can see every sample, like Management | They must see approved samples and their pictures to make CADs |

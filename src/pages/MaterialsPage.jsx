@@ -102,7 +102,7 @@ export default function MaterialsPage() {
       { key: 'qty', header: 'QTY (PCS)', align: 'right', value: (row) => row.qty },
       {
         key: 'cad',
-        header: 'CAD ASSIGNED',
+        header: 'CAD DRAWINGS',
         value: (row) => (cadsOfEntry(row.sample, row).length ? cadsOfEntry(row.sample, row).map((cad) => cad.cad_no) : 'Pending'),
       },
     ]

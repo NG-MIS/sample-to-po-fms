@@ -126,7 +126,6 @@ export async function loadSampleData(profile) {
     wishlistEntries,
     cads,
     cadRows,
-    cadWishlist,
     primaryLines,
     materialLists,
     materialItems,
@@ -174,7 +173,6 @@ export async function loadSampleData(profile) {
     fetchRows('wishlist_entries'),
     fetchRows('cads'),
     fetchRows('cad_rows', 'position'),
-    fetchRows('cad_wishlist', null),
     fetchRows('primary_accessory_lines', 'position'),
     fetchRows('material_lists', null),
     fetchRows('material_items', 'position'),
@@ -222,7 +220,6 @@ export async function loadSampleData(profile) {
   const wishlistBySample = groupBy(wishlistEntries, 'sample_id')
   const cadsBySample = groupBy(cads, 'sample_id')
   const rowsByCad = groupBy(cadRows, 'cad_id')
-  const wishlistByCad = groupBy(cadWishlist, 'cad_id')
   const primaryBySample = groupBy(primaryLines, 'sample_id')
   const listsByEntry = groupBy(materialLists, 'wishlist_entry_id')
   const itemsByEntry = groupBy(materialItems, 'wishlist_entry_id')
@@ -295,13 +292,14 @@ export async function loadSampleData(profile) {
           lists: Object.fromEntries((listsByEntry.get(entry.id) ?? []).map((list) => [list.kind, list])),
           materials: (itemsByEntry.get(entry.id) ?? []).map((item) => ({ ...item, orders: ordersByItem.get(item.id) ?? [] })),
         })),
-      // the CADs of the sample, each with its drawing rows and the wishlist items it is assigned to
+      // the CADs of the sample, each with its drawing rows and the wishlist items it is for:
+      // every wishlist item of the sample with the same size and ratio, with no assigning step
       cads: [...(cadsBySample.get(sample.id) ?? [])]
         .sort((a, b) => a.seq - b.seq)
         .map((cad) => ({
           ...cad,
           rows: rowsByCad.get(cad.id) ?? [],
-          wishlist_ids: (wishlistByCad.get(cad.id) ?? []).map((link) => link.wishlist_entry_id),
+          wishlist_ids: (wishlistBySample.get(sample.id) ?? []).filter((entry) => entry.size_ratio_id === cad.size_ratio_id).map((entry) => entry.id),
         })),
       // the lines of its primary accessory lists, for every size (+ ratio)
       primaryLines: primaryBySample.get(sample.id) ?? [],
@@ -339,7 +337,7 @@ export async function loadSampleData(profile) {
       manages: isAll || looksAfterSample,
       // May approve samples.
       management: isAll || (Boolean(managementDepartment) && profile.department_id === managementDepartment),
-      // Makes CADs, assigns them to wishlist items and sets up primary accessory lists.
+      // Makes CADs and sets up primary accessory lists.
       cad: isAll || (Boolean(cadDepartment) && profile.department_id === cadDepartment),
       // Receives material: the Fabric store for fabric POs, the Accessory store for accessory POs.
       receive: {

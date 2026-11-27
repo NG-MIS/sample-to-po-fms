@@ -12,8 +12,6 @@ import {
   cadFabricPayload,
   cadRowPayload,
   cadUsedIn,
-  cadsForEntry,
-  cadsOfEntry,
   checkCadFabricRows,
   checkCadRows,
   checkPrimaryLines,
@@ -39,7 +37,6 @@ import {
 import { friendlyError } from '../lib/format.js'
 import { QTY_TYPES, QTY_TYPE_LABEL } from '../lib/sampleAccessories.js'
 import { BUCKET, callSampleAction, latestImage } from '../lib/sampleData.js'
-import { supabase } from '../lib/supabase.js'
 import { defaultCombination, ratioOptions, sizeOptions } from '../lib/wishlist.js'
 
 const numberOnly = (value) => value.replace(/[^\d.]/g, '')
@@ -50,7 +47,7 @@ const formatRate = (value) => (value === null || value === undefined ? '' : Numb
 
 // ---------- One CAD, shown as a table like the CAD sheet ----------
 
-export function CadCard({ cad, sample, data, lookups, canCad, canFabric, onEdit, onCopy, onAssign, onFabric, onPrimary }) {
+export function CadCard({ cad, sample, data, lookups, canCad, canFabric, onEdit, onCopy, onFabric, onPrimary }) {
   const combination = lookups.combination.get(cad.size_ratio_id)
   const image = latestImage(sample)
   const primary = primaryLinesFor(sample, cad.size_ratio_id)
@@ -63,7 +60,7 @@ export function CadCard({ cad, sample, data, lookups, canCad, canFabric, onEdit,
       <div className="cad-card-head">
         <h3 className="cad-no">{cad.cad_no}</h3>
         <span className="tag-list">
-          {assigned.length === 0 && <span className="badge badge--pending">Not assigned to the wishlist</span>}
+          {assigned.length === 0 && <span className="badge badge--pending">No wishlist item of this size yet</span>}
           {assigned.map((entry) => (
             <span key={entry.id} className="tag-chip">
               {entry.wishlist_no}
@@ -81,9 +78,6 @@ export function CadCard({ cad, sample, data, lookups, canCad, canFabric, onEdit,
           )}
           {canCad && (
             <>
-              <button type="button" className="btn btn--small" onClick={() => onAssign(cad, sample)}>
-                Assign to wishlist
-              </button>
               <button type="button" className="btn btn--small" onClick={() => onCopy(cad, sample)}>
                 Copy as new CAD
               </button>
@@ -280,8 +274,6 @@ const newTable = (changes = {}) => ({ key: `table-${++tableCounter}`, id: null, 
 //   start  - for a new CAD: { sample, sizeRatioId, copyFrom } to begin from
 export function CadForm({ cad, start, data, onClose, onSaved, onPrimary }) {
   const isNew = !cad
-  // Opened from a wishlist item waiting for a drawing: the new CAD is assigned to it on saving.
-  const forEntry = isNew ? start?.entry ?? null : null
   const combinationOf = (id) => data.sizeRatios.find((row) => row.id === id)
   const approved = useMemo(
     () => data.samples.filter((sample) => sample.approvals.final?.decision === 'yes'),
@@ -312,7 +304,6 @@ export function CadForm({ cad, start, data, onClose, onSaved, onPrimary }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   const [tables, setTables] = useState(initial)
-  const [link, setLink] = useState({ assigned: '', problem: '' }) // kept when a later CAD failed to save
   const [savedKeys, setSavedKeys] = useState([]) // tables already saved, when a later one failed
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -325,8 +316,6 @@ export function CadForm({ cad, start, data, onClose, onSaved, onPrimary }) {
     setSampleId(id)
     setTables((previous) => previous.map((table) => ({ ...table, rows: table.rows.map((row) => ({ ...row, component_ids: [] })) })))
   }
-  const fitsEntry = (table) => Boolean(forEntry) && sampleId === forEntry.sample_id && table.size_ratio_id === forEntry.size_ratio_id
-  const willAssign = tables.some(fitsEntry)
   const dirty = sampleId !== (cad?.sample_id ?? start?.sample?.id ?? null) || snapshot(tables) !== snapshot(initial)
   const sampleOptions = approved
     .map((item) => ({ value: item.id, label: item.design_no ? `${item.sample_no} · design ${item.design_no}` : item.sample_no }))
@@ -345,7 +334,7 @@ export function CadForm({ cad, start, data, onClose, onSaved, onPrimary }) {
     setError('')
     const done = [...savedKeys]
     const numbers = []
-    let { assigned, problem: assignProblem } = link
+    const sizes = []
     try {
       for (const table of tables) {
         if (done.includes(table.key)) continue
@@ -357,23 +346,13 @@ export function CadForm({ cad, start, data, onClose, onSaved, onPrimary }) {
         })
         numbers.push(number)
         done.push(table.key)
-        // The first CAD of the wishlist item's own sample, size and ratio is assigned to it.
-        if (forEntry && !assigned && !assignProblem && fitsEntry(table)) {
-          try {
-            const { data: made, error: findError } = await supabase.from('cads').select('id').eq('cad_no', number).maybeSingle()
-            if (findError) throw findError
-            if (!made) throw new Error('The new CAD could not be found.')
-            await callSampleAction('set_wishlist_cads', { p_wishlist_id: forEntry.id, p_cad_ids: [made.id] })
-            assigned = number
-          } catch (failure) {
-            assignProblem = friendlyError(failure)
-          }
-        }
+        sizes.push(table.size_ratio_id)
       }
-      await onSaved(numbers, { entry: forEntry, assigned, problem: assignProblem })
+      // the wishlist items that pick these CADs up: same sample, size and ratio
+      const serves = sample.wishlist.filter((entry) => sizes.includes(entry.size_ratio_id)).map((entry) => entry.wishlist_no)
+      await onSaved(numbers, serves)
     } catch (failure) {
       setSavedKeys(done)
-      setLink({ assigned, problem: assignProblem })
       setError(
         (numbers.length ? `Saved ${numbers.join(', ')}. The next one was not saved: ` : '') + friendlyError(failure),
       )
@@ -427,17 +406,10 @@ export function CadForm({ cad, start, data, onClose, onSaved, onPrimary }) {
             </span>
           </div>
         )}
-        {forEntry && (
-          <p className={willAssign ? 'hint' : 'error-text'} data-cad-assign-note>
-            {willAssign
-              ? `On saving, this CAD is assigned to wishlist item ${forEntry.wishlist_no}.`
-              : `This CAD will not be assigned to ${forEntry.wishlist_no}: its sample, size or ratio is different.`}
-          </p>
-        )}
 
         {tables.map((table, index) => {
           const ratios = table.size ? ratioOptions(data.sizeRatios, table.size, table.size_ratio_id) : []
-          const locked = Boolean(cad) && cad.wishlist_ids.length > 0
+          const locked = Boolean(cad) && cadUsedIn(sample, cad).length > 0
           const primary = sample && table.size_ratio_id ? primaryLinesFor(sample, table.size_ratio_id) : null
           const others = sample ? sample.cads.filter((item) => item.id !== table.id) : []
           const saved = savedKeys.includes(table.key)
@@ -512,7 +484,7 @@ export function CadForm({ cad, start, data, onClose, onSaved, onPrimary }) {
                   )}
                 </div>
               </div>
-              {locked && <p className="hint">This CAD is assigned to wishlist items, so its size and ratio are locked.</p>}
+              {locked && <p className="hint">A material list was made from this CAD, so its size and ratio are locked.</p>}
               <CadRowsEditor
                 rows={table.rows}
                 onChange={(rows) => setTable(table.key, { rows })}
@@ -650,85 +622,6 @@ export function CadFabricDialog({ cad, data, lookups, onClose, onSaved }) {
             })}
           </tbody>
         </table>
-        {error && (
-          <p className="alert alert--error" role="alert">
-            {error}
-          </p>
-        )}
-      </form>
-    </Modal>
-  )
-}
-
-// ---------- Assigning: a CAD to wishlist items, or CADs to one wishlist item ----------
-//   cad   + sample - pick the wishlist items of this CAD
-//   entry + sample - pick the CADs of this wishlist item
-export function CadAssignDialog({ cad, entry, sample, lookups, onClose, onSaved }) {
-  const byCad = Boolean(cad)
-  const initial = byCad ? cad.wishlist_ids : cadsOfEntry(sample, entry).map((item) => item.id)
-  const [picked, setPicked] = useState(initial)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
-  const dirty = JSON.stringify([...picked].sort()) !== JSON.stringify([...initial].sort())
-  const combination = lookups.combination.get(byCad ? cad.size_ratio_id : entry.size_ratio_id)
-
-  const options = byCad
-    ? sample.wishlist
-        .filter((item) => item.size_ratio_id === cad.size_ratio_id)
-        .map((item) => ({ value: item.id, label: `${item.wishlist_no} (${item.qty} pcs)` }))
-    : cadsForEntry(sample, entry).map((item) => ({ value: item.id, label: `${item.cad_no} (${item.rows.length} drawings)` }))
-
-  const save = async (event) => {
-    event.preventDefault()
-    setBusy(true)
-    setError('')
-    try {
-      if (byCad) await callSampleAction('set_cad_wishlist', { p_cad_id: cad.id, p_wishlist_ids: picked })
-      else await callSampleAction('set_wishlist_cads', { p_wishlist_id: entry.id, p_cad_ids: picked })
-      const names = options.filter((option) => picked.includes(option.value)).map((option) => option.label.replace(/ \(.*\)$/, ''))
-      await onSaved({ byCad, number: byCad ? cad.cad_no : entry.wishlist_no, names })
-    } catch (failure) {
-      setError(friendlyError(failure))
-      setBusy(false)
-    }
-  }
-
-  return (
-    <Modal
-      title={byCad ? `Assign ${cad.cad_no} to the wishlist` : `Assign a CAD to ${entry.wishlist_no}`}
-      onClose={onClose}
-      dirty={dirty}
-      width={520}
-      footer={(requestClose) => (
-        <>
-          <button type="button" className="btn" onClick={requestClose}>
-            Cancel
-          </button>
-          <button type="submit" form="cad-assign-form" className="btn btn--primary" disabled={busy}>
-            {busy ? 'Saving…' : 'Save'}
-          </button>
-        </>
-      )}
-    >
-      <form id="cad-assign-form" onSubmit={save} noValidate>
-        <div className="field">
-          <label className="field-label" htmlFor="cad-assign-pick">
-            {byCad ? 'Wishlist items' : 'CADs'}
-          </label>
-          <PickList
-            id="cad-assign-pick"
-            multiple
-            options={options}
-            value={picked}
-            onChange={setPicked}
-            placeholder={options.length ? 'Select…' : byCad ? 'No wishlist item of this size and ratio' : 'No CAD of this size and ratio yet'}
-            disabled={options.length === 0}
-          />
-          <p className="hint">
-            Only {byCad ? 'wishlist items' : 'CADs'} of {sample.sample_no} in {sizeLabel(combination)} can be picked. One
-            assigned CAD is enough for a wishlist item.
-          </p>
-        </div>
         {error && (
           <p className="alert alert--error" role="alert">
             {error}

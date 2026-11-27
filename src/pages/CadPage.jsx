@@ -6,11 +6,11 @@ import DoneBox from '../components/DoneBox.jsx'
 import Tabs from '../components/Tabs.jsx'
 import { PageHead } from '../components/Layout.jsx'
 import { useAuth } from '../lib/auth.jsx'
-import { FABRIC_TYPE_LABEL, cadsForEntry, cadsOfEntry, primaryLinesFor, rowsWithoutFabric, sizeLabel } from '../lib/cad.js'
+import { FABRIC_TYPE_LABEL, cadsOfEntry, primaryLinesFor, rowsWithoutFabric, sizeLabel } from '../lib/cad.js'
 import { nameMap, useLoad } from '../lib/data.js'
 import { friendlyError } from '../lib/format.js'
 import { BUCKET, canWorkOn, latestImage, loadSampleData } from '../lib/sampleData.js'
-import { CadAssignDialog, CadCard, CadFabricDialog, CadForm, PrimaryAccessoryDialog } from './CadParts.jsx'
+import { CadCard, CadFabricDialog, CadForm, PrimaryAccessoryDialog } from './CadParts.jsx'
 import SampleDetail from './SampleDetail.jsx'
 
 function sampleColumns(onOpen, getSample) {
@@ -40,8 +40,9 @@ function sampleColumns(onOpen, getSample) {
 
 // CAD drawings.
 //   CAD drawings    - every CAD as a table, like the CAD sheet
-//   Pending drawing - wishlist items with no CAD assigned yet, and approved samples
-//                     that have neither a wishlist item nor a CAD
+//   Pending drawing - wishlist items with no CAD of their sample, size and ratio yet,
+//                     and approved samples that have neither a wishlist item nor a CAD
+// A wishlist item picks up every CAD of its sample, size and ratio by itself.
 //   Fabric pending  - CADs with rows that still have no fabric
 //   All rows        - every drawing row in one list, to filter and export
 export default function CadPage() {
@@ -52,7 +53,6 @@ export default function CadPage() {
   const [viewingId, setViewingId] = useState(null)
   const [form, setForm] = useState(null) // { cad } to edit, { start } for new
   const [fabricFor, setFabricFor] = useState(null) // { cadId, sampleId }
-  const [assign, setAssign] = useState(null) // { cadId | entryId, sampleId }
   const [primary, setPrimary] = useState(null) // { sampleId, sizeRatioId }
   const [notice, setNotice] = useState('')
   const [doneBox, setDoneBox] = useState(null) // { title, text, number, note }
@@ -110,7 +110,6 @@ export default function CadPage() {
   const done = async (message) => {
     setForm(null)
     setFabricFor(null)
-    setAssign(null)
     if (message) setNotice(message)
     await reload()
   }
@@ -145,11 +144,6 @@ export default function CadPage() {
       { key: 'size', header: 'SIZE', value: (row) => lookups.combination.get(row.size_ratio_id)?.size ?? '' },
       { key: 'ratio', header: 'RATIO', value: (row) => lookups.combination.get(row.size_ratio_id)?.ratio ?? '' },
       { key: 'qty', header: 'QTY (PCS)', align: 'right', value: (row) => row.qty },
-      {
-        key: 'available',
-        header: 'CADS OF THIS SIZE',
-        value: (row) => cadsForEntry(row.sample, row).map((cad) => cad.cad_no),
-      },
       ...(canCad
         ? [
             {
@@ -158,21 +152,12 @@ export default function CadPage() {
               align: 'right',
               render: (row) => (
                 <span className="row-actions">
-                  {cadsForEntry(row.sample, row).length > 0 && (
-                    <button type="button" className="btn btn--small btn--primary" onClick={() => setAssign({ entryId: row.id, sampleId: row.sample.id })}>
-                      Assign CAD
-                    </button>
-                  )}
                   <button
                     type="button"
-                    className={`btn btn--small ${cadsForEntry(row.sample, row).length ? '' : 'btn--primary'}`}
+                    className="btn btn--small btn--primary"
                     onClick={() =>
                       setForm({
-                        start: {
-                          sample: row.sample,
-                          sizeRatioId: row.size_ratio_id,
-                          entry: row.noWishlist ? null : { id: row.id, wishlist_no: row.wishlist_no, sample_id: row.sample.id, size_ratio_id: row.size_ratio_id },
-                        },
+                        start: { sample: row.sample, sizeRatioId: row.size_ratio_id },
                       })
                     }
                   >
@@ -240,14 +225,13 @@ export default function CadPage() {
   const viewing = sampleOf(viewingId)
   const fabricSample = fabricFor && sampleOf(fabricFor.sampleId)
   const fabricCad = fabricSample?.cads.find((cad) => cad.id === fabricFor.cadId)
-  const assignSample = assign && sampleOf(assign.sampleId)
   const primarySample = primary && sampleOf(primary.sampleId)
 
   return (
     <>
       <PageHead
         title="CAD drawings"
-        note="One CAD per sample and size, with a row for every drawing. A CAD is assigned to the wishlist items it is for; one assigned CAD is enough for a wishlist item."
+        note="One CAD per sample and size, with a row for every drawing. Every wishlist item of the same sample, size and ratio uses it by itself; nothing needs assigning."
       />
       {error && (
         <p className="alert alert--error" role="alert">
@@ -295,7 +279,6 @@ export default function CadPage() {
               canFabric={canWorkOn(sample, data, profile)}
               onEdit={(item) => setForm({ cad: item })}
               onCopy={(item, itemSample) => setForm({ start: { sample: itemSample, copyFrom: item } })}
-              onAssign={(item, itemSample) => setAssign({ cadId: item.id, sampleId: itemSample.id })}
               onFabric={(item, itemSample) => setFabricFor({ cadId: item.id, sampleId: itemSample.id })}
               onPrimary={(itemSample, sizeRatioId) => setPrimary({ sampleId: itemSample.id, sizeRatioId })}
             />
@@ -305,9 +288,9 @@ export default function CadPage() {
       {tab === 'pending' && (
         <>
           <p className="tab-note">
-            Wishlist items with no CAD assigned yet. A CAD of the same sample, size and ratio can be assigned, or a new
-            one made. An item leaves this list once a CAD is assigned. Approved samples not in the wishlist yet are
-            listed too, until their first CAD is made.
+            Wishlist items with no CAD of their sample, size and ratio yet. Once that CAD is made, every wishlist item
+            of that sample, size and ratio leaves this list. Approved samples not in the wishlist yet are listed too,
+            until their first CAD is made.
           </p>
           <DataTable
             tableId="cad-pending-drawing"
@@ -352,13 +335,9 @@ export default function CadPage() {
           start={form.start}
           data={data}
           onClose={() => setForm(null)}
-          onSaved={(numbers, link) => {
-            let message = numbers.length ? `Saved ${numbers.join(', ')}.` : ''
-            let note = ''
-            if (link?.assigned) note = `${link.assigned} is assigned to ${link.entry.wishlist_no}.`
-            else if (link?.problem) note = `It could not be assigned to ${link.entry.wishlist_no}: ${link.problem} Please assign it from here.`
-            else if (link?.entry && numbers.length) note = `Not assigned to ${link.entry.wishlist_no}, as the sample, size or ratio is different.`
-            if (note) message += ` ${note}`
+          onSaved={(numbers, serves) => {
+            const message = numbers.length ? `Saved ${numbers.join(', ')}.` : ''
+            const note = serves.length ? `Used by wishlist ${serves.length > 1 ? 'items' : 'item'} ${serves.join(', ')}.` : 'No wishlist item of this size and ratio yet.'
             if (!form.cad && numbers.length) {
               setDoneBox({
                 title: numbers.length > 1 ? 'CADs created' : 'CAD created',
@@ -379,31 +358,6 @@ export default function CadPage() {
           lookups={lookups}
           onClose={() => setFabricFor(null)}
           onSaved={() => done(`Fabric of ${fabricCad.cad_no} saved.`)}
-        />
-      )}
-      {assignSample && (
-        <CadAssignDialog
-          cad={assign.cadId ? assignSample.cads.find((cad) => cad.id === assign.cadId) : null}
-          entry={assign.entryId ? assignSample.wishlist.find((entry) => entry.id === assign.entryId) : null}
-          sample={assignSample}
-          lookups={lookups}
-          onClose={() => setAssign(null)}
-          onSaved={(result) => {
-            const list = result.names.join(', ')
-            setDoneBox({
-              title: 'Assignment saved',
-              text: result.byCad ? 'CAD drawing' : 'Wishlist item',
-              number: result.number,
-              note: result.byCad
-                ? list
-                  ? `is assigned to ${list}.`
-                  : 'is not assigned to any wishlist item now.'
-                : list
-                  ? `has ${list} assigned.`
-                  : 'has no CAD assigned now.',
-            })
-            return done('Assignment saved.')
-          }}
         />
       )}
       {primarySample && (

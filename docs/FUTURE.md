@@ -49,7 +49,7 @@ purchase orders (built 25 Nov 2026, Project Bible 2.6 and 2.7).
   raised or is marked Not required).
 - Primary accessory: a button brings in the primary accessory list of that sample + size +
   ratio when one exists; the person reviews it and edits if needed.
-- Fabric lists: picked from the CAD drawings assigned to the wishlist item (rows marked
+- Fabric lists: picked from the CAD drawings of the wishlist item's sample, size and ratio (rows marked
   Primary or Secondary).
 - Secondary accessory list: created by hand.
 - From a material list: raise a PO for the items required, or mark an item Not required
@@ -84,9 +84,10 @@ purchase orders (built 25 Nov 2026, Project Bible 2.6 and 2.7).
   used in) are drawn together in one CAD drawing. The fabric is layered, the drawing placed on
   top, and the parts are cut.
 - The CAD department makes the drawings; a sample can have many.
-- Every wishlist entry must have at least one drawing assigned to it. A drawing existing for
-  the same sample, size and ratio is not enough: it must be assigned to the wishlist id. One
-  wishlist id can have several drawings.
+- Every wishlist entry uses the drawings of the same sample, size and ratio by itself (changed
+  27 Nov 2026; before that a drawing had to be assigned). One wishlist id can have several
+  drawings, all used together.
+- Clean-up to do: remove the unused `cad_wishlist` table and its two assigning functions.
 - Entries with no drawing show on a "Pending drawing" screen.
 
 **Final material list**

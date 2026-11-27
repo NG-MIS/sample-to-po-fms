@@ -125,7 +125,7 @@ export default function WishlistPage() {
       },
       {
         key: 'cad',
-        header: 'CAD ASSIGNED',
+        header: 'CAD DRAWINGS',
         value: (row) => (cadsOfEntry(row.sample, row).length ? cadsOfEntry(row.sample, row).map((cad) => cad.cad_no) : 'Pending'),
         render: (row) => {
           const assigned = cadsOfEntry(row.sample, row)

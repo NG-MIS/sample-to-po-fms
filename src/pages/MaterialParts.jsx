@@ -340,7 +340,7 @@ export function MaterialListDialog({ entry, sample, kind, data, canEdit, isAdmin
             </button>
             <span className="hint">
               {assignedCads.length === 0
-                ? 'No CAD is assigned to this wishlist item yet.'
+                ? 'No CAD has been made for this sample, size and ratio yet.'
                 : cadRows.ready.length === 0
                   ? `Every ${levelOf(kind)} drawing row that has a fabric is already here.`
                   : `${levelOf(kind) === 'primary' ? 'Primary' : 'Secondary'} drawing rows of ${assignedCads.map((cad) => cad.cad_no).join(', ')}.`}

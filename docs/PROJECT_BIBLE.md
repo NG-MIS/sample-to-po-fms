@@ -186,7 +186,7 @@ person with authority All changing that No.
 | Give a sample its design number | Same as above, and only after the final approval is Yes |
 | Add a sample to the wishlist (first entry or repeats) | The people who approve: department Management, and authority All |
 | Correct a wishlist entry | Authority All |
-| Make or change a CAD, assign it to wishlist items, set up a primary accessory list | Department CAD, and authority All |
+| Make or change a CAD, set up a primary accessory list | Department CAD, and authority All |
 | Fill the fabric, vendor and rate of CAD rows | The sample's designer, or department authority over Sample |
 | Mark a piece completed | Department(s) authority that includes Sample, and only when the piece is not At vendor |
 | Give initial or final approval | Anyone in department Management |
@@ -275,25 +275,23 @@ count of rows), and the button for the primary accessory list.
 - A CAD can be made only for a sample whose final approval is Yes.
 - On the New CAD form several CAD tables can be entered at once for the same sample, and the
   rows can be copied from an existing CAD of that sample ("Copy as new CAD", "Copy rows from").
-- **Assigning.** A CAD is assigned to wishlist items of the same sample, size and ratio, from
-  the CAD or from the wishlist item. An item can have several CADs; one is enough for "CAD
-  assigned". The Pending drawing tab lists wishlist items with no CAD assigned. An existing
-  CAD of the right size is not enough: it must be assigned.
-- **New CAD from Pending drawing.** A CAD made with "New CAD" on a pending wishlist item is
-  assigned to that item on saving, so the item leaves the list. The form says so. If the
-  sample, size or ratio is changed in the form, it is saved but not assigned, and says so.
-  With several CAD tables in the form, the first one of the item's size and ratio is assigned.
+- **Wishlist items pick up their CADs by themselves (from 27 Nov 2026).** Every CAD of the
+  same sample, size and ratio is a drawing of the wishlist item; all of them together when
+  there are several. Nothing is assigned by hand: the Assign buttons and form are gone. The
+  Pending drawing tab lists wishlist items that have no CAD of their sample, size and ratio.
+  Making that CAD (from the row's New CAD, or anywhere) takes every such item off the list.
 - **Approved samples not in the wishlist yet.** A sample with final approval Yes, no wishlist
   item and no CAD is also listed in Pending drawing ("Not in the wishlist yet"), with New CAD
   only; the size is chosen in the form. It leaves the list once its first CAD is made. A
-  wishlist item added later shows as usual until a CAD is assigned to it.
+  wishlist item added later shows as usual until a CAD of its size and ratio exists.
 - **Used counter.** Each CAD shows "Used in material lists: N": the number of wishlist items
   whose fabric material list was made from its drawing rows (each item counted once). It is
   worked out on the screen from the material lists, nothing extra is stored.
-- **Message boxes.** Creating a CAD and saving an assignment show a message box with the CAD
-  number (or wishlist id) in large type, like "Sample created". One shared component
-  (`DoneBox`) is used for all of them.
-- Once assigned, a CAD keeps its size and ratio, and so does the wishlist item.
+- **Message box.** Creating a CAD shows a message box with the CAD number in large type and
+  the wishlist items that now use it, like "Sample created". One shared component (`DoneBox`).
+- **Keeping the size.** A CAD keeps its size and ratio once a material list was made from its
+  rows; a wishlist item keeps its size and ratio once it has a material list. Until then both
+  can be changed (the database enforces this).
 - **Fabric pending** tab: CADs with rows that still have no fabric, for the people who look
   after the sample.
 
@@ -317,7 +315,7 @@ combination. Set up by the CAD department, from the CAD table or the New CAD for
 The single sizes of each range (22-38 = 22, 24 ... 38) are kept in the Sizes and ratios master.
 The sampling accessory list of a sample (2.1b) is separate and unchanged.
 
-**Wishlist statuses so far:** CAD assigned, CAD accessory list (Added or Pending), and where
+**Wishlist statuses so far:** CAD drawings, CAD accessory list (Added or Pending), and where
 each of the four material lists stands (2.6).
 
 ### 2.6 Material lists of a wishlist item (built)
@@ -326,7 +324,7 @@ Every wishlist item has four lists of what must be bought for it. Screen: Materi
 
 | List | How it is filled |
 |---|---|
-| Primary fabric | "Bring in from CADs" takes the drawing rows marked Primary of the CADs assigned to the item (fabric, Msrmnt, No. of pcs in layer, paina, vendor, rate). Rows with no fabric yet cannot be brought in. Lines can also be added by hand |
+| Primary fabric | "Bring in from CADs" takes the drawing rows marked Primary of the CADs of the item's sample, size and ratio (fabric, Msrmnt, No. of pcs in layer, paina, vendor, rate). Rows with no fabric yet cannot be brought in. Lines can also be added by hand |
 | Secondary fabric | The same, from the rows marked Secondary |
 | Primary accessory | "Bring in primary accessory list" takes the list set up with the CADs for that sample + size + ratio (2.5). The person reviews it, changes it if needed, and adds vendor, rate and the Colour specific mark |
 | Secondary accessory | Entered by hand, same fields as the primary one. The primary accessory list is shown on top, to look at only |
@@ -573,7 +571,7 @@ Created by `supabase/migrations/20261123113937_masters_and_sign_in.sql`.
 | `cad_particulars` | CAD particulars master: the names of drawing rows |
 | `cads` | One row per CAD: CAD number, sample, size and ratio |
 | `cad_rows` | The drawing rows of each CAD, with their fabric, vendor and rate |
-| `cad_wishlist` | Which wishlist items each CAD is assigned to |
+| `cad_wishlist` | No longer used (27 Nov 2026): a wishlist item uses every CAD of its sample, size and ratio. Kept with its old rows, to be removed later |
 | `primary_accessory_lines` | The lines of each primary accessory list (sample + size and ratio), with their size groups |
 | `samples` | One row per sample: sample number, creation date, designer, concept image |
 | `sample_remarks` | Remarks of a sample: typed notes, voice notes, pictures |
@@ -652,7 +650,7 @@ Masters link.
 | Accessory vendors | List, add and edit: vendor name and vendor code (each code used once) | Built |
 | Sizes and ratios | List, add and edit the size and ratio combinations (pcs in a set, single sizes, pcs of each size), with import | Built |
 | Wishlist | Tabs: Wishlist (all entries), Newly approved, Add repeat. Add to wishlist and Add repeat popups; Edit for authority All | Built |
-| CAD drawings | Tabs: CAD drawings (each CAD as a table), Pending drawing, Fabric pending, All rows. New CAD, Copy as new CAD, Edit, Assign, Fill fabric, primary accessory list | Built |
+| CAD drawings | Tabs: CAD drawings (each CAD as a table), Pending drawing, Fabric pending, All rows. New CAD, Copy as new CAD, Edit, Fill fabric, primary accessory list | Built |
 | CAD particulars | List, add and edit the names of drawing rows | Built |
 | Material lists | Tabs: one pending tab per list (primary fabric, primary accessory, secondary fabric, secondary accessory) and All wishlist items. Opens a list to fill, confirm, mark Not required and raise POs | Built |
 | Purchase orders | Tabs: Purchase orders, PO lines. View a PO, PDF, Open order; Change and Cancel for authority All; receiving status and the receiving and follow-ups view | Built |
@@ -737,6 +735,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 27 Nov 2026 | Wishlist items use every CAD of their sample, size and ratio by themselves; assigning removed from the screens. The size of a CAD or wishlist item is now kept once a material list exists, not once assigned (migration `wishlist_items_use_cads_of_their_size`) |
 | 27 Nov 2026 | Pending drawing also lists approved samples with no wishlist item and no CAD; each CAD shows how many material lists used it; message boxes after creating a CAD and after assigning. Screen change only, no database change |
 | 27 Nov 2026 | New CAD opened from a Pending drawing item is assigned to that wishlist item on saving. Screen change only, no database change |
 | 26 Nov 2026 | CAD rows carry COMPONENTS (required, one or more of the sample's components; a sample with one component needs no picking) and EFFICIENCY %. The CAD form shows the sample's picture. Added by `supabase/migrations/20261126130457_cad_components_efficiency_and_accessory_colours.sql` |

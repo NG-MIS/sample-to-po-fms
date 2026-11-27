@@ -207,7 +207,7 @@ export const fabricItemsPayload = (lines) =>
     rate: orNull(line.rate),
   }))
 
-// The drawing rows of the assigned CADs that can still be brought in to a
+// The drawing rows of the wishlist item's CADs that can still be brought in to a
 // fabric list: rows of that type (primary / secondary) not in the list yet.
 // Gives { ready, withoutFabric }: rows with a fabric, and how many have none.
 export function cadRowsToBring(cads, level, lines) {
