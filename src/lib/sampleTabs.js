@@ -46,7 +46,7 @@ export function processRows(data, profile) {
 }
 
 // Mark completed: one row per sample with a piece that is Pending (nothing out
-// at a vendor, not completed).
+// at a vendor, not completed). The 2nd sample waits until the 1st is completed.
 export function completeRows(data) {
   if (!data.access.manages) return []
   return data.samples
@@ -57,7 +57,7 @@ export function completeRows(data) {
         id: sample.id,
         sample,
         statuses,
-        pending: PIECES.filter((piece) => statuses[piece.value] === 'pending').map((piece) => piece.value),
+        pending: PIECES.filter((piece) => statuses[piece.value] === 'pending' && (piece.value === 1 || statuses[1] === 'completed')).map((piece) => piece.value),
         processCount: sample.entries.length,
         lastReceived: sample.entries.map((entry) => entry.received_date).filter(Boolean).sort().pop() ?? '',
       }

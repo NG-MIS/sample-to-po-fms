@@ -55,10 +55,15 @@ export const newCadRow = () => ({
   msrmnt: '',
   paina: '',
   pcs_in_layer: '',
+  pcsAuto: true, // No. of pcs in layer follows the pcs in a set of the size and ratio, until it is typed
   panels: '',
   component_ids: [],
   efficiency: '',
 })
+
+// Fills No. of pcs in layer from the Sizes and ratios master (pcs in a set of the chosen
+// size and ratio) on every row where it was not typed by hand.
+export const withSetPcs = (rows, pieces) => rows.map((row) => (row.pcsAuto ? { ...row, pcs_in_layer: pieces ? String(pieces) : '' } : row))
 
 // The saved rows of a CAD, ready for the editor. keepIds false = a copy for a new CAD.
 export const toCadRows = (cad, keepIds = true) =>
@@ -71,6 +76,7 @@ export const toCadRows = (cad, keepIds = true) =>
     msrmnt: text(row.msrmnt),
     paina: text(row.paina),
     pcs_in_layer: text(row.pcs_in_layer),
+    pcsAuto: false,
     panels: text(row.panels),
     component_ids: row.component_ids ?? [],
     efficiency: text(row.efficiency),
@@ -81,7 +87,7 @@ export const isBlankCadRow = (row) =>
   !row.new_particular &&
   !row.fabric_type &&
   row.component_ids.length === 0 &&
-  [row.msrmnt, row.paina, row.pcs_in_layer, row.panels, row.efficiency].every((value) => value.trim() === '')
+  [row.msrmnt, row.paina, row.pcsAuto ? '' : row.pcs_in_layer, row.panels, row.efficiency].every((value) => value.trim() === '')
 
 const decimal = (value) => /^\d{1,7}(\.\d{1,2})?$/.test(value.trim())
 const whole = (value) => /^\d{1,6}$/.test(value.trim())
@@ -178,8 +184,9 @@ export const newPrimaryGroup = (upto) => ({ key: key('group'), upto, pcs: '', qt
 export const COLOUR_FOLLOWS = [
   { value: 'base', label: 'Base colour' },
   { value: 'alternate', label: 'Alternate colour' },
+  { value: 'neutral', label: 'Neutral colour' },
 ]
-export const COLOUR_FOLLOWS_LABEL = { base: 'Base colour', alternate: 'Alternate colour' }
+export const COLOUR_FOLLOWS_LABEL = { base: 'Base colour', alternate: 'Alternate colour', neutral: 'Neutral colour' }
 const NO_COLOUR = { colour_specific: false, colour_follows: null, colour: '' }
 // The colour fields of a saved line, ready for the editor.
 export const colourFields = (line) => ({
@@ -253,7 +260,7 @@ export function checkPrimaryLines(lines) {
   for (const line of lines) {
     if (!line.accessory_id && !line.new_accessory) return 'Every accessory line needs an accessory name.'
     if (!line.qty_type) return 'Choose the qty type of every accessory: Quantity, Length or Dimension.'
-    if (line.colour_specific && !line.colour_follows) return 'For every colour specific accessory, choose Base colour or Alternate colour.'
+    if (line.colour_specific && !line.colour_follows) return 'For every colour specific accessory, choose Base colour, Alternate colour or Neutral colour.'
     for (const group of line.groups) {
       if (!/^\d{1,6}$/.test(group.pcs.trim()) || Number(group.pcs) < 1) {
         return line.qty_type === 'quantity'

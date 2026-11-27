@@ -19,7 +19,7 @@ import {
 import { callSampleAction } from '../lib/sampleData.js'
 
 const sameText = (a, b) => a.toLowerCase() === b.toLowerCase()
-const numberOnly = (value) => value.replace(/[^\d.]/g, '')
+const numberOnly = (value) => value.replace(/[^\d.]/g, '').replace(/^\./, '0.')
 
 // Editor for the accessory list of a sample: any number of lines, each with
 // an accessory, how it is measured and how much, a vendor code, a rate and

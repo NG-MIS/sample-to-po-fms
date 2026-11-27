@@ -25,7 +25,7 @@ import {
 } from '../lib/receiving.js'
 import { BUCKET, callSampleAction } from '../lib/sampleData.js'
 
-const numberOnly = (value) => value.replace(/[^\d.]/g, '')
+const numberOnly = (value) => value.replace(/[^\d.]/g, '').replace(/^\./, '0.')
 const decimal = (value) => /^\d{1,10}(\.\d{1,2})?$/.test(value.trim())
 
 export function PoStandingBadge({ po, allowance }) {

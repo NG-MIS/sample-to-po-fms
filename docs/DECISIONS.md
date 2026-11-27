@@ -5,6 +5,9 @@ Newest first. A changed decision is not deleted: a new entry is added that repla
 
 | Date | Decision | Reason |
 |---|---|---|
+| 28 Nov 2026 | The 2nd sample can be marked completed only after the 1st; reopening goes the other way round | Nihal's rule; the reopen order keeps the two in step |
+| 28 Nov 2026 | No. of pcs in layer on a CAD row starts as the pcs in a set of the CAD's size and ratio (22-38 1:1 = 9) and can be typed over | Nihal confirmed the number is the total pieces of one set |
+| 28 Nov 2026 | Colour follows: Base, Alternate or Neutral colour | Nihal asked for Neutral as a third choice |
 | 27 Nov 2026 | PO qty stays "one number is for every colour" (the 25 Nov rule stands). What changed: the form fills the Qty box with what is needed divided by the colours, each share rounded up to the next 5, until a qty is typed (corrects the entry below, which changed the meaning of the box) | Nihal: "qty is not changing" - he expects the Qty box itself to change when colours are added |
 | 27 Nov 2026 | PO qty: one number is the total of the line, divided equally between the colours with each share rounded up to the next 5; numbers joined with + override it (replaces the 25 Nov rule that one number is for every colour) | Nihal: the total must stay the same when colours are added; "round up in 5s". The required quantity is for all colours together |
 | 27 Nov 2026 | A CAD stays in Fabric pending until every row has fabric, vendor and rate (before: fabric only) | Nihal confirmed; he wants to see CADs whose fabric details are started but not complete |

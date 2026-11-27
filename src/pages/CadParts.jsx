@@ -31,6 +31,7 @@ import {
   sizeSpan,
   toCadFabricRows,
   toCadRows,
+  withSetPcs,
   toPrimaryLines,
   typedName,
 } from '../lib/cad.js'
@@ -39,7 +40,7 @@ import { QTY_TYPES, QTY_TYPE_LABEL } from '../lib/sampleAccessories.js'
 import { BUCKET, callSampleAction, latestImage } from '../lib/sampleData.js'
 import { defaultCombination, ratioOptions, sizeOptions } from '../lib/wishlist.js'
 
-const numberOnly = (value) => value.replace(/[^\d.]/g, '')
+const numberOnly = (value) => value.replace(/[^\d.]/g, '').replace(/^\./, '0.')
 const digitsOnly = (value) => value.replace(/\D/g, '')
 const formatNumber = (value) => (value === null || value === undefined ? '' : String(Number(value)))
 const componentName = (data, id) => data.components.find((component) => component.id === id)?.name ?? ''
@@ -166,7 +167,7 @@ export function CadCard({ cad, sample, data, lookups, canCad, canFabric, onEdit,
 // ---------- The drawing rows of one CAD, as an editable table ----------
 
 //   components - the components of the sample: [{ value, label }]
-function CadRowsEditor({ rows, onChange, particulars, typedNames, idPrefix, components }) {
+function CadRowsEditor({ rows, onChange, particulars, typedNames, idPrefix, components, setPcs = null }) {
   const setRow = (key, changes) => onChange(rows.map((row) => (row.key === key ? { ...row, ...changes } : row)))
   const usedIds = rows.map((row) => row.particular_id).filter(Boolean)
   const options = namedOptions(particulars, usedIds, typedNames)
@@ -181,7 +182,7 @@ function CadRowsEditor({ rows, onChange, particulars, typedNames, idPrefix, comp
             <th>FABRIC TYPE *</th>
             <th>MSRMNT</th>
             <th>PAINA</th>
-            <th>NO. OF PCS IN LAYER</th>
+            <th title="Filled with the pcs in a set of the chosen size and ratio. Type over it to change it.">NO. OF PCS IN LAYER</th>
             <th>NO OF PANELS</th>
             <th>COMPONENTS *</th>
             <th>EFFICIENCY %</th>
@@ -224,7 +225,7 @@ function CadRowsEditor({ rows, onChange, particulars, typedNames, idPrefix, comp
                 <input className="input" inputMode="decimal" aria-label={`Paina, row ${index + 1}`} value={row.paina} onChange={(event) => setRow(row.key, { paina: numberOnly(event.target.value) })} />
               </td>
               <td data-label="No. of pcs in layer">
-                <input className="input" inputMode="numeric" aria-label={`No. of pcs in layer, row ${index + 1}`} value={row.pcs_in_layer} onChange={(event) => setRow(row.key, { pcs_in_layer: digitsOnly(event.target.value) })} />
+                <input className="input" inputMode="numeric" aria-label={`No. of pcs in layer, row ${index + 1}`} value={row.pcs_in_layer} onChange={(event) => setRow(row.key, { pcs_in_layer: digitsOnly(event.target.value), pcsAuto: false })} />
               </td>
               <td data-label="No of panels">
                 <input className="input" inputMode="numeric" aria-label={`No of panels, row ${index + 1}`} value={row.panels} onChange={(event) => setRow(row.key, { panels: digitsOnly(event.target.value) })} />
@@ -257,7 +258,7 @@ function CadRowsEditor({ rows, onChange, particulars, typedNames, idPrefix, comp
           ))}
         </tbody>
       </table>
-      <button type="button" className="btn btn--small" onClick={() => onChange([...rows, newCadRow()])}>
+      <button type="button" className="btn btn--small" onClick={() => onChange(withSetPcs([...rows, newCadRow()], setPcs))}>
         Add drawing row
       </button>
     </div>
@@ -275,6 +276,8 @@ const newTable = (changes = {}) => ({ key: `table-${++tableCounter}`, id: null, 
 export function CadForm({ cad, start, data, onClose, onSaved, onPrimary }) {
   const isNew = !cad
   const combinationOf = (id) => data.sizeRatios.find((row) => row.id === id)
+  // Pcs in a set of a size and ratio, from the Sizes and ratios master.
+  const piecesOf = (id) => combinationOf(id)?.pieces_per_set ?? null
   const approved = useMemo(
     () => data.samples.filter((sample) => sample.approvals.final?.decision === 'yes'),
     [data],
@@ -297,7 +300,7 @@ export function CadForm({ cad, start, data, onClose, onSaved, onPrimary }) {
       newTable({
         size: combinationOf(sizeRatioId)?.size ?? null,
         size_ratio_id: sizeRatioId,
-        rows: from ? toCadRows(from, false) : blankRows(),
+        rows: from ? toCadRows(from, false) : withSetPcs(blankRows(), piecesOf(sizeRatioId)),
       }),
     ]
     // The form starts from what it was opened with.
@@ -308,7 +311,15 @@ export function CadForm({ cad, start, data, onClose, onSaved, onPrimary }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
-  const setTable = (key, changes) => setTables((previous) => previous.map((table) => (table.key === key ? { ...table, ...changes } : table)))
+  // A change of size or ratio also refills No. of pcs in layer on the rows where it was not typed.
+  const setTable = (key, changes) =>
+    setTables((previous) =>
+      previous.map((table) => {
+        if (table.key !== key) return table
+        const next = { ...table, ...changes }
+        return 'size_ratio_id' in changes ? { ...next, rows: withSetPcs(next.rows, piecesOf(next.size_ratio_id)) } : next
+      }),
+    )
   const typedNames = [...new Set(tables.flatMap((table) => table.rows.map((row) => row.new_particular)).filter(Boolean))]
   const snapshot = (list) => JSON.stringify(list.map((table) => [table.size_ratio_id, cadRowPayload(table.rows)]))
   // Components belong to a sample, so another sample starts with none picked.
@@ -492,6 +503,7 @@ export function CadForm({ cad, start, data, onClose, onSaved, onPrimary }) {
                 typedNames={typedNames}
                 idPrefix={`cad-${table.key}`}
                 components={componentOptions}
+                setPcs={piecesOf(table.size_ratio_id)}
               />
               {isNew && tables.length > 1 && !saved && (
                 <button

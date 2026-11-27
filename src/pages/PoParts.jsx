@@ -30,7 +30,7 @@ import {
 } from '../lib/materials.js'
 import { callSampleAction } from '../lib/sampleData.js'
 
-const numberOnly = (value) => value.replace(/[^\d.]/g, '')
+const numberOnly = (value) => value.replace(/[^\d.]/g, '').replace(/^\./, '0.')
 const digitsOnly = (value) => value.replace(/\D/g, '')
 const TYPE_LABEL = { primary: 'Primary', secondary: 'Secondary' }
 
@@ -382,7 +382,7 @@ export function PoForm({ entry, family, vendorId, open = false, po, data, onClos
                     id={`po-${line.key}-qty`}
                     className="input"
                     value={line.qty_text}
-                    onChange={(event) => setLine(line.key, { qty_text: event.target.value.replace(/[^\d.+\s]/g, ''), qtyOwn: true })}
+                    onChange={(event) => setLine(line.key, { qty_text: event.target.value.replace(/[^\d.+\s]/g, '').replace(/(^|\+)(\s*)\./g, '$1$20.'), qtyOwn: true })}
                   />
                 </div>
                 <div className="po-line-fact">

@@ -206,7 +206,7 @@ action is done.
 |---|---|---|---|
 | All samples | Every sample the person can see | Open, Edit (authority All) | Everyone |
 | Process | One row per sample that still has a piece which is not completed, with the status of both pieces and what is out at which vendor. A closed sample is listed only while a piece is still at a vendor. Send asks which piece; Receive asks which one came back when more than one is out | Send, Receive | The sample's designer for their own samples; Sample department authority for all |
-| Mark completed | One row per sample with a piece that is Pending (nothing out at a vendor, not completed), with the status of both pieces | Complete 1st, Complete 2nd (only for a Pending piece) | Sample department authority |
+| Mark completed | One row per sample with a piece that is Pending (nothing out at a vendor, not completed) and may be completed now: the 2nd sample only after the 1st is completed. Shows the status of both pieces | Complete 1st, Complete 2nd (only for a Pending piece) | Sample department authority |
 | Images | Samples still missing a 1st sample, 2nd sample or photoshoot image | Add (per missing image) | Same as Process |
 | Fabrics | Every open sample the person looks after, one row per sample, with its fabric status, its fabrics, the components still without fabric and the vendor codes. The number on the tab counts samples that are not Completed | Add fabrics, Change fabrics | Same as Process |
 | Accessories | Every open sample the person looks after, one row per sample, with its accessory status (Pending or Added), its accessories and the vendor codes. The number on the tab counts samples that are Pending | Add accessories, Change accessories | Same as Process |
@@ -748,6 +748,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 28 Nov 2026 | Pieces are completed in order: the 2nd sample only after the 1st; the 1st cannot be reopened while the 2nd is completed (database and screens). A colour specific accessory can follow Base, Alternate or **Neutral** colour. Number boxes take .87 (it becomes 0.87). On the CAD form, No. of pcs in layer is filled with the pcs in a set of the chosen size and ratio from the Sizes and ratios master, on every row where it was not typed; typing over it keeps the typed number (migration `pieces_in_order_and_neutral_colour`) |
 | 27 Nov 2026 | Corrected the entry below: the Qty box stays the qty of one colour. It now changes by itself as colours are picked (needed qty divided by the colours, rounded up to the next 5) until a qty is typed. Screen change only |
 | 27 Nov 2026 | PO qty is the total of the line and is divided between the colours (each share rounded up to the next 5) instead of being multiplied by the number of colours. Screen change only: the database already takes one number per colour |
 | 27 Nov 2026 | The side menu stays in place while a screen scrolls (it scrolls on its own when taller than the window; the phone drawer is unchanged). Fabric material lists: the FROM column is now PARTICULARS and shows only the particulars; the drawing is named once on top |

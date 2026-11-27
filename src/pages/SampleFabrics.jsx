@@ -116,7 +116,7 @@ export function FabricLinesEditor({ lines, onChange, lists, componentOptions, sa
               className="input"
               inputMode="decimal"
               value={line.rate}
-              onChange={(event) => setLine(line.key, { rate: event.target.value.replace(/[^\d.]/g, '') })}
+              onChange={(event) => setLine(line.key, { rate: event.target.value.replace(/[^\d.]/g, '').replace(/^\./, '0.') })}
             />
           </div>
           <button

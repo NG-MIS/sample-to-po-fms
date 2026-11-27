@@ -369,6 +369,9 @@ export function SampleBody({ sample, data, onChanged }) {
         {PIECES.map((piece) => {
           const status = pieceStatus(sample, piece.value)
           const completion = sample.completions[piece.value]
+          // The pieces are completed in order: the 2nd only after the 1st, and reopened the other way round.
+          const firstNotDone = piece.value === 2 && status !== 'completed' && !sample.completions[1]
+          const secondDone = piece.value === 1 && Boolean(sample.completions[2])
           return (
             <div key={piece.value} className="piece-card" data-piece={piece.value}>
               <div className="piece-head">
@@ -390,21 +393,32 @@ export function SampleBody({ sample, data, onChanged }) {
                   <button
                     type="button"
                     className="btn btn--small btn--primary"
-                    disabled={status === 'at_vendor'}
-                    title={status === 'at_vendor' ? 'Receive it back from the vendor first' : undefined}
+                    disabled={status === 'at_vendor' || firstNotDone}
+                    title={status === 'at_vendor' ? 'Receive it back from the vendor first' : firstNotDone ? 'Complete the 1st sample first' : undefined}
                     onClick={() => setDialog({ type: 'complete', piece: piece.value })}
                   >
                     Mark completed
                   </button>
                 )}
                 {isAdmin && status === 'completed' && (
-                  <button type="button" className="btn btn--small" onClick={() => setDialog({ type: 'reopen', piece: piece.value })}>
+                  <button
+                    type="button"
+                    className="btn btn--small"
+                    disabled={secondDone}
+                    title={secondDone ? 'Reopen the 2nd sample first' : undefined}
+                    onClick={() => setDialog({ type: 'reopen', piece: piece.value })}
+                  >
                     Reopen
                   </button>
                 )}
               </div>
               {canComplete && status === 'at_vendor' && (
                 <p className="hint">It cannot be marked completed while it is at a vendor.</p>
+              )}
+              {canComplete && status !== 'at_vendor' && firstNotDone && (
+                <p className="hint" data-first-needed>
+                  The 2nd sample can be marked completed only after the 1st sample is completed.
+                </p>
               )}
             </div>
           )

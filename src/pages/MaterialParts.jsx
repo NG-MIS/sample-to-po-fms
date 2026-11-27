@@ -50,7 +50,7 @@ import { QTY_TYPE_LABEL } from '../lib/sampleAccessories.js'
 import { callSampleAction } from '../lib/sampleData.js'
 import { AccessoryLineEditor } from './CadParts.jsx'
 
-const numberOnly = (value) => value.replace(/[^\d.]/g, '')
+const numberOnly = (value) => value.replace(/[^\d.]/g, '').replace(/^\./, '0.')
 const digitsOnly = (value) => value.replace(/\D/g, '')
 
 // The status of one material list as a coloured label.

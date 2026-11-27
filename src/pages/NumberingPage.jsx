@@ -317,7 +317,7 @@ function PurchaseSettings({ settings, isAdmin, onSaved }) {
               className="input"
               inputMode="decimal"
               value={tolerance}
-              onChange={(event) => setTolerance(event.target.value.replace(/[^\d.]/g, ''))}
+              onChange={(event) => setTolerance(event.target.value.replace(/[^\d.]/g, '').replace(/^\./, '0.'))}
             />
           </Field>
           <button type="submit" className="btn btn--primary" disabled={busy !== ''}>
@@ -333,7 +333,7 @@ function PurchaseSettings({ settings, isAdmin, onSaved }) {
               className="input"
               inputMode="decimal"
               value={allowance}
-              onChange={(event) => setAllowance(event.target.value.replace(/[^\d.]/g, ''))}
+              onChange={(event) => setAllowance(event.target.value.replace(/[^\d.]/g, '').replace(/^\./, '0.'))}
             />
           </Field>
           <button type="submit" className="btn btn--primary" disabled={busy !== ''}>
