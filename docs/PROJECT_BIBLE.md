@@ -279,6 +279,10 @@ count of rows), and the button for the primary accessory list.
   the CAD or from the wishlist item. An item can have several CADs; one is enough for "CAD
   assigned". The Pending drawing tab lists wishlist items with no CAD assigned. An existing
   CAD of the right size is not enough: it must be assigned.
+- **New CAD from Pending drawing.** A CAD made with "New CAD" on a pending wishlist item is
+  assigned to that item on saving, so the item leaves the list. The form says so. If the
+  sample, size or ratio is changed in the form, it is saved but not assigned, and says so.
+  With several CAD tables in the form, the first one of the item's size and ratio is assigned.
 - Once assigned, a CAD keeps its size and ratio, and so does the wishlist item.
 - **Fabric pending** tab: CADs with rows that still have no fabric, for the people who look
   after the sample.
@@ -723,6 +727,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 27 Nov 2026 | New CAD opened from a Pending drawing item is assigned to that wishlist item on saving. Screen change only, no database change |
 | 26 Nov 2026 | CAD rows carry COMPONENTS (required, one or more of the sample's components; a sample with one component needs no picking) and EFFICIENCY %. The CAD form shows the sample's picture. Added by `supabase/migrations/20261126130457_cad_components_efficiency_and_accessory_colours.sql` |
 | 26 Nov 2026 | Accessories (the CAD primary accessory list and both accessory material lists) are either general (one colour, which can be named) or colour specific (following the Base colour or an Alternate colour); a "Same pcs per size group" tick types the pieces once. The PO says how each accessory is coloured |
 | 26 Nov 2026 | Column choices are now kept with the person in the database (`user_preferences`), so they survive a refresh, another browser or a phone. Added by `supabase/migrations/20261126130632_user_preferences.sql` |

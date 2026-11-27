@@ -38,6 +38,7 @@ import {
 import { friendlyError } from '../lib/format.js'
 import { QTY_TYPES, QTY_TYPE_LABEL } from '../lib/sampleAccessories.js'
 import { BUCKET, callSampleAction, latestImage } from '../lib/sampleData.js'
+import { supabase } from '../lib/supabase.js'
 import { defaultCombination, ratioOptions, sizeOptions } from '../lib/wishlist.js'
 
 const numberOnly = (value) => value.replace(/[^\d.]/g, '')
@@ -274,6 +275,8 @@ const newTable = (changes = {}) => ({ key: `table-${++tableCounter}`, id: null, 
 //   start  - for a new CAD: { sample, sizeRatioId, copyFrom } to begin from
 export function CadForm({ cad, start, data, onClose, onSaved, onPrimary }) {
   const isNew = !cad
+  // Opened from a wishlist item waiting for a drawing: the new CAD is assigned to it on saving.
+  const forEntry = isNew ? start?.entry ?? null : null
   const combinationOf = (id) => data.sizeRatios.find((row) => row.id === id)
   const approved = useMemo(
     () => data.samples.filter((sample) => sample.approvals.final?.decision === 'yes'),
@@ -304,6 +307,7 @@ export function CadForm({ cad, start, data, onClose, onSaved, onPrimary }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   const [tables, setTables] = useState(initial)
+  const [link, setLink] = useState({ assigned: '', problem: '' }) // kept when a later CAD failed to save
   const [savedKeys, setSavedKeys] = useState([]) // tables already saved, when a later one failed
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -316,6 +320,8 @@ export function CadForm({ cad, start, data, onClose, onSaved, onPrimary }) {
     setSampleId(id)
     setTables((previous) => previous.map((table) => ({ ...table, rows: table.rows.map((row) => ({ ...row, component_ids: [] })) })))
   }
+  const fitsEntry = (table) => Boolean(forEntry) && sampleId === forEntry.sample_id && table.size_ratio_id === forEntry.size_ratio_id
+  const willAssign = tables.some(fitsEntry)
   const dirty = sampleId !== (cad?.sample_id ?? start?.sample?.id ?? null) || snapshot(tables) !== snapshot(initial)
   const sampleOptions = approved
     .map((item) => ({ value: item.id, label: item.design_no ? `${item.sample_no} · design ${item.design_no}` : item.sample_no }))
@@ -334,6 +340,7 @@ export function CadForm({ cad, start, data, onClose, onSaved, onPrimary }) {
     setError('')
     const done = [...savedKeys]
     const numbers = []
+    let { assigned, problem: assignProblem } = link
     try {
       for (const table of tables) {
         if (done.includes(table.key)) continue
@@ -345,10 +352,23 @@ export function CadForm({ cad, start, data, onClose, onSaved, onPrimary }) {
         })
         numbers.push(number)
         done.push(table.key)
+        // The first CAD of the wishlist item's own sample, size and ratio is assigned to it.
+        if (forEntry && !assigned && !assignProblem && fitsEntry(table)) {
+          try {
+            const { data: made, error: findError } = await supabase.from('cads').select('id').eq('cad_no', number).maybeSingle()
+            if (findError) throw findError
+            if (!made) throw new Error('The new CAD could not be found.')
+            await callSampleAction('set_wishlist_cads', { p_wishlist_id: forEntry.id, p_cad_ids: [made.id] })
+            assigned = number
+          } catch (failure) {
+            assignProblem = friendlyError(failure)
+          }
+        }
       }
-      await onSaved(numbers)
+      await onSaved(numbers, { entry: forEntry, assigned, problem: assignProblem })
     } catch (failure) {
       setSavedKeys(done)
+      setLink({ assigned, problem: assignProblem })
       setError(
         (numbers.length ? `Saved ${numbers.join(', ')}. The next one was not saved: ` : '') + friendlyError(failure),
       )
@@ -401,6 +421,13 @@ export function CadForm({ cad, start, data, onClose, onSaved, onPrimary }) {
               {picture ? `, ${picture.label.toLowerCase()} image` : ''}
             </span>
           </div>
+        )}
+        {forEntry && (
+          <p className={willAssign ? 'hint' : 'error-text'} data-cad-assign-note>
+            {willAssign
+              ? `On saving, this CAD is assigned to wishlist item ${forEntry.wishlist_no}.`
+              : `This CAD will not be assigned to ${forEntry.wishlist_no}: its sample, size or ratio is different.`}
+          </p>
         )}
 
         {tables.map((table, index) => {

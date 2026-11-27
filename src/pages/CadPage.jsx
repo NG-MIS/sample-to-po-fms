@@ -152,7 +152,15 @@ export default function CadPage() {
                   <button
                     type="button"
                     className={`btn btn--small ${cadsForEntry(row.sample, row).length ? '' : 'btn--primary'}`}
-                    onClick={() => setForm({ start: { sample: row.sample, sizeRatioId: row.size_ratio_id } })}
+                    onClick={() =>
+                      setForm({
+                        start: {
+                          sample: row.sample,
+                          sizeRatioId: row.size_ratio_id,
+                          entry: { id: row.id, wishlist_no: row.wishlist_no, sample_id: row.sample.id, size_ratio_id: row.size_ratio_id },
+                        },
+                      })
+                    }
                   >
                     New CAD
                   </button>
@@ -329,7 +337,13 @@ export default function CadPage() {
           start={form.start}
           data={data}
           onClose={() => setForm(null)}
-          onSaved={(numbers) => done(numbers.length ? `Saved ${numbers.join(', ')}.` : '')}
+          onSaved={(numbers, link) => {
+            let message = numbers.length ? `Saved ${numbers.join(', ')}.` : ''
+            if (link?.assigned) message += ` ${link.assigned} is assigned to ${link.entry.wishlist_no}.`
+            else if (link?.problem) message += ` It could not be assigned to ${link.entry.wishlist_no}: ${link.problem} Please assign it from here.`
+            else if (link?.entry && numbers.length) message += ` Not assigned to ${link.entry.wishlist_no}, as the sample, size or ratio is different.`
+            return done(message)
+          }}
           onPrimary={(sample, sizeRatioId) => setPrimary({ sampleId: sample.id, sizeRatioId })}
         />
       )}
