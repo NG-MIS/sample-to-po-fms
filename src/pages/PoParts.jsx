@@ -23,6 +23,7 @@ import {
   poLinesPayload,
   promisedDate,
   readQty,
+  withColours,
   toPoLines,
   vendorLabel,
   vendorOfItem,
@@ -361,8 +362,8 @@ export function PoForm({ entry, family, vendorId, open = false, po, data, onClos
                       multiple
                       options={colourOptions}
                       value={line.colours}
-                      onChange={(value) => setLine(line.key, { colours: value })}
-                      onCreate={(typed) => setLine(line.key, { colours: [...line.colours, cleanName(typed)] })}
+                      onChange={(value) => setLine(line.key, withColours(line, value))}
+                      onCreate={(typed) => setLine(line.key, withColours(line, [...line.colours, cleanName(typed)]))}
                       createLabel={addColourLabel}
                     />
                   </div>
@@ -375,13 +376,13 @@ export function PoForm({ entry, family, vendorId, open = false, po, data, onClos
                 )}
                 <div className="fabric-cell">
                   <label className="field-label" htmlFor={`po-${line.key}-qty`}>
-                    Qty ({line.unit})<span className="field-required"> *</span>
+                    {line.colours.length > 1 ? "Qty per colour" : "Qty"} ({line.unit})<span className="field-required"> *</span>
                   </label>
                   <input
                     id={`po-${line.key}-qty`}
                     className="input"
                     value={line.qty_text}
-                    onChange={(event) => setLine(line.key, { qty_text: event.target.value.replace(/[^\d.+\s]/g, '') })}
+                    onChange={(event) => setLine(line.key, { qty_text: event.target.value.replace(/[^\d.+\s]/g, ''), qtyOwn: true })}
                   />
                 </div>
                 <div className="po-line-fact">
@@ -444,10 +445,10 @@ export function PoForm({ entry, family, vendorId, open = false, po, data, onClos
                 )}
               </div>
               {line.qty_text.trim() !== '' && total.error && <p className="hint error-text">{total.error}</p>}
-              {total.divided && (
+              {line.needed !== null && !line.qtyOwn && line.colours.length > 1 && (
                 <p className="hint" data-qty-split>
-                  Divided between the {total.parts.length} colours, each rounded up to the next 5: {total.parts.map(formatQty).join(' + ')} ={' '}
-                  {formatQty(total.total)} {line.unit}. To change it, write one number per colour joined with +.
+                  {formatQty(line.needed)} {line.unit} needed, divided between the {line.colours.length} colours and rounded up to the next 5:{' '}
+                  {line.qty_text} {line.unit} of each colour. Type a qty to set it yourself.
                 </p>
               )}
             </div>
@@ -462,9 +463,9 @@ export function PoForm({ entry, family, vendorId, open = false, po, data, onClos
           Total amount: <strong data-po-total>{grandTotal !== null ? formatMoney(grandTotal) : '—'}</strong>
         </p>
         <p className="hint">
-          Qty: one number is the qty of the whole line. It is divided equally between the colours, each share rounded up
-          to the next 5 (100 with 3 colours = 35 + 35 + 35). Or write one number per colour joined with +, like
-          100+200+300.
+          Qty is for one colour: one number is taken for every colour (100 with 3 colours = 300). Or write one number
+          per colour joined with +, like 100+200+300. Until you type a qty, what is needed is divided equally between
+          the colours, each share rounded up to the next 5.
         </p>
         {error && (
           <p className="alert alert--error" role="alert">

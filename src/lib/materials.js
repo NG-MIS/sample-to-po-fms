@@ -126,17 +126,14 @@ export function accessoryRequiredText(item, combination, qty) {
   return `${each} (${formatQty(parts.reduce((sum, part) => sum + part.inches, 0))} inch in all)`
 }
 
-// One number typed as the qty of a PO line is the qty of the whole line. It is
-// divided equally between the colours, each share rounded up to the next 5, so the
-// total can come out a little more (100 in 3 colours = 35 + 35 + 35 = 105).
-export const splitQty = (qty, colourCount) => {
-  const each = Math.ceil(round2(qty / colourCount) / 5 - 1e-9) * 5
-  return Array.from({ length: colourCount }, () => each)
-}
+// The qty of one colour when what is needed is divided equally between the colours:
+// each share is rounded up to the next 5 (700 in 3 colours = 235 each). With one
+// colour, or none, it is what is needed as it is.
+export const shareQty = (needed, colourCount) =>
+  colourCount < 2 ? round2(needed) : Math.ceil(round2(needed / colourCount) / 5 - 1e-9) * 5
 
-// What was typed as the qty of a PO line: one number for the whole line (divided
-// between the colours), or one number per colour joined with +, which overrides the
-// division. Gives { total, parts, divided } or { error }.
+// What was typed as the qty of a PO line: one number (for every colour), or one
+// number per colour joined with +. Gives { total } or { error }.
 export function readQty(typed, colourCount) {
   const clean = (typed || '').replace(/\s/g, '')
   if (!/^\d+(\.\d{1,2})?(\+\d+(\.\d{1,2})?)*$/.test(clean)) {
@@ -144,32 +141,22 @@ export function readQty(typed, colourCount) {
   }
   const parts = clean.split('+').map(Number)
   if (parts.length === 1) {
-    if (!(parts[0] > 0)) return { error: 'Qty must be more than zero.' }
-    if (colourCount < 2) return { total: round2(parts[0]), parts, divided: false }
-    const shares = splitQty(parts[0], colourCount)
-    return { total: round2(shares.reduce((sum, part) => sum + part, 0)), parts: shares, divided: true }
+    const total = round2(parts[0] * Math.max(colourCount, 1))
+    return total > 0 ? { total } : { error: 'Qty must be more than zero.' }
   }
   if (parts.length !== colourCount) {
     return { error: `${parts.length} quantities are written but ${colourCount} ${colourCount === 1 ? 'colour is' : 'colours are'} named. They must be equal.` }
   }
-  return { total: round2(parts.reduce((sum, part) => sum + part, 0)), parts, divided: false }
+  return { total: round2(parts.reduce((sum, part) => sum + part, 0)) }
 }
 
-// The qty as it is saved: a divided qty is written out per colour (35+35+35), so the
-// PO, the receiving screens and the database all read the same figures.
-export const qtyTextToSave = (typed, colourCount) => {
-  const clean = (typed || '').replace(/\s/g, '')
-  const read = readQty(clean, colourCount)
-  return read.divided ? read.parts.map(formatQty).join('+') : clean
-}
-
-// The qty of a saved line as the form shows it: an equal division is shown as its
-// total again, so it keeps dividing when colours are added or removed.
-export const qtyTextToEdit = (saved, colourCount) => {
-  const parts = String(saved).split('+').map(Number)
-  if (parts.length < 2 || parts.length !== colourCount) return saved
-  const total = round2(parts.reduce((sum, part) => sum + part, 0))
-  return splitQty(total, colourCount).every((share, index) => share === parts[index]) ? formatQty(total) : saved
+// The colours of a line were changed. Until the qty is typed by hand, it is what is
+// needed divided between the colours; what is needed is the qty the line started with.
+export function withColours(line, colours) {
+  if (line.qtyOwn) return { ...line, colours }
+  const needed = line.needed ?? (/^\d+(\.\d+)?$/.test(line.qty_text.trim()) ? Number(line.qty_text) : null)
+  if (!(needed > 0)) return { ...line, colours }
+  return { ...line, colours, needed, qty_text: formatQty(shareQty(needed, colours.length)) }
 }
 
 // The promised date: order date + promise days.
@@ -372,6 +359,8 @@ export const newPoLine = (changes = {}) => ({
   rate: '',
   promise_days: '',
   daysOwn: false, // true once the promise days of this line were typed here
+  qtyOwn: false, // true once the qty was typed here: it is then no longer divided between the colours
+  needed: null, // the qty the line needs in all, kept while the qty is divided between the colours
   folds: '',
   paina: '',
   required: '', // what the material list says is needed, shown beside the qty
@@ -452,7 +441,8 @@ export const toPoLines = (po, itemsById) =>
       item_type: line.item_type,
       dimension: line.dimension ?? '',
       colours: line.colours,
-      qty_text: qtyTextToEdit(line.qty_text, line.colours.length),
+      qty_text: line.qty_text,
+      qtyOwn: true,
       unit: line.unit,
       rate: text(line.rate),
       promise_days: text(line.promise_days),
@@ -490,7 +480,7 @@ export const poLinesPayload = (lines, kind) =>
     item_type: line.item_type,
     dimension: kind === 'accessory' ? orNull(line.dimension) : null,
     colours: line.colourSpecific === false ? [] : line.colours,
-    qty_text: qtyTextToSave(line.qty_text, line.colourSpecific === false ? 0 : line.colours.length),
+    qty_text: line.qty_text.replace(/\s/g, ''),
     unit: kind === 'fabric' ? 'mtr' : line.unit,
     rate: line.rate.trim(),
     promise_days: orNull(line.promise_days),
