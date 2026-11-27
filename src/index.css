@@ -640,6 +640,14 @@ textarea {
   background: var(--side);
   color: var(--side-text);
 }
+/* The side menu stays in place while the screen scrolls; it scrolls on its own if it is taller than the window. */
+.side:not(.side--drawer) {
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  height: 100vh;
+  overflow-y: auto;
+}
 .side-brand {
   padding: 4px 10px 16px;
   color: #fff;

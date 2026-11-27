@@ -288,7 +288,8 @@ count of rows), and the button for the primary accessory list.
   the drawing of the primary fabric list, with no dropdown of its own; if the primary list
   changes drawing later, the secondary list warns and offers to replace its rows. The chosen
   drawing is read from the rows of the list, nothing extra is stored; the screens keep this
-  rule, the database does not check it.
+  rule, the database does not check it. The drawing is named once on top of a fabric list
+  (also when there is only one); each row shows only its PARTICULARS.
 - **Approved samples not in the wishlist yet.** A sample with final approval Yes, no wishlist
   item and no CAD is also listed in Pending drawing ("Not in the wishlist yet"), with New CAD
   only; the size is chosen in the form. It leaves the list once its first CAD is made. A
@@ -747,6 +748,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 27 Nov 2026 | The side menu stays in place while a screen scrolls (it scrolls on its own when taller than the window; the phone drawer is unchanged). Fabric material lists: the FROM column is now PARTICULARS and shows only the particulars; the drawing is named once on top |
 | 27 Nov 2026 | Fabric pending counts a CAD until every row has fabric, vendor and rate, and has two views: All and Partly filled. Screen change only |
 | 27 Nov 2026 | Fabric material lists take their rows from one drawing: a Drawing dropdown on the primary fabric list when the item has several CADs; the secondary fabric list follows it. Screen change only |
 | 27 Nov 2026 | Wishlist items use every CAD of their sample, size and ratio by themselves; assigning removed from the screens. The size of a CAD or wishlist item is now kept once a material list exists, not once assigned (migration `wishlist_items_use_cads_of_their_size`) |

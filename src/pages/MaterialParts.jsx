@@ -355,12 +355,12 @@ export function MaterialListDialog({ entry, sample, kind, data, canEdit, isAdmin
           </section>
         )}
 
-        {fabric && assignedCads.length > 1 && (
+        {fabric && assignedCads.length > 0 && (
           <div className="material-drawing" data-material-drawing>
             <label className="field-label" htmlFor="material-drawing">
               Drawing
             </label>
-            {canEdit && !primaryDrawing ? (
+            {canEdit && !primaryDrawing && assignedCads.length > 1 ? (
               <PickList
                 id="material-drawing"
                 options={assignedCads.map((cad) => ({ value: cad.id, label: `${cad.cad_no} (${cad.rows.length} ${cad.rows.length === 1 ? 'row' : 'rows'})` }))}
@@ -374,7 +374,9 @@ export function MaterialListDialog({ entry, sample, kind, data, canEdit, isAdmin
               <strong data-drawing-fixed>{drawing ? drawing.cad_no : 'Not chosen yet'}</strong>
             )}
             <span className="hint">
-              {primaryDrawing
+              {assignedCads.length === 1
+                ? ''
+                : primaryDrawing
                 ? 'Same drawing as the primary fabric list.'
                 : drawingFixed
                   ? 'A row of this drawing is already ordered or marked not required, so the drawing cannot be changed.'
@@ -443,7 +445,7 @@ export function MaterialListDialog({ entry, sample, kind, data, canEdit, isAdmin
             <thead>
               <tr>
                 <th>FABRIC NAME</th>
-                <th>FROM</th>
+                <th>PARTICULARS</th>
                 <th>MSRMNT</th>
                 <th>PCS IN LAYER</th>
                 <th>PAINA</th>
@@ -475,7 +477,7 @@ export function MaterialListDialog({ entry, sample, kind, data, canEdit, isAdmin
                         />
                       )}
                     </td>
-                    <td data-label="From">{row ? `${row.cad_no}, ${particular(row.particular_id)}` : line.cad_row_id ? 'CAD' : 'Added by hand'}</td>
+                    <td data-label="Particulars">{row ? particular(row.particular_id) : line.cad_row_id ? 'CAD' : 'Added by hand'}</td>
                     {[
                       ['msrmnt', 'Msrmnt', numberOnly],
                       ['pcs_in_layer', 'Pcs in layer', digitsOnly],
