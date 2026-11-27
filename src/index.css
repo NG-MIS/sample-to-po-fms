@@ -2672,6 +2672,19 @@ td.material-actions .btn + .btn {
   margin: 10px 0 0;
   color: var(--text-muted);
 }
+.material-drawing {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 12px;
+}
+.material-drawing .picklist {
+  flex: 0 1 260px;
+}
+.material-drawing .field-label {
+  margin: 0;
+}
 .cad-used {
   font-size: 12.5px;
   color: var(--text-muted);

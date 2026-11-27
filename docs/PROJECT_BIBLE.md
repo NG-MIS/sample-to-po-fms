@@ -280,6 +280,15 @@ count of rows), and the button for the primary accessory list.
   there are several. Nothing is assigned by hand: the Assign buttons and form are gone. The
   Pending drawing tab lists wishlist items that have no CAD of their sample, size and ratio.
   Making that CAD (from the row's New CAD, or anywhere) takes every such item off the list.
+- **One drawing per fabric list.** Each drawing is a complete fabric list, so when a wishlist
+  item has more than one CAD the primary fabric list has a "Drawing" dropdown and takes its
+  rows from the chosen CAD only; the lists are never combined. Changing the drawing replaces
+  the rows of the earlier one (rows added by hand stay). Once a row of the drawing is ordered
+  or marked not required, the drawing cannot be changed. The secondary fabric list follows
+  the drawing of the primary fabric list, with no dropdown of its own; if the primary list
+  changes drawing later, the secondary list warns and offers to replace its rows. The chosen
+  drawing is read from the rows of the list, nothing extra is stored; the screens keep this
+  rule, the database does not check it.
 - **Approved samples not in the wishlist yet.** A sample with final approval Yes, no wishlist
   item and no CAD is also listed in Pending drawing ("Not in the wishlist yet"), with New CAD
   only; the size is chosen in the form. It leaves the list once its first CAD is made. A
@@ -735,6 +744,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 27 Nov 2026 | Fabric material lists take their rows from one drawing: a Drawing dropdown on the primary fabric list when the item has several CADs; the secondary fabric list follows it. Screen change only |
 | 27 Nov 2026 | Wishlist items use every CAD of their sample, size and ratio by themselves; assigning removed from the screens. The size of a CAD or wishlist item is now kept once a material list exists, not once assigned (migration `wishlist_items_use_cads_of_their_size`) |
 | 27 Nov 2026 | Pending drawing also lists approved samples with no wishlist item and no CAD; each CAD shows how many material lists used it; message boxes after creating a CAD and after assigning. Screen change only, no database change |
 | 27 Nov 2026 | New CAD opened from a Pending drawing item is assigned to that wishlist item on saving. Screen change only, no database change |

@@ -24,6 +24,7 @@ import {
   accessoryItemsPayload,
   accessoryRequiredText,
   cadRowsToBring,
+  drawingOfItems,
   checkAccessoryRates,
   checkFabricItems,
   fabricItemFromCadRow,
@@ -175,7 +176,28 @@ export function MaterialListDialog({ entry, sample, kind, data, canEdit, isAdmin
 
   // What can be brought in instead of typing.
   const assignedCads = cadsOfEntry(sample, entry)
-  const cadRows = fabric ? cadRowsToBring(assignedCads, levelOf(kind), lines) : null
+  // A drawing is a complete fabric list, so the rows come from one CAD only.
+  // The secondary fabric list follows the drawing of the primary fabric list.
+  const primaryDrawing = kind === 'secondary_fabric' ? drawingOfItems(assignedCads, itemsOf(entry, 'primary_fabric')) : null
+  const otherDrawing = kind === 'primary_fabric' ? drawingOfItems(assignedCads, itemsOf(entry, 'secondary_fabric')) : null
+  const [pickedDrawing, setPickedDrawing] = useState(() => drawingOfItems(assignedCads, saved) ?? otherDrawing)
+  const drawingId = assignedCads.length === 1 ? assignedCads[0].id : (primaryDrawing ?? pickedDrawing)
+  const drawing = assignedCads.find((cad) => cad.id === drawingId) ?? null
+  const cadOfRow = (rowId) => assignedCads.find((cad) => cad.rows.some((row) => row.id === rowId))
+  // rows that came from another drawing than the chosen one
+  const fromOther = (line) => Boolean(line.cad_row_id) && Boolean(drawing) && cadOfRow(line.cad_row_id) && cadOfRow(line.cad_row_id).id !== drawing.id
+  const staleLines = fabric ? lines.filter(fromOther) : []
+  // a row of a drawing already ordered or marked not required keeps the list on that drawing
+  const drawingFixed = fabric && lines.some((line) => line.cad_row_id && locked(line))
+  // Takes the rows of one drawing: open rows of the other drawings go, its own rows come in.
+  const takeDrawing = (cad) => {
+    setPickedDrawing(cad.id)
+    setLines((previous) => {
+      const kept = previous.filter((line) => !line.cad_row_id || locked(line) || cadOfRow(line.cad_row_id)?.id === cad.id || !cadOfRow(line.cad_row_id))
+      return [...kept, ...cadRowsToBring([cad], levelOf(kind), kept).ready.map(fabricItemFromCadRow)]
+    })
+  }
+  const cadRows = fabric ? cadRowsToBring(drawing ? [drawing] : [], levelOf(kind), lines) : null
   const cadRowById = new Map(assignedCads.flatMap((cad) => cad.rows.map((row) => [row.id, { ...row, cad_no: cad.cad_no }])))
   const particular = (id) => data.cadParticulars.find((row) => row.id === id)?.name ?? ''
   const primaryList = primaryLinesFor(sample, entry.size_ratio_id)
@@ -205,7 +227,12 @@ export function MaterialListDialog({ entry, sample, kind, data, canEdit, isAdmin
         p_items: payload(lines),
         p_confirm: confirm,
       })
-      await onChanged(confirm ? `${KIND_LABEL[kind]} list of ${entry.wishlist_no} confirmed.` : `${KIND_LABEL[kind]} list of ${entry.wishlist_no} saved.`)
+      // the secondary fabric list follows the drawing of the primary one
+      const follow =
+        kind === 'primary_fabric' && drawing && otherDrawing && otherDrawing !== drawing.id && lines.some((line) => line.cad_row_id)
+          ? ` The secondary fabric list still has rows of ${assignedCads.find((cad) => cad.id === otherDrawing).cad_no}: open it to take the rows of ${drawing.cad_no}.`
+          : ''
+      await onChanged((confirm ? `${KIND_LABEL[kind]} list of ${entry.wishlist_no} confirmed.` : `${KIND_LABEL[kind]} list of ${entry.wishlist_no} saved.`) + follow)
     } catch (failure) {
       setError(friendlyError(failure))
       setBusy(false)
@@ -328,6 +355,45 @@ export function MaterialListDialog({ entry, sample, kind, data, canEdit, isAdmin
           </section>
         )}
 
+        {fabric && assignedCads.length > 1 && (
+          <div className="material-drawing" data-material-drawing>
+            <label className="field-label" htmlFor="material-drawing">
+              Drawing
+            </label>
+            {canEdit && !primaryDrawing ? (
+              <PickList
+                id="material-drawing"
+                options={assignedCads.map((cad) => ({ value: cad.id, label: `${cad.cad_no} (${cad.rows.length} ${cad.rows.length === 1 ? 'row' : 'rows'})` }))}
+                value={drawingId}
+                clearable={false}
+                disabled={drawingFixed}
+                onChange={(id) => takeDrawing(assignedCads.find((cad) => cad.id === id))}
+                placeholder="Choose the drawing…"
+              />
+            ) : (
+              <strong data-drawing-fixed>{drawing ? drawing.cad_no : 'Not chosen yet'}</strong>
+            )}
+            <span className="hint">
+              {primaryDrawing
+                ? 'Same drawing as the primary fabric list.'
+                : drawingFixed
+                  ? 'A row of this drawing is already ordered or marked not required, so the drawing cannot be changed.'
+                  : 'This item has more than one drawing. Each is a complete fabric list, so the rows are taken from one drawing only.'}
+            </span>
+          </div>
+        )}
+        {canEdit && fabric && staleLines.length > 0 && (
+          <p className="alert alert--error" role="alert" data-drawing-stale>
+            {staleLines.length} {staleLines.length === 1 ? 'row is' : 'rows are'} from another drawing than {drawing.cad_no}.{' '}
+            {staleLines.every((line) => !locked(line)) ? (
+              <button type="button" className="link link--strong" onClick={() => takeDrawing(drawing)}>
+                Replace with the rows of {drawing.cad_no}
+              </button>
+            ) : (
+              'Some of them are already ordered or marked not required and stay.'
+            )}
+          </p>
+        )}
         {canEdit && fabric && (
           <div className="material-bring">
             <button
@@ -336,14 +402,16 @@ export function MaterialListDialog({ entry, sample, kind, data, canEdit, isAdmin
               disabled={cadRows.ready.length === 0}
               onClick={() => setLines((previous) => [...previous, ...cadRows.ready.map(fabricItemFromCadRow)])}
             >
-              Bring in from CADs{cadRows.ready.length ? ` (${cadRows.ready.length})` : ''}
+              Bring in from {drawing && assignedCads.length > 1 ? drawing.cad_no : 'CADs'}{cadRows.ready.length ? ` (${cadRows.ready.length})` : ''}
             </button>
             <span className="hint">
               {assignedCads.length === 0
                 ? 'No CAD has been made for this sample, size and ratio yet.'
-                : cadRows.ready.length === 0
+                : !drawing
+                  ? 'Choose the drawing first.'
+                  : cadRows.ready.length === 0
                   ? `Every ${levelOf(kind)} drawing row that has a fabric is already here.`
-                  : `${levelOf(kind) === 'primary' ? 'Primary' : 'Secondary'} drawing rows of ${assignedCads.map((cad) => cad.cad_no).join(', ')}.`}
+                  : `${levelOf(kind) === 'primary' ? 'Primary' : 'Secondary'} drawing rows of ${drawing.cad_no}.`}
               {cadRows.withoutFabric > 0 && ` ${cadRows.withoutFabric} drawing ${cadRows.withoutFabric === 1 ? 'row has' : 'rows have'} no fabric yet and cannot be brought in.`}
             </span>
           </div>

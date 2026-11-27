@@ -207,6 +207,13 @@ export const fabricItemsPayload = (lines) =>
     rate: orNull(line.rate),
   }))
 
+// The CAD a fabric list was made from: the CAD of its rows that came from a drawing.
+// A drawing is a complete fabric list, so a list takes its rows from one CAD only.
+export const drawingOfItems = (cads, items) => {
+  const used = new Set(items.map((item) => item.cad_row_id).filter(Boolean))
+  return cads.find((cad) => cad.rows.some((row) => used.has(row.id)))?.id ?? null
+}
+
 // The drawing rows of the wishlist item's CADs that can still be brought in to a
 // fabric list: rows of that type (primary / secondary) not in the list yet.
 // Gives { ready, withoutFabric }: rows with a fabric, and how many have none.

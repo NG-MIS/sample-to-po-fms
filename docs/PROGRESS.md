@@ -76,6 +76,7 @@ Next to discuss: the CAD stage (CAD drawing and its approval).
 | 25 Nov 2026 | Design number assignment and the accessory list of a sample (31 database rule checks; 46 new screen checks, 475 pass in total) |
 | 25 Nov 2026 | Wishlist: Sizes and ratios master, entries at final approval or later, Wishlist screen (29 database rule checks; 43 new screen checks, 520 pass in total) |
 | 25 Nov 2026 | CAD drawings (table view, new, copy, assign to wishlist, fabric by sample people) and the primary accessory list with size groups (41 database rule checks; 69 new screen checks, 591 pass in total) |
+| 27 Nov 2026 | One drawing per fabric material list, with a Drawing dropdown when there are several (17 new screen checks, 881 pass in total) |
 | 27 Nov 2026 | Wishlist items pick up the CADs of their sample, size and ratio by themselves; assigning removed (5 database rule checks; 864 screen checks pass in total) |
 | 27 Nov 2026 | Approved samples without a wishlist item in Pending drawing, used counter on each CAD, message boxes for CAD creation and assigning (13 new screen checks, 871 pass in total) |
 | 27 Nov 2026 | New CAD from Pending drawing is assigned to the clicked wishlist item on saving (5 new screen checks, 858 pass in total) |
