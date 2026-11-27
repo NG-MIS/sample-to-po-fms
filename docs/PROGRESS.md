@@ -76,6 +76,7 @@ Next to discuss: the CAD stage (CAD drawing and its approval).
 | 25 Nov 2026 | Design number assignment and the accessory list of a sample (31 database rule checks; 46 new screen checks, 475 pass in total) |
 | 25 Nov 2026 | Wishlist: Sizes and ratios master, entries at final approval or later, Wishlist screen (29 database rule checks; 43 new screen checks, 520 pass in total) |
 | 25 Nov 2026 | CAD drawings (table view, new, copy, assign to wishlist, fabric by sample people) and the primary accessory list with size groups (41 database rule checks; 69 new screen checks, 591 pass in total) |
+| 27 Nov 2026 | PO qty divided between colours, not multiplied (3 new screen checks, 892 pass in total) |
 | 27 Nov 2026 | Side menu stays in place on scroll; PARTICULARS column on fabric material lists (4 new screen checks, 889 pass in total) |
 | 27 Nov 2026 | Fabric pending: All and Partly filled views; a CAD waits until fabric, vendor and rate are on every row (4 new screen checks, 885 pass in total) |
 | 27 Nov 2026 | One drawing per fabric material list, with a Drawing dropdown when there are several (17 new screen checks, 881 pass in total) |
@@ -99,8 +100,8 @@ Next to discuss: the CAD stage (CAD drawing and its approval).
 
 ## Open questions
 
-- Is the wishlist quantity for all colours together, or for each colour? The PO form fills in the
-  quantity worked out for the wishlist quantity, and one number is multiplied by the number of colours.
+- Answered 27 Nov 2026: the wishlist quantity is for all colours together. The PO qty is the total
+  of the line and is divided between the colours.
 - The rule for which fabric or accessory is primary and which is secondary (Nihal: "i will share the rule later").
 - Several drawing rows with the same fabric come to the list as separate lines, and so as separate
   PO lines. Should the same fabric from one vendor be added up into one line?

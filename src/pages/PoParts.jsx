@@ -444,6 +444,12 @@ export function PoForm({ entry, family, vendorId, open = false, po, data, onClos
                 )}
               </div>
               {line.qty_text.trim() !== '' && total.error && <p className="hint error-text">{total.error}</p>}
+              {total.divided && (
+                <p className="hint" data-qty-split>
+                  Divided between the {total.parts.length} colours, each rounded up to the next 5: {total.parts.map(formatQty).join(' + ')} ={' '}
+                  {formatQty(total.total)} {line.unit}. To change it, write one number per colour joined with +.
+                </p>
+              )}
             </div>
           )
         })}
@@ -456,8 +462,9 @@ export function PoForm({ entry, family, vendorId, open = false, po, data, onClos
           Total amount: <strong data-po-total>{grandTotal !== null ? formatMoney(grandTotal) : '—'}</strong>
         </p>
         <p className="hint">
-          Qty: one number is taken for every colour (100 with 3 colours = 300). Or write one number per colour joined with
-          +, like 100+200+300.
+          Qty: one number is the qty of the whole line. It is divided equally between the colours, each share rounded up
+          to the next 5 (100 with 3 colours = 35 + 35 + 35). Or write one number per colour joined with +, like
+          100+200+300.
         </p>
         {error && (
           <p className="alert alert--error" role="alert">

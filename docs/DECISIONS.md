@@ -5,6 +5,7 @@ Newest first. A changed decision is not deleted: a new entry is added that repla
 
 | Date | Decision | Reason |
 |---|---|---|
+| 27 Nov 2026 | PO qty: one number is the total of the line, divided equally between the colours with each share rounded up to the next 5; numbers joined with + override it (replaces the 25 Nov rule that one number is for every colour) | Nihal: the total must stay the same when colours are added; "round up in 5s". The required quantity is for all colours together |
 | 27 Nov 2026 | A CAD stays in Fabric pending until every row has fabric, vendor and rate (before: fabric only) | Nihal confirmed; he wants to see CADs whose fabric details are started but not complete |
 | 27 Nov 2026 | A fabric material list takes its rows from one drawing only, chosen in a dropdown; the secondary fabric list uses the same drawing as the primary (narrows "all together": every CAD of the size still counts as a drawing of the item, but only one feeds the fabric lists) | Nihal: each drawing contains the complete fabric list, so combining them would cause trouble; "same as primary" |
 | 27 Nov 2026 | A wishlist item uses every CAD of the same sample, size and ratio, all together, with no assigning (replaces the 25 Nov rule that a CAD must be assigned) | Nihal: "should fetch their respective drawings, no need to assign further"; "all together" |

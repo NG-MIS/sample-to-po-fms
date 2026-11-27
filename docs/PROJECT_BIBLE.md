@@ -390,7 +390,7 @@ material list.
 | DIMENSION | Accessories only. Each length, or length x breadth, is its own line |
 | COLOURS NAME | Several, from the Colours master or typed new. Required for fabric, and for an accessory marked Colour specific. An accessory that is not colour specific has no colours |
 | NO. OF COLOURS | The count of colours picked |
-| QTY | One number = that quantity for every colour (100 with 3 colours = 300). Or one number per colour joined with +, like 100+200+300; the count must equal the number of colours |
+| QTY | One number = the quantity of the whole line (changed 27 Nov 2026; before, it was taken for every colour). It is divided equally between the colours, each share rounded up to the next 5, so the total can come out a little more (100 with 3 colours = 35 + 35 + 35 = 105). The form shows the division. One number per colour joined with +, like 100+200+300, overrides it; the count must equal the number of colours. A divided qty is saved written out per colour (35+35+35) and opens as its total again when the PO is changed |
 | TOTAL QTY, AMOUNT | Worked out. Fabric in metres, accessories in pieces or inches |
 | RATE | Required |
 | PROMISE DAYS, PROMISED DATE OF DELIVERY | Promised date = order date + promise days. Per line; what is typed on the first line fills the lines that have none of their own |
@@ -748,6 +748,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 27 Nov 2026 | PO qty is the total of the line and is divided between the colours (each share rounded up to the next 5) instead of being multiplied by the number of colours. Screen change only: the database already takes one number per colour |
 | 27 Nov 2026 | The side menu stays in place while a screen scrolls (it scrolls on its own when taller than the window; the phone drawer is unchanged). Fabric material lists: the FROM column is now PARTICULARS and shows only the particulars; the drawing is named once on top |
 | 27 Nov 2026 | Fabric pending counts a CAD until every row has fabric, vendor and rate, and has two views: All and Partly filled. Screen change only |
 | 27 Nov 2026 | Fabric material lists take their rows from one drawing: a Drawing dropdown on the primary fabric list when the item has several CADs; the secondary fabric list follows it. Screen change only |
