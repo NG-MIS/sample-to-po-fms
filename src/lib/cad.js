@@ -158,6 +158,13 @@ export const cadFabricPayload = (rows) =>
 // The rows of a CAD that still have no fabric.
 export const rowsWithoutFabric = (cad) => cad.rows.filter((row) => !row.fabric_id)
 
+// The fabric details of a drawing row: fabric, vendor and rate. A CAD waits in
+// Fabric pending until every row has all three.
+export const missingFabricDetails = (row) => [!row.fabric_id && 'fabric', !row.vendor_id && 'vendor', row.rate == null && 'rate'].filter(Boolean)
+export const rowsMissingFabricDetails = (cad) => cad.rows.filter((row) => missingFabricDetails(row).length > 0)
+// Some fabric details are in, on any row.
+export const hasFabricDetails = (cad) => cad.rows.some((row) => missingFabricDetails(row).length < 3)
+
 // ---------- Primary accessory list ----------
 // One list per sample + size (+ ratio). The qty of a line is given per group
 // of sizes; a group ends at `upto` and starts where the one before it ended.

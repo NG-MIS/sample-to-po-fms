@@ -25,7 +25,7 @@ import {
   pickValue,
   primaryLinesFor,
   primaryPayload,
-  rowsWithoutFabric,
+  rowsMissingFabricDetails,
   setGroupEnd,
   sizeLabel,
   sizeSpan,
@@ -52,7 +52,7 @@ export function CadCard({ cad, sample, data, lookups, canCad, canFabric, onEdit,
   const image = latestImage(sample)
   const primary = primaryLinesFor(sample, cad.size_ratio_id)
   const assigned = sample.wishlist.filter((entry) => cad.wishlist_ids.includes(entry.id))
-  const missing = rowsWithoutFabric(cad).length
+  const missing = rowsMissingFabricDetails(cad).length
   const usedIn = cadUsedIn(sample, cad)
 
   return (

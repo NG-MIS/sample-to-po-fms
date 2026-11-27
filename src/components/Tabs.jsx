@@ -1,8 +1,9 @@
 // A row of tabs, each with an optional count of what is waiting in it.
 //   tabs: [{ key, label, count }]
-export default function Tabs({ tabs, value, onChange, label = 'Views' }) {
+//   sub:  a second, smaller row of tabs inside one tab of the screen
+export default function Tabs({ tabs, value, onChange, label = 'Views', sub = false }) {
   return (
-    <div className="tabs" role="tablist" aria-label={label}>
+    <div className={sub ? 'subtabs' : 'tabs'} role="tablist" aria-label={label}>
       {tabs.map((tab) => (
         <button
           key={tab.key}

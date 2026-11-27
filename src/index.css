@@ -1639,6 +1639,16 @@ button.side-group-title:hover {
   gap: 6px;
   margin-bottom: 12px;
 }
+.subtabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.subtabs .tab {
+  padding-block: 4px;
+  font-size: 13px;
+}
 .tab {
   display: inline-flex;
   align-items: center;

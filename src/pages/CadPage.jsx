@@ -6,7 +6,15 @@ import DoneBox from '../components/DoneBox.jsx'
 import Tabs from '../components/Tabs.jsx'
 import { PageHead } from '../components/Layout.jsx'
 import { useAuth } from '../lib/auth.jsx'
-import { FABRIC_TYPE_LABEL, cadsOfEntry, primaryLinesFor, rowsWithoutFabric, sizeLabel } from '../lib/cad.js'
+import {
+  FABRIC_TYPE_LABEL,
+  cadsOfEntry,
+  hasFabricDetails,
+  missingFabricDetails,
+  primaryLinesFor,
+  rowsMissingFabricDetails,
+  sizeLabel,
+} from '../lib/cad.js'
 import { nameMap, useLoad } from '../lib/data.js'
 import { friendlyError } from '../lib/format.js'
 import { BUCKET, canWorkOn, latestImage, loadSampleData } from '../lib/sampleData.js'
@@ -43,7 +51,8 @@ function sampleColumns(onOpen, getSample) {
 //   Pending drawing - wishlist items with no CAD of their sample, size and ratio yet,
 //                     and approved samples that have neither a wishlist item nor a CAD
 // A wishlist item picks up every CAD of its sample, size and ratio by itself.
-//   Fabric pending  - CADs with rows that still have no fabric
+//   Fabric pending  - CADs with a row whose fabric, vendor or rate is still missing;
+//                     inside it: All, and Partly filled (some details are in)
 //   All rows        - every drawing row in one list, to filter and export
 export default function CadPage() {
   const { profile } = useAuth()
@@ -55,6 +64,7 @@ export default function CadPage() {
   const [fabricFor, setFabricFor] = useState(null) // { cadId, sampleId }
   const [primary, setPrimary] = useState(null) // { sampleId, sizeRatioId }
   const [notice, setNotice] = useState('')
+  const [fabricView, setFabricView] = useState('all') // inside Fabric pending: 'all' or 'partial'
   const [doneBox, setDoneBox] = useState(null) // { title, text, number, note }
 
   const samples = useMemo(() => data?.samples ?? [], [data])
@@ -90,11 +100,12 @@ export default function CadPage() {
   const fabricPending = useMemo(
     () =>
       data
-        ? cads.filter(({ cad, sample }) => rowsWithoutFabric(cad).length > 0 && canWorkOn(sample, data, profile))
+        ? cads.filter(({ cad, sample }) => rowsMissingFabricDetails(cad).length > 0 && canWorkOn(sample, data, profile))
         : [],
     [cads, data, profile],
   )
   const allRows = useMemo(() => cads.flatMap(({ cad, sample }) => cad.rows.map((row) => ({ ...row, cad, sample }))), [cads])
+  const fabricPartial = useMemo(() => fabricPending.filter(({ cad }) => hasFabricDetails(cad)), [fabricPending])
   const fillsFabric = Boolean(data?.access.manages) || fabricPending.length > 0 || samples.some((sample) => sample.designer_id === profile.id)
 
   const tabs = [
@@ -179,8 +190,9 @@ export default function CadPage() {
       { key: 'size', header: 'SIZE', value: (row) => sizeLabel(lookups.combination.get(row.cad.size_ratio_id)) },
       {
         key: 'missing',
-        header: 'ROWS WITHOUT FABRIC',
-        value: (row) => rowsWithoutFabric(row.cad).map((item) => lookups.particular.get(item.particular_id)),
+        header: 'WHAT IS MISSING',
+        value: (row) =>
+          rowsMissingFabricDetails(row.cad).map((item) => `${lookups.particular.get(item.particular_id)}: ${missingFabricDetails(item).join(', ')}`),
       },
       {
         key: 'actions',
@@ -305,14 +317,27 @@ export default function CadPage() {
       )}
       {tab === 'fabric' && (
         <>
-          <p className="tab-note">CADs of the samples you look after, with drawing rows that still have no fabric.</p>
+          <p className="tab-note">
+            CADs of the samples you look after, with a drawing row whose fabric, vendor or rate is still missing. Partly
+            filled shows the ones where some of these are already entered.
+          </p>
+          <Tabs
+            sub
+            label="Fabric pending views"
+            tabs={[
+              { key: 'all', label: 'All', count: fabricPending.length },
+              { key: 'partial', label: 'Partly filled', count: fabricPartial.length },
+            ]}
+            value={fabricView}
+            onChange={setFabricView}
+          />
           <DataTable
             tableId="cad-fabric-pending"
             title="CADs waiting for fabric"
             columns={fabricColumns}
-            rows={fabricPending.map((item) => ({ ...item, id: item.cad.id }))}
+            rows={(fabricView === 'partial' ? fabricPartial : fabricPending).map((item) => ({ ...item, id: item.cad.id }))}
             loading={loading}
-            emptyText="No CAD is waiting for its fabric."
+            emptyText={fabricView === 'partial' ? 'No CAD has its fabric details partly filled.' : 'No CAD is waiting for its fabric details.'}
             searchPlaceholder="Search CADs…"
           />
         </>

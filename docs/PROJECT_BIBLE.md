@@ -301,8 +301,11 @@ count of rows), and the button for the primary accessory list.
 - **Keeping the size.** A CAD keeps its size and ratio once a material list was made from its
   rows; a wishlist item keeps its size and ratio once it has a material list. Until then both
   can be changed (the database enforces this).
-- **Fabric pending** tab: CADs with rows that still have no fabric, for the people who look
-  after the sample.
+- **Fabric pending** tab, for the people who look after the sample: CADs with a drawing row
+  whose fabric, vendor or rate is still missing (from 27 Nov 2026; before, only a missing
+  fabric counted). A CAD leaves it when every row has all three. Two views inside it: **All**,
+  and **Partly filled** (some fabric details are entered, something is still missing). The
+  WHAT IS MISSING column names each row and what it lacks.
 
 **Who.** Department CAD (a fixed department name) and authority All make and change CADs,
 assign them, and set up primary accessory lists. The fabric, vendor and rate of the rows are
@@ -744,6 +747,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 27 Nov 2026 | Fabric pending counts a CAD until every row has fabric, vendor and rate, and has two views: All and Partly filled. Screen change only |
 | 27 Nov 2026 | Fabric material lists take their rows from one drawing: a Drawing dropdown on the primary fabric list when the item has several CADs; the secondary fabric list follows it. Screen change only |
 | 27 Nov 2026 | Wishlist items use every CAD of their sample, size and ratio by themselves; assigning removed from the screens. The size of a CAD or wishlist item is now kept once a material list exists, not once assigned (migration `wishlist_items_use_cads_of_their_size`) |
 | 27 Nov 2026 | Pending drawing also lists approved samples with no wishlist item and no CAD; each CAD shows how many material lists used it; message boxes after creating a CAD and after assigning. Screen change only, no database change |
