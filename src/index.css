@@ -294,6 +294,29 @@ textarea {
 .popover-search {
   margin-bottom: 6px;
 }
+/* A pick-list that is typed into: the panel lies over the box, and its first line
+   is the box to type in, at the same place and size. */
+.popover--over {
+  padding: 0;
+  border-color: var(--primary);
+}
+.popover--over .popover-search {
+  flex: none;
+  min-height: var(--anchor-height, 36px);
+  margin: 0;
+  padding: 7px 10px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: var(--radius) var(--radius) 0 0;
+  box-shadow: none;
+  outline: none;
+}
+.popover--over .option-list {
+  padding: 6px;
+}
+.popover--over .popover-foot {
+  padding: 0 8px 8px;
+}
 .popover-title {
   padding: 2px 8px 8px;
   font-size: 12px;

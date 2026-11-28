@@ -105,11 +105,16 @@ export function checkCadRows(rows, sampleComponentIds = []) {
     if (!row.particular_id && !row.new_particular) return 'Every drawing row needs its particulars.'
     if (!row.fabric_type) return 'Choose the fabric type of every drawing row: Primary or Secondary.'
     if (rowComponents(row, sampleComponentIds).length === 0) return 'Choose the components of every drawing row.'
-    if (row.efficiency.trim() !== '' && (!decimal(row.efficiency) || Number(row.efficiency) > 100)) return 'Efficiency is a percentage from 0 to 100.'
-    if (row.msrmnt.trim() !== '' && !decimal(row.msrmnt)) return 'Msrmnt must be a number with at most 2 decimals.'
-    if (row.paina.trim() !== '' && !decimal(row.paina)) return 'Paina must be a number with at most 2 decimals.'
-    if (row.pcs_in_layer.trim() !== '' && !whole(row.pcs_in_layer)) return 'No. of pcs in layer must be a whole number.'
-    if (row.panels.trim() !== '' && !whole(row.panels)) return 'No. of panels must be a whole number.'
+    // every column of a drawing row is required
+    const empty = [['Msrmnt', row.msrmnt], ['Paina', row.paina], ['No. of pcs in layer', row.pcs_in_layer], ['No of panels', row.panels], ['Efficiency', row.efficiency]]
+      .filter(([, value]) => value.trim() === '')
+      .map(([label]) => label)
+    if (empty.length) return `Every drawing row needs its ${empty.join(', ').replace(/, ([^,]*)$/, ' and $1')}.`
+    if (!decimal(row.efficiency) || Number(row.efficiency) > 100) return 'Efficiency is a percentage from 0 to 100.'
+    if (!decimal(row.msrmnt)) return 'Msrmnt must be a number with at most 2 decimals.'
+    if (!decimal(row.paina)) return 'Paina must be a number with at most 2 decimals.'
+    if (!whole(row.pcs_in_layer)) return 'No. of pcs in layer must be a whole number.'
+    if (!whole(row.panels)) return 'No. of panels must be a whole number.'
   }
   return ''
 }
@@ -237,6 +242,24 @@ export const toPrimaryLines = (lines, sizes) =>
     ...colourFields(line),
     same_pcs: hasSamePcs(line.groups),
   }))
+
+// The saved lines of another size, as lines for this size: the accessories, units,
+// colour choices and quantities are kept, and the size groups are fitted to the sizes
+// of this size. A group keeps the sizes it shares with this size, groups that share
+// none are dropped, and the last group runs to the last size.
+export function linesForOtherSize(savedLines, fromSizes, sizes) {
+  const last = sizes[sizes.length - 1]
+  return toPrimaryLines(savedLines, fromSizes).map((line, index) => {
+    const covered = groupSizes(line.groups, fromSizes)
+    const kept = line.groups
+      .map((group, at) => ({ group, shared: covered[at].filter((size) => sizes.includes(size)) }))
+      .filter((item) => item.shared.length > 0)
+      .map((item) => ({ ...item.group, key: key('group'), upto: item.shared[item.shared.length - 1] }))
+    const groups = kept.length ? kept.map((group, at) => (at === kept.length - 1 ? { ...group, upto: last } : group)) : [newPrimaryGroup(last)]
+    const pending = primaryDetailsPending(savedLines[index])
+    return { ...line, key: key('primary'), groups: pending ? [newPrimaryGroup(last)] : groups, same_pcs: !pending && hasSamePcs(groups) }
+  })
+}
 
 // The details of a line in the form are still to be filled: nothing is typed in its
 // size groups. Such a line is saved as "Details pending" and filled later.

@@ -5,6 +5,9 @@ Newest first. A changed decision is not deleted: a new entry is added that repla
 
 | Date | Decision | Reason |
 |---|---|---|
+| 28 Nov 2026 | "Yes, and send to CAD" lets CAD make the drawing and primary accessory list before final approval; wishlist and design number still wait for final approval | Nihal: some changes after initial approval do not affect the drawing; he confirmed the rest waits |
+| 28 Nov 2026 | The secondary accessory tick list offers the whole accessories master | Nihal: "whole" |
+| 28 Nov 2026 | Sums are worked out when the box is left or Enter is pressed, not on every key | A half-typed sum (5+) must not turn into a number while it is being typed |
 | 28 Nov 2026 | The same accessory can be on a primary accessory list more than once, added with "Add accessory" | Nihal: it is needed at times, also for an accessory not in the ticked list |
 | 28 Nov 2026 | Primary accessories have their own master screen, but are kept in the one accessories list with a primary mark and a default unit | Nihal wanted the master separate; one underlying list keeps material lists, POs and receiving working and avoids a name being in the system twice |
 | 28 Nov 2026 | "Details pending" is worked out, not ticked: an accessory whose table is left empty is pending; once anything is typed it must be complete | No extra tick to forget; the marker always matches what is filled |

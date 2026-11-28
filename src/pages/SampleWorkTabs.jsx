@@ -7,7 +7,7 @@ import {
   BUCKET,
   ACCESSORY_STATUS_BADGE,
   ACCESSORY_STATUS_LABEL,
-  DECISION_LABEL,
+  decisionLabel,
   FABRIC_STATUS_BADGE,
   FABRIC_STATUS_LABEL,
   PIECE_LABEL,
@@ -493,11 +493,11 @@ export function ApprovalTab({ rows, lookups, loading, onOpen, onApprove }) {
       {
         key: 'first_approval',
         header: 'INITIAL APPROVAL',
-        value: (row) => (row.approvals.initial ? DECISION_LABEL[row.approvals.initial.decision] : 'Not given'),
+        value: (row) => (row.approvals.initial ? decisionLabel(row.approvals.initial) : 'Not given'),
         render: (row) =>
           row.approvals.initial ? (
             <span className={`badge badge--${row.approvals.initial.decision}`}>
-              {DECISION_LABEL[row.approvals.initial.decision]}
+              {decisionLabel(row.approvals.initial)}
             </span>
           ) : (
             <span className="badge badge--pending">Not given</span>

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { digitsTyped } from '../lib/calc.js'
 import DataTable from '../components/DataTable.jsx'
 import ImportButton from '../components/ImportButton.jsx'
 import Modal from '../components/Modal.jsx'
@@ -262,7 +263,7 @@ function SizeRatioForm({ row, rows, onClose, onSaved }) {
             className="input"
             inputMode="numeric"
             value={pieces}
-            onChange={(event) => setPieces(event.target.value.replace(/\D/g, ''))}
+            onChange={(event) => setPieces(digitsTyped(event.target.value))}
           />
         </Field>
         <Field

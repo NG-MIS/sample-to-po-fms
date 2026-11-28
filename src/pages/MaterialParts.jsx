@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { digitsTyped, numberTyped } from '../lib/calc.js'
 import Modal from '../components/Modal.jsx'
 import PickList from '../components/PickList.jsx'
 import { Field } from '../components/Field.jsx'
@@ -8,10 +9,14 @@ import {
   checkPrimaryLines,
   colourText,
   formatPrimaryQty,
+  isTypedValue,
   namedOptions,
+  pickValue,
   primaryDetailsPending,
   primaryLinesFor,
   sizeLabel,
+  typedName,
+  typedValue,
 } from '../lib/cad.js'
 import { friendlyError } from '../lib/format.js'
 import {
@@ -51,8 +56,8 @@ import { QTY_TYPE_LABEL } from '../lib/sampleAccessories.js'
 import { callSampleAction } from '../lib/sampleData.js'
 import { AccessoryLineEditor } from './CadParts.jsx'
 
-const numberOnly = (value) => value.replace(/[^\d.]/g, '').replace(/^\./, '0.')
-const digitsOnly = (value) => value.replace(/\D/g, '')
+const numberOnly = numberTyped
+const digitsOnly = digitsTyped
 
 // The status of one material list as a coloured label.
 export function ListStatusBadge({ entry, kind }) {
@@ -174,6 +179,29 @@ export function MaterialListDialog({ entry, sample, kind, data, canEdit, isAdmin
   const typedNames = fabric ? [] : [...new Set(lines.map((line) => line.new_accessory).filter(Boolean))]
   const accessoryOptions = namedOptions(data.accessories, saved.map((item) => item.accessory_id), typedNames)
   const addLabel = addLabelFor(data.accessories, typedNames)
+  // Secondary accessories are ticked first, from the whole accessories master (a new name
+  // can be typed), and then one table opens for each of them, all at once.
+  const tickValue = (line) => pickValue(line.accessory_id, line.new_accessory)
+  const tickedValues = fabric ? [] : [...new Set(lines.map(tickValue).filter((value) => value !== null))]
+  const setTicked = (values) =>
+    setLines((previous) => {
+      // a table already ordered or marked not required stays, whatever is unticked
+      const kept = previous.filter((line) => tickValue(line) === null || locked(line) || values.includes(tickValue(line)))
+      const have = kept.map(tickValue)
+      const added = values
+        .filter((value) => !have.includes(value))
+        .map((value) => {
+          const accessory = isTypedValue(value) ? null : data.accessories.find((item) => item.id === value)
+          return newAccessoryItem(sizes, accessory ? { accessory_id: accessory.id, qty_type: accessory.default_qty_type ?? null, ticked: true } : { new_accessory: typedName(value), ticked: true })
+        })
+      return [...kept, ...added]
+    })
+  const tickTyped = (typed) => {
+    const name = typed.trim().replace(/\s+/g, ' ')
+    const known = data.accessories.find((item) => item.name.toLowerCase() === name.toLowerCase())
+    setTicked([...tickedValues, known ? known.id : typedValue(name)])
+  }
+  const tickedName = (line) => (line.accessory_id ? (data.accessories.find((item) => item.id === line.accessory_id)?.name ?? '') : line.new_accessory)
 
   // What can be brought in instead of typing.
   const assignedCads = cadsOfEntry(sample, entry)
@@ -582,6 +610,27 @@ export function MaterialListDialog({ entry, sample, kind, data, canEdit, isAdmin
           </p>
         )}
 
+        {kind === 'secondary_accessory' && canEdit && (
+          <div className="primary-pick" data-secondary-pick>
+            <label className="field-label" htmlFor="secondary-pick">
+              Secondary accessories of this item
+            </label>
+            <PickList
+              id="secondary-pick"
+              multiple
+              options={accessoryOptions}
+              value={tickedValues}
+              onChange={setTicked}
+              onCreate={tickTyped}
+              createLabel={addLabel}
+              placeholder="Tick the accessories…"
+            />
+            <span className="hint">
+              Tick them from the accessories master, or type a new name to add it. A table opens below for each one to fill
+              its details.
+            </span>
+          </div>
+        )}
         {!fabric &&
           lines.map((line, index) => {
             const fixed = !canEdit || locked(line)
@@ -594,6 +643,7 @@ export function MaterialListDialog({ entry, sample, kind, data, canEdit, isAdmin
                 index={index}
                 sizes={sizes}
                 canEdit={!fixed}
+                fixedName={kind === 'secondary_accessory' && (line.ticked || line.id) ? tickedName(line) : null}
                 accessoryOptions={accessoryOptions}
                 addLabel={addLabel}
                 colours={data.colours}

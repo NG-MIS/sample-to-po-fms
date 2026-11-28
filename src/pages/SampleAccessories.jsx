@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { numberTyped } from '../lib/calc.js'
 import DataTable from '../components/DataTable.jsx'
 import Modal from '../components/Modal.jsx'
 import PickList from '../components/PickList.jsx'
@@ -19,7 +20,7 @@ import {
 import { callSampleAction } from '../lib/sampleData.js'
 
 const sameText = (a, b) => a.toLowerCase() === b.toLowerCase()
-const numberOnly = (value) => value.replace(/[^\d.]/g, '').replace(/^\./, '0.')
+const numberOnly = numberTyped
 
 // Editor for the accessory list of a sample: any number of lines, each with
 // an accessory, how it is measured and how much, a vendor code, a rate and

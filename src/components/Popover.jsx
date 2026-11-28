@@ -4,7 +4,9 @@ import { useEscape } from '../lib/escape.js'
 
 // A floating panel anchored under a button. Used by pick-lists and column
 // filters. Closes on Esc or on a click anywhere outside it.
-export default function Popover({ anchorRef, onClose, width, matchAnchorWidth = false, className = '', children }) {
+//   overAnchor - the panel starts on top of the button, not under it, so that its
+//                first line (the box to type in) sits exactly where the button is
+export default function Popover({ anchorRef, onClose, width, matchAnchorWidth = false, overAnchor = false, className = '', children }) {
   const panelRef = useRef(null)
   const [position, setPosition] = useState(null)
 
@@ -19,13 +21,13 @@ export default function Popover({ anchorRef, onClose, width, matchAnchorWidth = 
     const gap = 4
     let left = Math.min(anchor.left, window.innerWidth - panelWidth - 8)
     left = Math.max(8, left)
-    let top = anchor.bottom + gap
+    let top = overAnchor ? anchor.top : anchor.bottom + gap
     if (top + panelHeight > window.innerHeight - 8) {
       const above = anchor.top - gap - panelHeight
-      top = above >= 8 ? above : Math.max(8, window.innerHeight - panelHeight - 8)
+      top = !overAnchor && above >= 8 ? above : Math.max(8, window.innerHeight - panelHeight - 8)
     }
-    setPosition({ left, top, width: panelWidth })
-  }, [anchorRef, width, matchAnchorWidth])
+    setPosition({ left, top, width: panelWidth, '--anchor-height': `${anchor.height}px` })
+  }, [anchorRef, width, matchAnchorWidth, overAnchor])
 
   return createPortal(
     <div

@@ -18,7 +18,7 @@ import { nextSampleNo } from '../lib/numbering.js'
 import { remarksSummary } from '../lib/remarks.js'
 import {
   BUCKET,
-  DECISION_LABEL,
+  decisionLabel,
   PIECE_LABEL,
   FABRIC_STATUS_BADGE,
   FABRIC_STATUS_LABEL,
@@ -286,11 +286,11 @@ export default function SamplesPage() {
         {
           key: `approval_${stage}`,
           header,
-          value: (row) => (row.approvals[stage] ? DECISION_LABEL[row.approvals[stage].decision] : ''),
+          value: (row) => (row.approvals[stage] ? decisionLabel(row.approvals[stage]) : ''),
           render: (row) =>
             row.approvals[stage] && (
               <span className={`badge badge--${row.approvals[stage].decision}`}>
-                {DECISION_LABEL[row.approvals[stage].decision]}
+                {decisionLabel(row.approvals[stage])}
               </span>
             ),
         },

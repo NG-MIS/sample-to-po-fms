@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { digitsTyped, numberTyped } from '../lib/calc.js'
 import DataTable from '../components/DataTable.jsx'
 import ImportButton from '../components/ImportButton.jsx'
 import Modal from '../components/Modal.jsx'
@@ -211,7 +212,7 @@ function DesignNumbers({ series, isAdmin, onSaved }) {
               className="input"
               inputMode="numeric"
               value={start}
-              onChange={(event) => setStart(event.target.value.replace(/\D/g, ''))}
+              onChange={(event) => setStart(digitsTyped(event.target.value))}
             />
           </Field>
           <button type="submit" className="btn btn--primary" disabled={busy}>
@@ -301,7 +302,7 @@ function PurchaseSettings({ settings, isAdmin, onSaved }) {
       {isAdmin && !used && (
         <form className="design-form" onSubmit={saveStart} noValidate>
           <Field label="Starting PO number" htmlFor="po-start">
-            <input id="po-start" className="input" inputMode="numeric" value={start} onChange={(event) => setStart(event.target.value.replace(/\D/g, ''))} />
+            <input id="po-start" className="input" inputMode="numeric" value={start} onChange={(event) => setStart(digitsTyped(event.target.value))} />
           </Field>
           <button type="submit" className="btn btn--primary" disabled={busy !== ''}>
             {busy === 'start' ? 'Setting…' : 'Set starting PO number'}
@@ -317,7 +318,7 @@ function PurchaseSettings({ settings, isAdmin, onSaved }) {
               className="input"
               inputMode="decimal"
               value={tolerance}
-              onChange={(event) => setTolerance(event.target.value.replace(/[^\d.]/g, '').replace(/^\./, '0.'))}
+              onChange={(event) => setTolerance(numberTyped(event.target.value))}
             />
           </Field>
           <button type="submit" className="btn btn--primary" disabled={busy !== ''}>
@@ -333,7 +334,7 @@ function PurchaseSettings({ settings, isAdmin, onSaved }) {
               className="input"
               inputMode="decimal"
               value={allowance}
-              onChange={(event) => setAllowance(event.target.value.replace(/[^\d.]/g, '').replace(/^\./, '0.'))}
+              onChange={(event) => setAllowance(numberTyped(event.target.value))}
             />
           </Field>
           <button type="submit" className="btn btn--primary" disabled={busy !== ''}>
@@ -520,7 +521,7 @@ function LotSeriesForm({ row, onClose, onSaved }) {
             inputMode="numeric"
             disabled={used}
             value={start}
-            onChange={(event) => setStart(event.target.value.replace(/\D/g, ''))}
+            onChange={(event) => setStart(digitsTyped(event.target.value))}
           />
         </Field>
         <Tick id="lot-series-active" label="Active" checked={isActive} onChange={setIsActive} hint="An inactive series can no longer be picked while receiving." />
@@ -621,7 +622,7 @@ function SeriesForm({ row, onClose, onSaved }) {
             inputMode="numeric"
             disabled={used}
             value={start}
-            onChange={(event) => setStart(event.target.value.replace(/\D/g, ''))}
+            onChange={(event) => setStart(digitsTyped(event.target.value))}
           />
         </Field>
         <Tick

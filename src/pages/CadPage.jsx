@@ -11,13 +11,15 @@ import {
   cadsOfEntry,
   hasFabricDetails,
   missingFabricDetails,
+  primaryDetailsPending,
   primaryLinesFor,
+  primaryListState,
   rowsMissingFabricDetails,
   sizeLabel,
 } from '../lib/cad.js'
 import { nameMap, useLoad } from '../lib/data.js'
 import { friendlyError } from '../lib/format.js'
-import { BUCKET, canWorkOn, latestImage, loadSampleData } from '../lib/sampleData.js'
+import { BUCKET, canWorkOn, isReadyForCad, latestImage, loadSampleData } from '../lib/sampleData.js'
 import { CadCard, CadFabricDialog, CadForm, PrimaryAccessoryDialog } from './CadParts.jsx'
 import SampleDetail from './SampleDetail.jsx'
 
@@ -51,6 +53,8 @@ function sampleColumns(onOpen, getSample) {
 //   Pending drawing - wishlist items with no CAD of their sample, size and ratio yet,
 //                     and approved samples that have neither a wishlist item nor a CAD
 // A wishlist item picks up every CAD of its sample, size and ratio by itself.
+//   Accessory pending - for the CAD team: a sample and size with a CAD whose primary
+//                     accessory list is not added, or has details still to fill
 //   Fabric pending  - CADs with a row whose fabric, vendor or rate is still missing;
 //                     inside it: All, and Partly filled (some details are in)
 //   All rows        - every drawing row in one list, to filter and export
@@ -64,6 +68,7 @@ export default function CadPage() {
   const [fabricFor, setFabricFor] = useState(null) // { cadId, sampleId }
   const [primary, setPrimary] = useState(null) // { sampleId, sizeRatioId }
   const [notice, setNotice] = useState('')
+  const [accessoryView, setAccessoryView] = useState('all') // inside Accessory pending: 'all', 'none' or 'details'
   const [fabricView, setFabricView] = useState('all') // inside Fabric pending: 'all' or 'partial'
   const [doneBox, setDoneBox] = useState(null) // { title, text, number, note }
 
@@ -89,7 +94,7 @@ export default function CadPage() {
       samples.flatMap((sample) => {
         // Approved, but not in the wishlist yet and with no CAD: the drawing is still to be made.
         if (sample.wishlist.length === 0) {
-          return sample.approvals.final?.decision === 'yes' && sample.cads.length === 0
+          return isReadyForCad(sample) && sample.cads.length === 0
             ? [{ id: `sample-${sample.id}`, noWishlist: true, wishlist_no: '', size_ratio_id: null, qty: '', sample }]
             : []
         }
@@ -105,6 +110,28 @@ export default function CadPage() {
     [cads, data, profile],
   )
   const allRows = useMemo(() => cads.flatMap(({ cad, sample }) => cad.rows.map((row) => ({ ...row, cad, sample }))), [cads])
+  // One row per sample + size (and ratio) that has a CAD, while its primary accessory
+  // list is not added yet or still has an accessory with details pending.
+  const accessoryPending = useMemo(
+    () =>
+      samples.flatMap((sample) =>
+        [...new Set(sample.cads.map((cad) => cad.size_ratio_id))]
+          .map((sizeRatioId) => {
+            const lines = primaryLinesFor(sample, sizeRatioId)
+            return {
+              id: `${sample.id}-${sizeRatioId}`,
+              sample,
+              sizeRatioId,
+              lines,
+              state: primaryListState(lines),
+              cadNos: sample.cads.filter((cad) => cad.size_ratio_id === sizeRatioId).map((cad) => cad.cad_no),
+            }
+          })
+          .filter((row) => row.state !== 'added'),
+      ),
+    [samples],
+  )
+  const accessoryShown = accessoryView === 'all' ? accessoryPending : accessoryPending.filter((row) => (accessoryView === 'none' ? row.state === 'pending' : row.state === 'details'))
   const fabricPartial = useMemo(() => fabricPending.filter(({ cad }) => hasFabricDetails(cad)), [fabricPending])
   const fillsFabric = Boolean(data?.access.manages) || fabricPending.length > 0 || samples.some((sample) => sample.designer_id === profile.id)
 
@@ -112,6 +139,7 @@ export default function CadPage() {
     { key: 'cads', label: 'CAD drawings', count: cads.length },
     { key: 'pending', label: 'Pending drawing', count: pending.length },
     fillsFabric && { key: 'fabric', label: 'Fabric pending', count: fabricPending.length },
+    canCad && { key: 'accessory', label: 'Accessory pending', count: accessoryPending.length },
     { key: 'rows', label: 'All rows' },
   ].filter(Boolean)
   const wanted = params.get('tab') ?? 'cads'
@@ -234,6 +262,38 @@ export default function CadPage() {
     [lookups, openSample],
   )
 
+  const accessoryColumns = useMemo(
+    () =>
+      lookups
+        ? [
+            ...sampleColumns(openSample, (row) => row.sample),
+            { key: 'size', header: 'SIZE', value: (row) => lookups.combination.get(row.sizeRatioId)?.size ?? '' },
+            { key: 'ratio', header: 'RATIO', value: (row) => lookups.combination.get(row.sizeRatioId)?.ratio ?? '' },
+            { key: 'cads', header: 'CADS', value: (row) => row.cadNos },
+            {
+              key: 'state',
+              header: 'ACCESSORY LIST',
+              value: (row) => (row.state === 'pending' ? 'Not added' : 'Details pending'),
+              render: (row) => <span className="badge badge--pending">{row.state === 'pending' ? 'Not added' : 'Details pending'}</span>,
+            },
+            {
+              key: 'waiting',
+              header: 'DETAILS PENDING FOR',
+              value: (row) => row.lines.filter(primaryDetailsPending).map((line) => data.accessories.find((item) => item.id === line.accessory_id)?.name ?? ''),
+            },
+            {
+              key: 'actions',
+              header: '',
+              render: (row) => (
+                <button type="button" className="btn btn--small btn--primary" onClick={() => setPrimary({ sampleId: row.sample.id, sizeRatioId: row.sizeRatioId })}>
+                  {row.state === 'pending' ? 'Add accessory list' : 'Fill details'}
+                </button>
+              ),
+            },
+          ]
+        : [],
+    [lookups, openSample, data],
+  )
   const viewing = sampleOf(viewingId)
   const fabricSample = fabricFor && sampleOf(fabricFor.sampleId)
   const fabricCad = fabricSample?.cads.find((cad) => cad.id === fabricFor.cadId)
@@ -312,6 +372,33 @@ export default function CadPage() {
             loading={loading}
             emptyText="No wishlist item is waiting for a CAD."
             searchPlaceholder="Search wishlist items…"
+          />
+        </>
+      )}
+      {tab === 'accessory' && (
+        <>
+          <p className="tab-note">
+            A sample and size that has a CAD, while its primary accessory list is not added yet, or has an accessory whose
+            details are still to be filled.
+          </p>
+          <Tabs
+            sub
+            label="Accessory pending views"
+            tabs={[
+              { key: 'all', label: 'All', count: accessoryPending.length },
+              { key: 'none', label: 'Not added', count: accessoryPending.filter((row) => row.state === 'pending').length },
+              { key: 'details', label: 'Details pending', count: accessoryPending.filter((row) => row.state === 'details').length },
+            ]}
+            value={accessoryView}
+            onChange={setAccessoryView}
+          />
+          <DataTable
+            tableId="cad-accessory-pending"
+            title="Primary accessory lists waiting"
+            columns={accessoryColumns}
+            rows={accessoryShown}
+            loading={loading}
+            emptyText="No primary accessory list is waiting."
           />
         </>
       )}

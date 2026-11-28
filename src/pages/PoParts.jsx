@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { digitsTyped, numberTyped } from '../lib/calc.js'
 import Modal from '../components/Modal.jsx'
 import PickList from '../components/PickList.jsx'
 import { Field } from '../components/Field.jsx'
@@ -30,8 +31,8 @@ import {
 } from '../lib/materials.js'
 import { callSampleAction } from '../lib/sampleData.js'
 
-const numberOnly = (value) => value.replace(/[^\d.]/g, '').replace(/^\./, '0.')
-const digitsOnly = (value) => value.replace(/\D/g, '')
+const numberOnly = numberTyped
+const digitsOnly = digitsTyped
 const TYPE_LABEL = { primary: 'Primary', secondary: 'Secondary' }
 
 // ---------- Raising or changing a PO ----------

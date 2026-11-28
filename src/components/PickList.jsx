@@ -1,7 +1,10 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Popover from './Popover.jsx'
 
-// The one pick-list used everywhere. Values are picked, never typed.
+// The one pick-list used everywhere. It is typed into directly: clicking the box, or
+// typing while it has the cursor, turns the box into a line to type in, with the
+// matching names under it. Enter or Tab takes the first match, or adds what was typed
+// where adding is allowed.
 //   options  - [{ value, label }]
 //   multiple - false: `value` is one value or null. true: `value` is a list (tick boxes).
 //   onCreate - optional. Lets a value that is not in the list be added on the spot:
@@ -32,6 +35,20 @@ export default function PickList({
   const buttonRef = useRef(null)
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
+  const searchRef = useRef(null)
+
+  // The cursor goes into the line to type in as soon as the list is open. (The panel is
+  // put in place a moment after it first appears, and only then can it take the cursor.)
+  useEffect(() => {
+    if (!open) return undefined
+    const frame = requestAnimationFrame(() => {
+      const line = searchRef.current
+      if (!line || document.activeElement === line) return
+      line.focus()
+      line.setSelectionRange(line.value.length, line.value.length)
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [open])
 
   const selected = useMemo(
     () => new Set(multiple ? value || [] : value === null || value === undefined ? [] : [value]),
@@ -81,6 +98,14 @@ export default function PickList({
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen(true)}
+        onKeyDown={(event) => {
+          // typing with the cursor on the box starts the search with that letter
+          if (event.key.length !== 1 || (event.key === ' ' && !open) || event.ctrlKey || event.metaKey || event.altKey) return
+          event.preventDefault()
+          // a letter typed before the line to type in has the cursor is not lost
+          setQuery((previous) => previous + event.key)
+          setOpen(true)
+        }}
       >
         <span className="picklist-text">{summary.length ? summary.join(', ') : placeholder}</span>
         <span className="picklist-arrow" aria-hidden="true">
@@ -88,12 +113,13 @@ export default function PickList({
         </span>
       </button>
       {open && (
-        <Popover anchorRef={buttonRef} onClose={close} matchAnchorWidth className="popover--list">
+        <Popover anchorRef={buttonRef} onClose={close} matchAnchorWidth overAnchor className="popover--list popover--over">
           <input
             className="input popover-search"
-            placeholder={onCreate ? 'Search, or type a new one…' : 'Search…'}
+            aria-label={onCreate ? 'Type to search, or to add a new one' : 'Type to search'}
+            placeholder={summary.length ? summary.join(', ') : onCreate ? 'Type to search, or add a new one…' : 'Type to search…'}
             value={query}
-            autoFocus
+            ref={searchRef}
             onChange={(event) => setQuery(event.target.value)}
             onKeyDown={(event) => {
               // Enter and Tab both take what was typed: the new name when nothing

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { digitsTyped, numberTyped } from '../lib/calc.js'
 import ClickableImage from '../components/ClickableImage.jsx'
 import Modal from '../components/Modal.jsx'
 import PickList from '../components/PickList.jsx'
@@ -22,6 +23,7 @@ import {
   namedOptions,
   newCadRow,
   isPrimaryPending,
+  linesForOtherSize,
   newPrimaryLine,
   primaryDetailsPending,
   primaryListState,
@@ -41,11 +43,11 @@ import {
 } from '../lib/cad.js'
 import { friendlyError } from '../lib/format.js'
 import { QTY_TYPES, QTY_TYPE_LABEL } from '../lib/sampleAccessories.js'
-import { BUCKET, callSampleAction, latestImage } from '../lib/sampleData.js'
+import { BUCKET, callSampleAction, isReadyForCad, latestImage } from '../lib/sampleData.js'
 import { defaultCombination, ratioOptions, sizeOptions } from '../lib/wishlist.js'
 
-const numberOnly = (value) => value.replace(/[^\d.]/g, '').replace(/^\./, '0.')
-const digitsOnly = (value) => value.replace(/\D/g, '')
+const numberOnly = numberTyped
+const digitsOnly = digitsTyped
 const formatNumber = (value) => (value === null || value === undefined ? '' : String(Number(value)))
 const componentName = (data, id) => data.components.find((component) => component.id === id)?.name ?? ''
 const formatRate = (value) => (value === null || value === undefined ? '' : Number(value).toFixed(2))
@@ -184,12 +186,12 @@ function CadRowsEditor({ rows, onChange, particulars, typedNames, idPrefix, comp
           <tr>
             <th>PARTICULARS *</th>
             <th>FABRIC TYPE *</th>
-            <th>MSRMNT</th>
-            <th>PAINA</th>
-            <th title="Filled with the pcs in a set of the chosen size and ratio. Type over it to change it.">NO. OF PCS IN LAYER</th>
-            <th>NO OF PANELS</th>
+            <th>MSRMNT *</th>
+            <th>PAINA *</th>
+            <th title="Filled with the pcs in a set of the chosen size and ratio. Type over it to change it.">NO. OF PCS IN LAYER *</th>
+            <th>NO OF PANELS *</th>
             <th>COMPONENTS *</th>
-            <th>EFFICIENCY %</th>
+            <th>EFFICIENCY % *</th>
             <th aria-label="Remove" />
           </tr>
         </thead>
@@ -283,7 +285,7 @@ export function CadForm({ cad, start, data, onClose, onSaved, onPrimary }) {
   // Pcs in a set of a size and ratio, from the Sizes and ratios master.
   const piecesOf = (id) => combinationOf(id)?.pieces_per_set ?? null
   const approved = useMemo(
-    () => data.samples.filter((sample) => sample.approvals.final?.decision === 'yes'),
+    () => data.samples.filter(isReadyForCad),
     [data],
   )
   const [sampleId, setSampleId] = useState(cad?.sample_id ?? start?.sample?.id ?? null)
@@ -915,6 +917,28 @@ export function PrimaryAccessoryDialog({ sample, sizeRatioId, data, canEdit, onC
     setPicked([...pickedValues, known ? known.id : typedValue(name)])
   }
   const pendingCount = lines.filter(isPrimaryPending).length
+  // The lists this sample already has for other sizes: one of them can be brought in here.
+  const otherSizes = [...new Set(sample.primaryLines.map((line) => line.size_ratio_id))]
+    .filter((id) => id !== sizeRatioId)
+    .map((id) => data.sizeRatios.find((row) => row.id === id))
+    .filter(Boolean)
+  // Of each accessory, as many tables come in as are not here yet, so nothing is doubled.
+  const bringFrom = (fromId) => {
+    const from = data.sizeRatios.find((row) => row.id === fromId)
+    const coming = linesForOtherSize(primaryLinesFor(sample, fromId), from.sizes, sizes)
+    setLines((previous) => {
+      const here = new Map()
+      previous.forEach((line) => line.accessory_id && here.set(line.accessory_id, (here.get(line.accessory_id) ?? 0) + 1))
+      return [
+        ...previous,
+        ...coming.filter((line) => {
+          const have = here.get(line.accessory_id) ?? 0
+          if (have > 0) here.set(line.accessory_id, have - 1)
+          return have === 0
+        }),
+      ]
+    })
+  }
   // A table added by hand: when its accessory is picked, the unit comes from the master
   // unless one was already chosen. A typed name that is already an accessory is taken from the list.
   const withMasterUnit = (line, changes) => {
@@ -987,6 +1011,17 @@ export function PrimaryAccessoryDialog({ sample, sizeRatioId, data, canEdit, onC
               Tick them from the primary accessory master, or type a new name to add it. A table opens below for each one.
               The details can be filled now or later.
             </span>
+          </div>
+        )}
+        {canEdit && otherSizes.length > 0 && (
+          <div className="primary-add" data-primary-import>
+            <span className="field-label">Bring in from another size</span>
+            {otherSizes.map((other) => (
+              <button key={other.id} type="button" className="btn btn--small" onClick={() => bringFrom(other.id)}>
+                {sizeLabel(other)} ({primaryLinesFor(sample, other.id).length})
+              </button>
+            ))}
+            <span className="hint">Copies that list here, fitted to these sizes. Change anything afterwards.</span>
           </div>
         )}
         {lines.length === 0 && <p className="hint">No primary accessory has been added yet.</p>}

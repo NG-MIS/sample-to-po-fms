@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { numberTyped } from '../lib/calc.js'
 import DataTable from '../components/DataTable.jsx'
 import Modal from '../components/Modal.jsx'
 import PickList from '../components/PickList.jsx'
@@ -116,7 +117,7 @@ export function FabricLinesEditor({ lines, onChange, lists, componentOptions, sa
               className="input"
               inputMode="decimal"
               value={line.rate}
-              onChange={(event) => setLine(line.key, { rate: event.target.value.replace(/[^\d.]/g, '').replace(/^\./, '0.') })}
+              onChange={(event) => setLine(line.key, { rate: numberTyped(event.target.value) })}
             />
           </div>
           <button

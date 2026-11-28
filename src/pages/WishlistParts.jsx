@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { digitsTyped } from '../lib/calc.js'
 import Modal from '../components/Modal.jsx'
 import PickList from '../components/PickList.jsx'
 import { friendlyError } from '../lib/format.js'
@@ -72,7 +73,7 @@ export function WishlistLinesEditor({ lines, onChange, sizeRatios, sample, minLi
                 className="input"
                 inputMode="numeric"
                 value={line.qty}
-                onChange={(event) => setLine(line.key, { qty: event.target.value.replace(/\D/g, '') })}
+                onChange={(event) => setLine(line.key, { qty: digitsTyped(event.target.value) })}
               />
             </div>
             {lines.length > minLines && (
@@ -253,7 +254,7 @@ export function WishlistCorrectDialog({ entry, data, onClose, onSaved }) {
             className="input"
             inputMode="numeric"
             value={qty}
-            onChange={(event) => setQty(event.target.value.replace(/\D/g, ''))}
+            onChange={(event) => setQty(digitsTyped(event.target.value))}
           />
           {combination && qty && <p className="hint">{setsText(qty, combination.pieces_per_set)}</p>}
         </div>

@@ -19,6 +19,8 @@ import {
   APPROVAL_STAGES,
   BUCKET,
   DECISION_LABEL,
+  decisionChoice,
+  decisionLabel,
   PIECES,
   PIECE_LABEL,
   PIECE_STATUS_LABEL,
@@ -442,7 +444,7 @@ export function SampleBody({ sample, data, onChanged }) {
               const approval = sample.approvals[stage]
               return (
                 <span key={stage} className={`badge badge--${approval ? approval.decision : 'pending'}`}>
-                  {info.label.replace(' approval', '')}: {approval ? DECISION_LABEL[approval.decision] : 'Not given'}
+                  {info.label.replace(' approval', '')}: {approval ? decisionLabel(approval) : 'Not given'}
                 </span>
               )
             })}
@@ -464,7 +466,7 @@ export function SampleBody({ sample, data, onChanged }) {
               <div className="piece-head">
                 <strong>{info.label}</strong>
                 {approval ? (
-                  <span className={`badge badge--${approval.decision}`}>{DECISION_LABEL[approval.decision]}</span>
+                  <span className={`badge badge--${approval.decision}`}>{decisionLabel(approval)}</span>
                 ) : (
                   <span className="badge badge--pending">Not given</span>
                 )}
@@ -488,7 +490,7 @@ export function SampleBody({ sample, data, onChanged }) {
                 <ol className="approval-rounds">
                   {rounds.map((round) => (
                     <li key={round.id}>
-                      <span className={`badge badge--${round.decision}`}>{DECISION_LABEL[round.decision]}</span>
+                      <span className={`badge badge--${round.decision}`}>{decisionLabel(round)}</span>
                       <span className="approval-round-text">
                         {round.remarks && <span className="approval-remarks">{round.remarks}</span>}
                         <span className="hint">
@@ -822,18 +824,18 @@ export function ApprovalDialog({ sample, stage, correct = false, sizeRatios, onC
   const info = APPROVAL_STAGES[stage]
   const latest = sample.approvals[stage]
   const current = correct ? latest : null
-  const [decision, setDecision] = useState(current?.decision ?? null)
+  const [decision, setDecision] = useState(decisionChoice(current))
   const [remarks, setRemarks] = useState(current?.remarks ?? '')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [wishLines, setWishLines] = useState([])
   const offersWishlist = Boolean(sizeRatios) && !correct && stage === 'final' && decision === 'yes'
   const dirty =
-    decision !== (current?.decision ?? null) || remarks !== (current?.remarks ?? '') || wishLines.length > 0
+    decision !== decisionChoice(current) || remarks !== (current?.remarks ?? '') || wishLines.length > 0
 
   const save = async (event) => {
     event.preventDefault()
-    if (!decision) return setError(`Choose ${info.decisions.map((key) => DECISION_LABEL[key]).join(', ').replace(/, ([^,]*)$/, ' or $1')}.`)
+    if (!decision) return setError(`Choose the decision: ${info.decisions.map((key) => DECISION_LABEL[key].replace(', and', ' and')).join(', ').replace(/, ([^,]*)$/, ' or $1')}.`)
     const wishProblem = offersWishlist ? checkWishlistLines(wishLines) : ''
     if (wishProblem) return setError(wishProblem)
     const wishEntries = offersWishlist ? wishlistPayload(wishLines) : []
@@ -850,9 +852,10 @@ export function ApprovalDialog({ sample, stage, correct = false, sizeRatios, onC
         await call('set_sample_approval', {
           p_sample_id: sample.id,
           p_stage: stage,
-          p_decision: decision,
+          p_decision: decision === 'yes_cad' ? 'yes' : decision,
           p_remarks: remarks,
           p_correct: correct,
+          p_send_to_cad: decision === 'yes_cad',
         })
       }
       await onSaved()
@@ -905,7 +908,8 @@ export function ApprovalDialog({ sample, stage, correct = false, sizeRatios, onC
         {!correct && stage === 'initial' && (
           <p className="hint">
             {latest ? `Changes were requested ${sample.approvals.changesRequested} ${sample.approvals.changesRequested === 1 ? 'time' : 'times'} so far. ` : ''}
-            Maybe asks for changes and lets you approve again later. No closes the sample: everything on it stops.
+            Yes, and send to CAD lets the CAD team make the drawing before the final approval. Maybe asks for changes and
+            lets you approve again later. No closes the sample: everything on it stops.
           </p>
         )}
         {!correct && stage === 'final' && (

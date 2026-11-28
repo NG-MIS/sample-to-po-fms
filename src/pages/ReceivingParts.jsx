@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { numberTyped } from '../lib/calc.js'
 import ClickableImage from '../components/ClickableImage.jsx'
 import ImageUpload from '../components/ImageUpload.jsx'
 import Modal, { ConfirmDialog } from '../components/Modal.jsx'
@@ -25,7 +26,7 @@ import {
 } from '../lib/receiving.js'
 import { BUCKET, callSampleAction } from '../lib/sampleData.js'
 
-const numberOnly = (value) => value.replace(/[^\d.]/g, '').replace(/^\./, '0.')
+const numberOnly = numberTyped
 const decimal = (value) => /^\d{1,10}(\.\d{1,2})?$/.test(value.trim())
 
 export function PoStandingBadge({ po, allowance }) {
