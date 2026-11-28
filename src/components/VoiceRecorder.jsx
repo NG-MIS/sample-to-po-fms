@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import { useAuth } from '../lib/auth.jsx'
+import { VOICE_LIMIT_SECONDS } from '../lib/remarks.js'
 
 const TYPES = ['audio/webm', 'audio/mp4', 'audio/ogg']
 
@@ -8,7 +10,10 @@ function clock(seconds) {
 
 // Records a voice note from the microphone. When the person presses Stop,
 // the finished recording is handed back through `onRecorded` as a file.
+// At the limit the recording stops by itself and is kept.
 export default function VoiceRecorder({ onRecorded, disabled = false }) {
+  const { isAdmin } = useAuth()
+  const limit = isAdmin ? null : VOICE_LIMIT_SECONDS
   const [recording, setRecording] = useState(false)
   const [seconds, setSeconds] = useState(0)
   const [error, setError] = useState('')
@@ -31,9 +36,16 @@ export default function VoiceRecorder({ onRecorded, disabled = false }) {
 
   useEffect(() => {
     if (!recording) return undefined
-    const timer = setInterval(() => setSeconds((value) => value + 1), 1000)
+    // Counted from the clock, so a tab left in the background still stops on time.
+    const startedAt = Date.now()
+    const timer = setInterval(() => setSeconds(Math.floor((Date.now() - startedAt) / 1000)), 500)
     return () => clearInterval(timer)
   }, [recording])
+
+  // The limit is reached: stop, keeping what was recorded.
+  useEffect(() => {
+    if (recording && limit !== null && seconds >= limit && recorderRef.current?.state === 'recording') recorderRef.current.stop()
+  }, [recording, seconds, limit])
 
   const start = async () => {
     setError('')
@@ -78,12 +90,20 @@ export default function VoiceRecorder({ onRecorded, disabled = false }) {
           <span className="recorder-live" role="status">
             <span className="recorder-dot" aria-hidden="true" />
             Recording {clock(seconds)}
+            {limit !== null && ` of ${clock(limit)}`}
           </span>
         </>
       ) : (
-        <button type="button" className="btn" disabled={disabled} onClick={start}>
-          Record voice note
-        </button>
+        <>
+          <button type="button" className="btn" disabled={disabled} onClick={start}>
+            Record voice note
+          </button>
+          {limit !== null && (
+            <span className="hint" data-voice-limit>
+              Up to {limit} seconds
+            </span>
+          )}
+        </>
       )}
       {error && <span className="hint error-text">{error}</span>}
     </div>

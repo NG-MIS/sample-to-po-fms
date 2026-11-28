@@ -14,6 +14,7 @@ const MENU = [
     links: [
       { to: '/samples', label: 'Samples' },
       { to: '/process-log', label: 'Process log' },
+      { to: '/process-remarks', label: 'Process remarks' },
       { to: '/wishlist', label: 'Wishlist' },
       { to: '/cad', label: 'CAD drawings' },
       { to: '/materials', label: 'Material lists' },

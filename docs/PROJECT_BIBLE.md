@@ -218,6 +218,27 @@ Approval tab. Closed samples leave the Mark completed, Images and Approval tabs.
 never use is not shown to them. The chosen tab is kept in the page address, so a refresh or a
 shared link opens the same tab. Opening a sample still shows its full picture and history.
 
+### 2.2a Process remarks (built)
+
+Instructions for production on a sample. They are like the normal remarks of a sample (typed
+notes, voice notes and pictures, any number of each) but each remark is **tagged to the
+departments and the processes that must follow it**. A remark needs a sample, at least one
+department or process, and at least one note, voice note or picture.
+
+- **Where.** The Process remarks screen under Sampling lists every remark (SL NO, SAMPLE NO,
+  DESIGN NO, IMAGE, DEPARTMENTS, PROCESSES, REMARK, VOICE, PICTURES, ENTERED BY, TIMESTAMP)
+  with Add, Edit and Delete. A sample also shows its own process remarks in a section of
+  their own, with the same Add, Edit and Delete.
+- **Who.** The people who work on the sample write, change and delete them (its designer, a
+  person with department authority over Sample, authority All). Everyone who can see the
+  sample can read them.
+- Departments and processes come from their masters; only active ones are offered.
+
+**Voice notes are at most 90 seconds**, wherever one is recorded (sample remarks, approval
+remarks, process remarks). The recorder shows "Up to 90 seconds", counts "of 1:30" while
+recording, and at 90 seconds stops by itself and keeps what was recorded. A person with
+authority All has no limit. The limit is kept by the screen, not by the database.
+
 ### 2.3 Wishlist (built)
 
 A sample approved for production (final approval Yes) goes to the wishlist: what it is to be
@@ -614,6 +635,7 @@ revised approval rules by
 | `sample_stage_images` | The 1st sample, 2nd sample and photoshoot image of each sample |
 | `sample_approvals` | Every initial approval round of each sample, and its final approval |
 | `sample_approval_history` | Every approval ever given or changed |
+| `process_remarks`, `process_remark_items` | Process remarks of a sample: the departments and processes each is tagged to, and its typed notes, voice notes and pictures. Written only through `save_process_remark` and `delete_process_remark` |
 
 | `material_lists`, `material_items` | The four material lists of every wishlist item and what is on them, with the Not required mark |
 | `purchase_orders`, `po_lines` | Every PO and its lines; `purchase_settings` holds the PO number series and the fabric tolerance; `colours` is the Colours master |
@@ -677,6 +699,7 @@ Masters link.
 | Product types | List, add, edit and import | Built |
 | Collections | List, add, edit and import | Built |
 | Samples | The All samples tab is a list of collapsible bars: a closed bar shows the picture, sample number and the important details and statuses; clicking it opens the sample right under it. An opened sample has seven collapsible sections (details, stage images, fabrics, accessories, pieces and process log, approval, remarks), all closed at first, each bar showing its summary. Search, sort, filter, group and export work on every detail; Columns chooses what the closed bar shows. New sample form; edit (authority All). The work tabs stay as tables and open a sample in a popup with the same sections | Built |
+| Process remarks | Every process remark of every sample with its departments and processes; add, change and delete; clicking the sample number opens the sample | Built |
 | Process log | Every process entry of every sample, in tabs All, Completed (received back) and Running (still at the vendor); clicking a row opens the sample | Built |
 | Processes | List, add, edit and import | Built |
 | Vendors | List, add, edit and import | Built |
@@ -751,6 +774,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 28 Nov 2026 | **Process remarks**: a new screen under Sampling, and a section inside every sample, for remarks that production must follow. Each is tagged to departments and processes and holds typed notes, voice notes and pictures (see 2.2a). **Voice notes are limited to 90 seconds** everywhere, except for authority All. Added by `supabase/migrations/20261128121605_process_remarks.sql` |
 | 28 Nov 2026 | Lists that are **Not required**. A wishlist item's list shows Not required instead of Pending, and counts as dealt with, when: (secondary fabric) its drawing has no secondary fabric row - worked out on the screen from the drawing its primary fabric list was made from, or else every CAD of its size; (primary accessory) the CAD team marked the sample and size as having no primary accessory, with "Not required" on the empty primary accessory list (`primary_accessory_none`, `set_primary_accessory_not_required`) - this also takes it off Accessory pending; (secondary accessory) the people who look after the sample chose "Not required" on the empty secondary accessory list (`material_lists.not_required_at`, `set_material_list_not_required`). The two marks can be undone, and adding an accessory takes them away. Shown on the Wishlist, Material lists, the CAD and inside each list (migration `lists_not_required`) |
 | 28 Nov 2026 | **By-product consumption** on CAD drawing rows: cloth a garment needs that is not in the drawing (a flower, piping). A row can have several, each as item, metres of cloth, pieces made from it, and pieces on one garment; cloth per garment = metres / pieces made x pieces per garment. Entered under the row on the CAD form ("+ By-product"), shown under the row on the CAD and in All rows. When the row is brought into a fabric material list its total comes along as BY-PRODUCT (MTR / PC), which can be changed there, and is added to the cloth needed before the tolerance: (Msrmnt / pcs in layer + by-product) x wishlist quantity. Kept as `cad_rows.by_products` and `material_items.by_product` (migration `cad_by_product_consumption`) |
 | 28 Nov 2026 | Seven changes. (1) CAD drawings has an **Accessory pending** tab for the CAD team: one row per sample and size with a CAD whose primary accessory list is not added or has details pending, with views All, Not added, Details pending. (2) Number boxes work sums out (1+2, 2*3, (10-4)/8) on leaving the box or Enter; whole-number boxes round; the PO Qty box is left out because + means one qty per colour there (`lib/calc.js`). (3) A primary accessory list can be brought in from another size of the same sample; the size groups are fitted to the new sizes and nothing is doubled. (4) **Send to CAD** is a third step beside the initial and final approval (first built as a choice of the initial approval, changed the same day): a sample that is not final approved yet but needs its drawing is sent to CAD by Management, with a confirmation; it is then ready for CAD (Pending drawing, New CAD, primary accessory list) while the wishlist and design number still wait for the final approval. It needs no approval first, cannot be done on a closed sample, and authority All can take it back until a CAD is made. The button is in the Approvals section of a sample and on each row of the Approval tab of Samples (with a SENT TO CAD column). Kept on the sample as `sent_to_cad_at` / `sent_to_cad_by`, done with `send_sample_to_cad` (migrations `send_to_cad_as_its_own_step`, `send_to_cad_messages`). (5) The secondary accessory material list starts with a tick list from the whole accessories master (or a typed new name), then one table per accessory. (6) Pick-lists are typed into directly: the line to type in lies on the box itself, typing with the cursor on a box starts the search, Enter or Tab takes the first match or adds the new name. This also fixed the cursor not landing in the search line when a list opened. (7) Every column of a CAD drawing row is required (migration `send_to_cad_and_required_cad_columns`) |

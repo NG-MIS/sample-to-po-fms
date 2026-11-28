@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import ClickableImage from '../components/ClickableImage.jsx'
 import DataTable from '../components/DataTable.jsx'
 import Fold from '../components/Fold.jsx'
+import { ProcessRemarkCard, ProcessRemarkDialog } from './ProcessRemarkParts.jsx'
 import ImageEditor from '../components/ImageEditor.jsx'
 import Modal, { ConfirmDialog } from '../components/Modal.jsx'
 import PickList from '../components/PickList.jsx'
@@ -565,6 +566,31 @@ export function SampleBody({ sample, data, onChanged }) {
       <RemarksView bucket={BUCKET} remarks={sample.remarks} people={names.person} />
       </Fold>
 
+      <Fold
+        {...fold('process-remarks')}
+        title="Process remarks"
+        summary={sample.processRemarks.length ? `${sample.processRemarks.length} for production` : 'None'}
+        action={
+          mayWork && (
+            <button type="button" className="btn btn--small btn--primary" onClick={() => setDialog({ type: 'process-remark' })}>
+              Add process remark
+            </button>
+          )
+        }
+      >
+        {sample.processRemarks.length === 0 && <p className="hint">No process remark. These tell production what to follow, by department and process.</p>}
+        {sample.processRemarks.map((remark) => (
+          <ProcessRemarkCard
+            key={remark.id}
+            remark={remark}
+            data={data}
+            canEdit={mayWork}
+            onEdit={(item) => setDialog({ type: 'process-remark', remark: item })}
+            onDelete={(item) => setDialog({ type: 'process-remark-delete', remark: item })}
+          />
+        ))}
+      </Fold>
+
       {dialog?.type === 'send' && (
         <EntryDialog mode="send" sample={sample} data={data} piece={dialog.piece} pieces={openPieces} onClose={() => setDialog(null)} onSaved={saved} />
       )}
@@ -591,6 +617,19 @@ export function SampleBody({ sample, data, onChanged }) {
           cancelLabel="Not yet"
           onCancel={() => setDialog(null)}
           onConfirm={() => runConfirmed('complete_sample_piece', { p_sample_id: sample.id, p_piece: dialog.piece })}
+        />
+      )}
+      {dialog?.type === 'process-remark' && (
+        <ProcessRemarkDialog remark={dialog.remark ?? null} sample={sample} data={data} onClose={() => setDialog(null)} onSaved={saved} />
+      )}
+      {dialog?.type === 'process-remark-delete' && (
+        <ConfirmDialog
+          title={`Delete this process remark of ${sample.sample_no}?`}
+          message="Its notes, voice notes and pictures are removed. This cannot be undone."
+          confirmLabel="Delete"
+          cancelLabel="Cancel"
+          onCancel={() => setDialog(null)}
+          onConfirm={() => runConfirmed('delete_process_remark', { p_id: dialog.remark.id })}
         />
       )}
       {dialog?.type === 'to-cad' && (

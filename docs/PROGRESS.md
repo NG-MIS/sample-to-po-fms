@@ -76,6 +76,7 @@ Next to discuss: the CAD stage (CAD drawing and its approval).
 | 25 Nov 2026 | Design number assignment and the accessory list of a sample (31 database rule checks; 46 new screen checks, 475 pass in total) |
 | 25 Nov 2026 | Wishlist: Sizes and ratios master, entries at final approval or later, Wishlist screen (29 database rule checks; 43 new screen checks, 520 pass in total) |
 | 25 Nov 2026 | CAD drawings (table view, new, copy, assign to wishlist, fabric by sample people) and the primary accessory list with size groups (41 database rule checks; 69 new screen checks, 591 pass in total) |
+| 28 Nov 2026 | Process remarks screen and section (remarks tagged to departments and processes, with text, voice and pictures); voice notes limited to 90 seconds except for authority All (12 database rule checks; 22 new screen checks, 1025 pass in total) |
 | 28 Nov 2026 | Not required for secondary fabric (from the drawing), primary accessory (CAD team) and secondary accessory (in place of a list) (8 database rule checks; 1003 screen checks pass in total) |
 | 28 Nov 2026 | By-product consumption on CAD rows, counted in the cloth of the fabric material list (7 database rule checks; 988 screen checks pass in total) |
 | 28 Nov 2026 | Accessory pending tab, sums in number boxes, bring in accessory list from another size, Yes and send to CAD, secondary accessory tick list, type-in pick-lists, all CAD columns required (10 database rule checks; 980 screen checks pass in total). Send to CAD changed to its own step beside the two approvals |

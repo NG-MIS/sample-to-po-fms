@@ -5,6 +5,7 @@ import { MASTERS } from './lib/masters.js'
 import SignIn, { NoAccess, SetPassword } from './pages/SignIn.jsx'
 import NumberingPage from './pages/NumberingPage.jsx'
 import ProcessLogPage from './pages/ProcessLogPage.jsx'
+import ProcessRemarksPage from './pages/ProcessRemarksPage.jsx'
 import SamplesPage from './pages/SamplesPage.jsx'
 import CadPage from './pages/CadPage.jsx'
 import MaterialsPage from './pages/MaterialsPage.jsx'
@@ -44,6 +45,7 @@ export default function App() {
       <Routes>
         <Route path="/samples" element={<SamplesPage />} />
         <Route path="/process-log" element={<ProcessLogPage />} />
+        <Route path="/process-remarks" element={<ProcessRemarksPage />} />
         <Route path="/wishlist" element={<WishlistPage />} />
         <Route path="/cad" element={<CadPage />} />
         <Route path="/materials" element={<MaterialsPage />} />

@@ -134,6 +134,8 @@ export async function loadSampleData(profile) {
     cadRows,
     primaryLines,
     primaryNone,
+    processRemarks,
+    processRemarkItems,
     materialLists,
     materialItems,
     purchaseOrders,
@@ -182,6 +184,8 @@ export async function loadSampleData(profile) {
     fetchRows('cad_rows', 'position'),
     fetchRows('primary_accessory_lines', 'position'),
     fetchRows('primary_accessory_none', null),
+    fetchRows('process_remarks', 'created_at'),
+    fetchRows('process_remark_items', 'position'),
     fetchRows('material_lists', null),
     fetchRows('material_items', 'position'),
     fetchRows('purchase_orders'),
@@ -230,6 +234,8 @@ export async function loadSampleData(profile) {
   const rowsByCad = groupBy(cadRows, 'cad_id')
   const primaryBySample = groupBy(primaryLines, 'sample_id')
   const noneBySample = groupBy(primaryNone, 'sample_id')
+  const remarkItemsByRemark = groupBy(processRemarkItems, 'remark_id')
+  const processRemarksBySample = groupBy(processRemarks, 'sample_id')
   // Which of its lists a wishlist item does not need, so they show "Not required" and
   // do not wait as pending:
   //   secondary fabric    - its drawing has no secondary fabric row (the drawing its primary
@@ -330,6 +336,12 @@ export async function loadSampleData(profile) {
         })),
       // the lines of its primary accessory lists, for every size (+ ratio)
       primaryLines: primaryBySample.get(sample.id) ?? [],
+      // process remarks: instructions for production, tagged to departments and processes;
+      // each one is made of typed notes, voice notes and pictures
+      processRemarks: (processRemarksBySample.get(sample.id) ?? []).map((remark) => ({
+        ...remark,
+        items: (remarkItemsByRemark.get(remark.id) ?? []).map((item) => ({ ...item, created_at: remark.created_at, created_by: remark.created_by })),
+      })),
       // the sizes (+ ratio) the CAD team marked as needing no primary accessory
       primaryNone: (noneBySample.get(sample.id) ?? []).map((mark) => mark.size_ratio_id),
       entries: entriesBySample.get(sample.id) ?? [],
@@ -355,6 +367,7 @@ export async function loadSampleData(profile) {
     sizeRatios,
     cadParticulars,
     processes,
+    departments,
     vendors,
     people,
     designerIds,
