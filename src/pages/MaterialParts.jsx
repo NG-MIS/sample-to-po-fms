@@ -258,6 +258,22 @@ export function MaterialListDialog({ entry, sample, kind, data, canEdit, isAdmin
         : primaryList
       : []
 
+  // A list the item does not need shows "Not required". Only the secondary accessory
+  // list is marked here by hand; the other two follow the drawing and the CAD team.
+  const skipped = Boolean(entry.notRequired?.[kind]) && lines.length === 0
+  const markListNotRequired = async (notRequired) => {
+    setBusy(true)
+    setError('')
+    try {
+      await callSampleAction('set_material_list_not_required', { p_wishlist_id: entry.id, p_kind: kind, p_not_required: notRequired })
+      await onChanged(notRequired ? `${KIND_LABEL[kind]} list of ${entry.wishlist_no} marked not required.` : `${KIND_LABEL[kind]} list of ${entry.wishlist_no} is needed again.`)
+    } catch (failure) {
+      setError(friendlyError(failure))
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const save = async (confirm) => {
     const problem = fabric
       ? checkFabricItems(lines)
@@ -612,6 +628,30 @@ export function MaterialListDialog({ entry, sample, kind, data, canEdit, isAdmin
           </p>
         )}
 
+        {skipped && (
+          <p className="alert alert--ok" data-list-not-required>
+            {kind === 'secondary_fabric' && 'Not required: the drawing of this item has no secondary fabric. A fabric can still be added by hand if needed.'}
+            {kind === 'primary_accessory' && 'Not required: the CAD team marked this design as having no primary accessory.'}
+            {kind === 'secondary_accessory' && (
+              <>
+                Marked as not required: this item has no secondary accessory.{' '}
+                {canEdit && (
+                  <button type="button" className="link link--strong" disabled={busy} onClick={() => markListNotRequired(false)}>
+                    It needs one after all
+                  </button>
+                )}
+              </>
+            )}
+          </p>
+        )}
+        {kind === 'secondary_accessory' && canEdit && !entry.notRequired?.secondary_accessory && saved.length === 0 && lines.length === 0 && (
+          <div className="primary-add" data-list-skip>
+            <button type="button" className="btn" disabled={busy} onClick={() => markListNotRequired(true)}>
+              Not required
+            </button>
+            <span className="hint">For an item with no secondary accessory, in place of a list.</span>
+          </div>
+        )}
         {kind === 'secondary_accessory' && canEdit && (
           <div className="primary-pick" data-secondary-pick>
             <label className="field-label" htmlFor="secondary-pick">

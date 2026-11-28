@@ -133,6 +133,7 @@ export async function loadSampleData(profile) {
     cads,
     cadRows,
     primaryLines,
+    primaryNone,
     materialLists,
     materialItems,
     purchaseOrders,
@@ -180,6 +181,7 @@ export async function loadSampleData(profile) {
     fetchRows('cads'),
     fetchRows('cad_rows', 'position'),
     fetchRows('primary_accessory_lines', 'position'),
+    fetchRows('primary_accessory_none', null),
     fetchRows('material_lists', null),
     fetchRows('material_items', 'position'),
     fetchRows('purchase_orders'),
@@ -227,6 +229,24 @@ export async function loadSampleData(profile) {
   const cadsBySample = groupBy(cads, 'sample_id')
   const rowsByCad = groupBy(cadRows, 'cad_id')
   const primaryBySample = groupBy(primaryLines, 'sample_id')
+  const noneBySample = groupBy(primaryNone, 'sample_id')
+  // Which of its lists a wishlist item does not need, so they show "Not required" and
+  // do not wait as pending:
+  //   secondary fabric    - its drawing has no secondary fabric row (the drawing its primary
+  //                         fabric list was made from, or else every CAD of its size)
+  //   primary accessory   - the CAD team marked the sample and size as having none
+  //   secondary accessory - the list itself was marked as not required
+  const notRequiredFor = (entry, items, lists) => {
+    const sized = (cadsBySample.get(entry.sample_id) ?? []).filter((cad) => cad.size_ratio_id === entry.size_ratio_id)
+    const usedRows = new Set(items.filter((item) => item.kind === 'primary_fabric' && item.cad_row_id).map((item) => item.cad_row_id))
+    const drawing = sized.find((cad) => (rowsByCad.get(cad.id) ?? []).some((row) => usedRows.has(row.id)))
+    const drawings = drawing ? [drawing] : sized
+    return {
+      secondary_fabric: drawings.length > 0 && drawings.every((cad) => !(rowsByCad.get(cad.id) ?? []).some((row) => row.fabric_type === 'secondary')),
+      primary_accessory: (noneBySample.get(entry.sample_id) ?? []).some((mark) => mark.size_ratio_id === entry.size_ratio_id),
+      secondary_accessory: Boolean(lists.find((list) => list.kind === 'secondary_accessory')?.not_required_at),
+    }
+  }
   const listsByEntry = groupBy(materialLists, 'wishlist_entry_id')
   const itemsByEntry = groupBy(materialItems, 'wishlist_entry_id')
   const linesByPo = groupBy(poLines, 'po_id')
@@ -297,6 +317,7 @@ export async function loadSampleData(profile) {
           ...entry,
           lists: Object.fromEntries((listsByEntry.get(entry.id) ?? []).map((list) => [list.kind, list])),
           materials: (itemsByEntry.get(entry.id) ?? []).map((item) => ({ ...item, orders: ordersByItem.get(item.id) ?? [] })),
+          notRequired: notRequiredFor(entry, itemsByEntry.get(entry.id) ?? [], listsByEntry.get(entry.id) ?? []),
         })),
       // the CADs of the sample, each with its drawing rows and the wishlist items it is for:
       // every wishlist item of the sample with the same size and ratio, with no assigning step
@@ -309,6 +330,8 @@ export async function loadSampleData(profile) {
         })),
       // the lines of its primary accessory lists, for every size (+ ratio)
       primaryLines: primaryBySample.get(sample.id) ?? [],
+      // the sizes (+ ratio) the CAD team marked as needing no primary accessory
+      primaryNone: (noneBySample.get(sample.id) ?? []).map((mark) => mark.size_ratio_id),
       entries: entriesBySample.get(sample.id) ?? [],
       completions: keyed(completionsBySample.get(sample.id), 'piece'),
       stageImages: keyed(imagesBySample.get(sample.id), 'stage'),

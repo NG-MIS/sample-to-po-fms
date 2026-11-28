@@ -16,6 +16,7 @@ import {
   primaryDetailsPending,
   primaryLinesFor,
   primaryListState,
+  primaryNoneFor,
   rowByProduct,
   rowsMissingFabricDetails,
   sizeLabel,
@@ -126,11 +127,11 @@ export default function CadPage() {
               sample,
               sizeRatioId,
               lines,
-              state: primaryListState(lines),
+              state: primaryListState(lines, primaryNoneFor(sample, sizeRatioId)),
               cadNos: sample.cads.filter((cad) => cad.size_ratio_id === sizeRatioId).map((cad) => cad.cad_no),
             }
           })
-          .filter((row) => row.state !== 'added'),
+          .filter((row) => !['added', 'none'].includes(row.state)),
       ),
     [samples],
   )

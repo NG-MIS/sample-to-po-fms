@@ -32,6 +32,7 @@ import {
   newPrimaryLine,
   primaryDetailsPending,
   primaryListState,
+  primaryNoneFor,
   pickValue,
   primaryLinesFor,
   primaryPayload,
@@ -129,7 +130,7 @@ export function CadCard({ cad, sample, data, lookups, canCad, canFabric, onEdit,
                 <td>{cad.rows.length}</td>
                 <td>
                   <button type="button" className="btn btn--small" onClick={() => onPrimary(sample, cad.size_ratio_id)}>
-                    {primary.length ? `View (${primary.length})${primaryListState(primary) === 'details' ? ', details pending' : ''}` : canCad ? 'Assign' : 'Not added yet'}
+                    {primary.length ? `View (${primary.length})${primaryListState(primary) === 'details' ? ', details pending' : ''}` : primaryNoneFor(sample, cad.size_ratio_id) ? 'Not required' : canCad ? 'Assign' : 'Not added yet'}
                   </button>
                 </td>
               </tr>
@@ -557,8 +558,8 @@ export function CadForm({ cad, start, data, onClose, onSaved, onPrimary }) {
                     <p className="hint cad-primary-state">Choose the sample and size first.</p>
                   ) : (
                     <p className="cad-primary-state">
-                      <span className={`badge badge--${primaryListState(primary) === 'added' ? 'completed' : 'pending'}`}>
-                        {primary.length ? `Added (${primary.length})${primaryListState(primary) === 'details' ? ', details pending' : ''}` : 'Not added yet'}
+                      <span className={`badge badge--${['added', 'none'].includes(primaryListState(primary, primaryNoneFor(sample, table.size_ratio_id))) ? 'completed' : 'pending'}`}>
+                        {primary.length ? `Added (${primary.length})${primaryListState(primary) === 'details' ? ', details pending' : ''}` : primaryNoneFor(sample, table.size_ratio_id) ? 'Not required' : 'Not added yet'}
                       </span>{' '}
                       <button type="button" className="btn btn--small" onClick={() => onPrimary(sample, table.size_ratio_id)}>
                         {primary.length ? 'View or change' : 'Add primary accessory now'}
@@ -1015,6 +1016,21 @@ export function PrimaryAccessoryDialog({ sample, sizeRatioId, data, canEdit, onC
     return { accessory_id: known.id, new_accessory: '', qty_type: line.qty_type ?? known.default_qty_type ?? null }
   }
 
+  // The CAD team can say this design has no primary accessory: the list then shows
+  // "Not required" everywhere instead of waiting as pending.
+  const none = primaryNoneFor(sample, sizeRatioId)
+  const markNone = async (notRequired) => {
+    setBusy(true)
+    setError('')
+    try {
+      await callSampleAction('set_primary_accessory_not_required', { p_sample_id: sample.id, p_size_ratio_id: sizeRatioId, p_not_required: notRequired })
+      await onSaved()
+    } catch (failure) {
+      setError(friendlyError(failure))
+      setBusy(false)
+    }
+  }
+
   const save = async (event) => {
     event.preventDefault()
     const problem = checkPrimaryLines(lines, true)
@@ -1058,6 +1074,24 @@ export function PrimaryAccessoryDialog({ sample, sizeRatioId, data, canEdit, onC
           One list for every wishlist item of {sample.sample_no} in {sizeLabel(combination)}. The qty is for one garment
           piece. If it changes with the size, click the last size of the first group; the next group starts after it.
         </p>
+        {none && lines.length === 0 && (
+          <p className="alert alert--ok" data-primary-none>
+            Marked as not required: this design has no primary accessory.{' '}
+            {canEdit && (
+              <button type="button" className="link link--strong" disabled={busy} onClick={() => markNone(false)}>
+                It needs one after all
+              </button>
+            )}
+          </p>
+        )}
+        {canEdit && !none && saved.length === 0 && lines.length === 0 && (
+          <div className="primary-add" data-primary-skip>
+            <button type="button" className="btn" disabled={busy} onClick={() => markNone(true)}>
+              Not required
+            </button>
+            <span className="hint">For a design with no primary accessory. The list then shows "Not required" instead of pending.</span>
+          </div>
+        )}
         {canEdit && (
           <div className="primary-pick" data-primary-pick>
             <label className="field-label" htmlFor="primary-pick">

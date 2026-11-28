@@ -28,8 +28,8 @@ export const NOT_REQUIRED_REASONS = [
 ]
 export const NOT_REQUIRED_LABEL = { in_house: 'Already in-house', not_needed: 'Not required at all' }
 
-export const LIST_STATUS_LABEL = { pending: 'Pending', updated: 'Updated', ordered: 'Ordered', received: 'Received' }
-export const LIST_STATUS_BADGE = { pending: 'pending', updated: 'maybe', ordered: 'ordered', received: 'completed' }
+export const LIST_STATUS_LABEL = { pending: 'Pending', updated: 'Updated', ordered: 'Ordered', received: 'Received', not_required: 'Not required' }
+export const LIST_STATUS_BADGE = { pending: 'pending', updated: 'maybe', ordered: 'ordered', received: 'completed', not_required: 'completed' }
 
 export const UNIT_LABEL = { mtr: 'mtr', pcs: 'pcs', inch: 'inch' }
 
@@ -46,19 +46,23 @@ export const isLocked = (item) => itemState(item) !== 'open'
 // Updated - confirmed, with at least one item still to order.
 // Ordered - confirmed, and every item has a PO or is marked not required.
 // Received - ordered, and everything on a PO has come (or was closed short).
+// Not required - the item does not need this list at all, and nothing is on it.
+export const listNotRequired = (entry, kind) => Boolean(entry.notRequired?.[kind]) && itemsOf(entry, kind).length === 0
 export function listStatus(entry, kind) {
+  if (listNotRequired(entry, kind)) return 'not_required'
   if (!isConfirmed(entry, kind)) return 'pending'
   const items = itemsOf(entry, kind)
   if (!items.every(isLocked)) return 'updated'
   const onOrder = items.filter((item) => itemState(item) === 'ordered')
   return onOrder.length > 0 && onOrder.every((item) => item.orders.every((order) => order.received)) ? 'received' : 'ordered'
 }
-// Ordered or received: nothing on the list still waits for a PO.
-export const listOrdered = (entry, kind) => ['ordered', 'received'].includes(listStatus(entry, kind))
+// Ordered, received or not required: nothing on the list still waits for a PO.
+export const listOrdered = (entry, kind) => ['ordered', 'received', 'not_required'].includes(listStatus(entry, kind))
 
 // "2 of 3 dealt with", for a confirmed list.
 export function listProgress(entry, kind) {
   const items = itemsOf(entry, kind)
+  if (listNotRequired(entry, kind)) return 'Nothing to order'
   if (!isConfirmed(entry, kind)) return items.length ? `${items.length} in draft` : ''
   if (items.length === 0) return 'Nothing to order'
   return `${items.filter(isLocked).length} of ${items.length} dealt with`

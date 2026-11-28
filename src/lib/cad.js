@@ -299,8 +299,12 @@ export const primaryDetailsPending = (line) => line.details_filled === false || 
 
 // Where a saved primary accessory list stands: 'pending' (none), 'details' (some
 // accessory still needs its details) or 'added'.
-export const primaryListState = (lines) => (lines.length === 0 ? 'pending' : lines.some(primaryDetailsPending) ? 'details' : 'added')
-export const PRIMARY_STATE_LABEL = { pending: 'Pending', details: 'Details pending', added: 'Added' }
+// 'none' = the CAD team marked the sample and size as needing no primary accessory.
+export const primaryListState = (lines, none = false) =>
+  lines.length === 0 ? (none ? 'none' : 'pending') : lines.some(primaryDetailsPending) ? 'details' : 'added'
+export const PRIMARY_STATE_LABEL = { pending: 'Pending', details: 'Details pending', added: 'Added', none: 'Not required' }
+// Whether a sample has no primary accessory for a size (+ ratio).
+export const primaryNoneFor = (sample, sizeRatioId) => (sample.primaryNone ?? []).includes(sizeRatioId)
 
 // The single sizes each group of a line covers: [['22','24'], ['26','28','30'], ...].
 export function groupSizes(groups, sizes) {
