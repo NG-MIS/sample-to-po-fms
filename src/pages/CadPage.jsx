@@ -8,12 +8,15 @@ import { PageHead } from '../components/Layout.jsx'
 import { useAuth } from '../lib/auth.jsx'
 import {
   FABRIC_TYPE_LABEL,
+  byProductText,
+  formatByProduct,
   cadsOfEntry,
   hasFabricDetails,
   missingFabricDetails,
   primaryDetailsPending,
   primaryLinesFor,
   primaryListState,
+  rowByProduct,
   rowsMissingFabricDetails,
   sizeLabel,
 } from '../lib/cad.js'
@@ -258,6 +261,8 @@ export default function CadPage() {
         header: 'WISHLIST',
         value: (row) => row.sample.wishlist.filter((entry) => row.cad.wishlist_ids.includes(entry.id)).map((entry) => entry.wishlist_no),
       },
+      { key: 'by_products', header: 'BY-PRODUCTS', value: (row) => (row.by_products ?? []).map(byProductText) },
+      { key: 'by_product_mtr', header: 'BY-PRODUCT (MTR / PC)', align: 'right', value: (row) => (rowByProduct(row) > 0 ? formatByProduct(rowByProduct(row)) : '') },
     ],
     [lookups, openSample],
   )

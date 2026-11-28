@@ -5,6 +5,7 @@ Newest first. A changed decision is not deleted: a new entry is added that repla
 
 | Date | Decision | Reason |
 |---|---|---|
+| 28 Nov 2026 | A by-product is entered as item, metres of cloth, pieces made from it and pieces per garment; its cloth is added to the row's fabric before the tolerance | Nihal: "abc item in x mtr there are y pcs made", and "include how many pcs too per garment" |
 | 28 Nov 2026 | Send to CAD is its own simple step beside initial and final approval, not a choice inside the initial approval (replaces the first version built the same day). It lets CAD make the drawing and primary accessory list before final approval; wishlist and design number still wait | Nihal: "with initial approve and final approve... i want a third, make it simple send to cad, for what is not final approved but needs cad drawing" |
 | 28 Nov 2026 | The secondary accessory tick list offers the whole accessories master | Nihal: "whole" |
 | 28 Nov 2026 | Sums are worked out when the box is left or Enter is pressed, not on every key | A half-typed sum (5+) must not turn into a number while it is being typed |

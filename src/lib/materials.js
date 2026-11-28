@@ -2,7 +2,7 @@
 // A wishlist item has four lists: primary fabric, secondary fabric,
 // primary accessory and secondary accessory.
 
-import { COLOUR_FOLLOWS_LABEL, colourFields, colourPayload, groupSizes, hasSamePcs, newPrimaryGroup, sizeSpan } from './cad.js'
+import { COLOUR_FOLLOWS_LABEL, colourFields, colourPayload, formatByProduct, groupSizes, hasSamePcs, newPrimaryGroup, rowByProduct, sizeSpan } from './cad.js'
 
 let counter = 0
 const key = (prefix) => `${prefix}-${++counter}`
@@ -77,13 +77,16 @@ export function piecesBySize(combination, qty) {
 // Fabric to order for a wishlist quantity, in metres:
 //   Msrmnt ÷ No. of pcs in layer × quantity, plus the tolerance, rounded up to the next 10.
 // Gives null when the measurement or the pieces are missing.
+// by_product is the cloth one garment needs besides the drawing (a flower, piping),
+// in metres: it is added before the tolerance.
 export function fabricRequired(item, qty, tolerance) {
   const msrmnt = Number(item.msrmnt)
   const pieces = Number(item.pcs_in_layer)
   if (!msrmnt || !pieces) return null
-  const base = (msrmnt / pieces) * Number(qty)
+  const byProduct = Number(item.by_product || 0) * Number(qty)
+  const base = (msrmnt / pieces) * Number(qty) + byProduct
   const withTolerance = base * (1 + Number(tolerance || 0) / 100)
-  return { base, withTolerance, order: Math.ceil(withTolerance / 10 - 1e-9) * 10 }
+  return { base, byProduct, withTolerance, order: Math.ceil(withTolerance / 10 - 1e-9) * 10 }
 }
 
 const round2 = (value) => Math.round(value * 100) / 100
@@ -177,6 +180,7 @@ export const newFabricItem = (changes = {}) => ({
   msrmnt: '',
   pcs_in_layer: '',
   paina: '',
+  by_product: '',
   vendor_id: null,
   rate: '',
   ...changes,
@@ -191,6 +195,7 @@ export const toFabricItems = (items) =>
     msrmnt: text(item.msrmnt),
     pcs_in_layer: text(item.pcs_in_layer),
     paina: text(item.paina),
+    by_product: item.by_product ? text(Number(item.by_product)) : '',
     vendor_id: item.fabric_vendor_id,
     rate: text(item.rate),
   }))
@@ -205,6 +210,7 @@ export function checkFabricItems(lines) {
       return 'No. of pcs in layer must be a whole number, 1 or more.'
     }
     if (line.paina.trim() !== '' && !decimal(line.paina)) return 'Paina must be a number with at most 2 decimals.'
+    if (line.by_product.trim() !== '' && !/^\d{1,6}(\.\d{1,4})?$/.test(line.by_product.trim())) return 'By-product cloth per garment must be a number with at most 4 decimals.'
     if (line.rate.trim() !== '' && !decimal(line.rate)) return 'Rate must be a number with at most 2 decimals.'
   }
   return ''
@@ -218,6 +224,7 @@ export const fabricItemsPayload = (lines) =>
     msrmnt: orNull(line.msrmnt),
     pcs_in_layer: orNull(line.pcs_in_layer),
     paina: orNull(line.paina),
+    by_product: orNull(line.by_product),
     vendor_id: line.vendor_id,
     rate: orNull(line.rate),
   }))
@@ -248,6 +255,7 @@ export const fabricItemFromCadRow = (row) =>
     msrmnt: text(row.msrmnt),
     pcs_in_layer: text(row.pcs_in_layer),
     paina: text(row.paina),
+    by_product: rowByProduct(row) > 0 ? formatByProduct(rowByProduct(row)) : '',
     vendor_id: row.vendor_id,
     rate: text(row.rate),
   })
@@ -383,7 +391,7 @@ export function poLinesForFabricItem(item, entry, tolerance) {
       rate: text(item.rate),
       paina: text(item.paina),
       required: needed
-        ? `${formatQty(needed.base)} mtr for ${entry.qty} pcs${Number(tolerance) ? `, ${formatQty(needed.withTolerance)} with ${text(tolerance)}% more` : ''}, rounded up to ${needed.order}`
+        ? `${formatQty(needed.base)} mtr for ${entry.qty} pcs${needed.byProduct ? ` (${formatQty(needed.byProduct)} mtr of it for by-products)` : ''}${Number(tolerance) ? `, ${formatQty(needed.withTolerance)} with ${text(tolerance)}% more` : ''}, rounded up to ${needed.order}`
         : 'Msrmnt or No. of pcs in layer is missing, so enter the qty',
     }),
   ]

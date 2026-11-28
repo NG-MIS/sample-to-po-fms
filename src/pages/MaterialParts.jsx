@@ -511,6 +511,7 @@ export function MaterialListDialog({ entry, sample, kind, data, canEdit, isAdmin
                 <th>MSRMNT</th>
                 <th>PCS IN LAYER</th>
                 <th>PAINA</th>
+                <th title="Cloth one garment needs besides the drawing, such as a flower or piping. It comes from the by-products of the CAD row.">BY-PRODUCT (MTR / PC)</th>
                 <th>VENDOR CODE</th>
                 <th>RATE</th>
                 <th>TO ORDER (MTR)</th>
@@ -544,6 +545,7 @@ export function MaterialListDialog({ entry, sample, kind, data, canEdit, isAdmin
                       ['msrmnt', 'Msrmnt', numberOnly],
                       ['pcs_in_layer', 'Pcs in layer', digitsOnly],
                       ['paina', 'Paina', numberOnly],
+                      ['by_product', 'By-product', numberOnly],
                     ].map(([field, label, clean]) => (
                       <td key={field} data-label={label}>
                         {fixed ? (
@@ -585,7 +587,7 @@ export function MaterialListDialog({ entry, sample, kind, data, canEdit, isAdmin
                         />
                       )}
                     </td>
-                    <td data-label="To order (mtr)" data-to-order title={needed ? `${formatQty(needed.base)} mtr before the extra` : ''}>
+                    <td data-label="To order (mtr)" data-to-order title={needed ? `${formatQty(needed.base)} mtr before the extra${needed.byProduct ? `, of which ${formatQty(needed.byProduct)} mtr for by-products` : ''}` : ''}>
                       {needed ? needed.order : <span className="hint">—</span>}
                     </td>
                     <td data-label="Status">{item ? <ItemStanding item={item} /> : <span className="hint">Not saved</span>}</td>

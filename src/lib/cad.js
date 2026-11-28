@@ -59,7 +59,27 @@ export const newCadRow = () => ({
   panels: '',
   component_ids: [],
   efficiency: '',
+  by_products: [],
 })
+
+// ---------- By-product consumption ----------
+// Cloth a garment needs that is not in the drawing, such as a flower or piping. Each
+// one is: the item, the metres of cloth, the pieces made from that cloth, and the
+// pieces on one garment.
+export const newByProduct = () => ({ key: key('by'), name: '', mtr: '', pcs: '', per_garment: '1' })
+
+// Metres of cloth one garment needs for one by-product, or 0 while it is not complete.
+export const byProductPerGarment = (item) => {
+  const mtr = Number(item.mtr)
+  const pcs = Number(item.pcs)
+  const per = Number(item.per_garment || 1)
+  return mtr > 0 && pcs > 0 && per > 0 ? (mtr / pcs) * per : 0
+}
+// The by-product cloth one garment needs for a whole drawing row, in metres.
+export const rowByProduct = (row) => (row.by_products ?? []).reduce((sum, item) => sum + byProductPerGarment(item), 0)
+export const formatByProduct = (value) => String(Math.round(Number(value) * 10000) / 10000)
+// "Flower: 1 mtr makes 20 pcs, 2 per garment"
+export const byProductText = (item) => `${item.name}: ${item.mtr} mtr makes ${item.pcs} pcs, ${item.per_garment} per garment`
 
 // Fills No. of pcs in layer from the Sizes and ratios master (pcs in a set of the chosen
 // size and ratio) on every row where it was not typed by hand.
@@ -80,6 +100,7 @@ export const toCadRows = (cad, keepIds = true) =>
     panels: text(row.panels),
     component_ids: row.component_ids ?? [],
     efficiency: text(row.efficiency),
+    by_products: (row.by_products ?? []).map((item) => ({ key: key('by'), name: item.name, mtr: text(item.mtr), pcs: text(item.pcs), per_garment: text(item.per_garment) })),
   }))
 
 export const isBlankCadRow = (row) =>
@@ -87,6 +108,7 @@ export const isBlankCadRow = (row) =>
   !row.new_particular &&
   !row.fabric_type &&
   row.component_ids.length === 0 &&
+  row.by_products.length === 0 &&
   [row.msrmnt, row.paina, row.pcsAuto ? '' : row.pcs_in_layer, row.panels, row.efficiency].every((value) => value.trim() === '')
 
 const decimal = (value) => /^\d{1,7}(\.\d{1,2})?$/.test(value.trim())
@@ -115,6 +137,12 @@ export function checkCadRows(rows, sampleComponentIds = []) {
     if (!decimal(row.paina)) return 'Paina must be a number with at most 2 decimals.'
     if (!whole(row.pcs_in_layer)) return 'No. of pcs in layer must be a whole number.'
     if (!whole(row.panels)) return 'No. of panels must be a whole number.'
+    for (const item of row.by_products) {
+      if (!item.name.trim()) return 'Every by-product needs its item name.'
+      if (!decimal(item.mtr) || Number(item.mtr) <= 0) return 'Enter the metres of cloth, more than zero, for every by-product.'
+      if (!whole(item.pcs) || Number(item.pcs) < 1) return 'Pieces made from the cloth must be a whole number, 1 or more, for every by-product.'
+      if (!whole(item.per_garment) || Number(item.per_garment) < 1) return 'Pieces per garment must be a whole number, 1 or more, for every by-product.'
+    }
   }
   return ''
 }
@@ -135,6 +163,7 @@ export const cadRowPayload = (rows, sampleComponentIds = []) =>
       panels: orNull(row.panels),
       component_ids: rowComponents(row, sampleComponentIds),
       efficiency: orNull(row.efficiency),
+      by_products: row.by_products.map((item) => ({ name: item.name.trim().replace(/\s+/g, ' '), mtr: item.mtr.trim(), pcs: item.pcs.trim(), per_garment: item.per_garment.trim() })),
     }))
 
 // ---------- Fabric of the CAD rows (filled by the people who look after the sample) ----------

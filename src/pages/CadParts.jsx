@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { digitsTyped, numberTyped } from '../lib/calc.js'
 import ClickableImage from '../components/ClickableImage.jsx'
 import Modal from '../components/Modal.jsx'
@@ -10,6 +10,11 @@ import {
   FABRIC_TYPE_LABEL,
   colourText,
   addLabelFor,
+  byProductPerGarment,
+  byProductText,
+  formatByProduct,
+  newByProduct,
+  rowByProduct,
   cadFabricPayload,
   cadRowPayload,
   cadUsedIn,
@@ -148,7 +153,8 @@ export function CadCard({ cad, sample, data, lookups, canCad, canFabric, onEdit,
             </thead>
             <tbody>
               {cad.rows.map((row) => (
-                <tr key={row.id}>
+                <Fragment key={row.id}>
+                <tr>
                   <td>{lookups.particular.get(row.particular_id)}</td>
                   <td>{FABRIC_TYPE_LABEL[row.fabric_type]}</td>
                   <td>{formatNumber(row.msrmnt)}</td>
@@ -161,6 +167,16 @@ export function CadCard({ cad, sample, data, lookups, canCad, canFabric, onEdit,
                   <td>{data.fabricVendors.find((vendor) => vendor.id === row.vendor_id)?.code}</td>
                   <td>{formatRate(row.rate)}</td>
                 </tr>
+                {(row.by_products ?? []).length > 0 && (
+                  <tr className="cad-by-row" data-cad-by>
+                    <td colSpan={11}>
+                      <span className="cad-by-text">
+                        <strong>By-product:</strong> {row.by_products.map(byProductText).join('; ')}. Extra cloth: {formatByProduct(rowByProduct(row))} mtr per garment.
+                      </span>
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
               ))}
             </tbody>
           </table>
@@ -197,7 +213,8 @@ function CadRowsEditor({ rows, onChange, particulars, typedNames, idPrefix, comp
         </thead>
         <tbody>
           {rows.map((row, index) => (
-            <tr key={row.key} data-cad-row={index + 1}>
+            <Fragment key={row.key}>
+            <tr data-cad-row={index + 1}>
               <td data-label="Particulars">
                 <PickList
                   id={`${idPrefix}-${row.key}-particular`}
@@ -251,16 +268,65 @@ function CadRowsEditor({ rows, onChange, particulars, typedNames, idPrefix, comp
                 <input className="input" inputMode="decimal" aria-label={`Efficiency, row ${index + 1}`} value={row.efficiency} onChange={(event) => setRow(row.key, { efficiency: numberOnly(event.target.value) })} />
               </td>
               <td>
-                <button
-                  type="button"
-                  className="btn btn--small"
-                  aria-label={`Remove drawing row ${index + 1}`}
-                  onClick={() => onChange(rows.filter((item) => item.key !== row.key))}
-                >
-                  Remove
-                </button>
+                <span className="row-actions">
+                  <button
+                    type="button"
+                    className="btn btn--small"
+                    aria-label={`Add a by-product to row ${index + 1}`}
+                    title="Cloth this row needs that is not in the drawing, such as a flower or piping"
+                    onClick={() => setRow(row.key, { by_products: [...row.by_products, newByProduct()] })}
+                  >
+                    + By-product
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn--small"
+                    aria-label={`Remove drawing row ${index + 1}`}
+                    onClick={() => onChange(rows.filter((item) => item.key !== row.key))}
+                  >
+                    Remove
+                  </button>
+                </span>
               </td>
             </tr>
+            {row.by_products.length > 0 && (
+              <tr className="cad-by-row" data-cad-by={index + 1}>
+                <td colSpan={9}>
+                  <div className="cad-by">
+                    <strong>By-product consumption</strong>
+                    {row.by_products.map((item, at) => {
+                      const setItem = (changes) =>
+                        setRow(row.key, { by_products: row.by_products.map((other) => (other.key === item.key ? { ...other, ...changes } : other)) })
+                      const label = (what) => `${what}, by-product ${at + 1} of row ${index + 1}`
+                      return (
+                        <div key={item.key} className="cad-by-line" data-by-line={at + 1}>
+                          <input className="input cad-by-name" aria-label={label('Item')} placeholder="Item, e.g. flower" value={item.name} onChange={(event) => setItem({ name: event.target.value })} />
+                          <span>in</span>
+                          <input className="input cad-by-num" inputMode="decimal" aria-label={label('Metres of cloth')} placeholder="mtr" value={item.mtr} onChange={(event) => setItem({ mtr: numberOnly(event.target.value) })} />
+                          <span>mtr there are</span>
+                          <input className="input cad-by-num" inputMode="numeric" aria-label={label('Pieces made')} placeholder="pcs" value={item.pcs} onChange={(event) => setItem({ pcs: digitsOnly(event.target.value) })} />
+                          <span>pcs made, and</span>
+                          <input className="input cad-by-num" inputMode="numeric" aria-label={label('Pieces per garment')} value={item.per_garment} onChange={(event) => setItem({ per_garment: digitsOnly(event.target.value) })} />
+                          <span>pcs go on one garment</span>
+                          <span className="hint" data-by-result>
+                            {byProductPerGarment(item) > 0 ? `= ${formatByProduct(byProductPerGarment(item))} mtr per garment` : ''}
+                          </span>
+                          <button
+                            type="button"
+                            className="btn btn--small"
+                            aria-label={`Remove by-product ${at + 1} of row ${index + 1}`}
+                            onClick={() => setRow(row.key, { by_products: row.by_products.filter((other) => other.key !== item.key) })}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </td>
+              </tr>
+            )}
+            </Fragment>
           ))}
         </tbody>
       </table>

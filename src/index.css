@@ -2746,6 +2746,34 @@ td.material-actions .btn + .btn {
 .material-drawing .field-label {
   margin: 0;
 }
+.cad-by-row > td {
+  padding-top: 0;
+  background: var(--surface-soft, rgba(16, 122, 87, 0.04));
+}
+.cad-by {
+  display: grid;
+  gap: 6px;
+  padding: 6px 4px 8px;
+  text-align: left;
+}
+.cad-by-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+.cad-by-name {
+  flex: 0 1 200px;
+}
+.cad-by-num {
+  flex: 0 0 76px;
+  width: 76px;
+}
+.cad-by-text {
+  display: block;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
 .cad-used {
   font-size: 12.5px;
   color: var(--text-muted);
