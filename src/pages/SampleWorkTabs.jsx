@@ -476,7 +476,7 @@ export function DesignTab({ rows, lookups, loading, nextNumber, onOpen, onAssign
   )
 }
 
-export function ApprovalTab({ rows, lookups, loading, onOpen, onApprove }) {
+export function ApprovalTab({ rows, lookups, loading, onOpen, onApprove, onSendToCad }) {
   const columns = useMemo(
     () => [
       ...sampleColumns(lookups, onOpen, (row) => row),
@@ -503,6 +503,12 @@ export function ApprovalTab({ rows, lookups, loading, onOpen, onApprove }) {
             <span className="badge badge--pending">Not given</span>
           ),
       },
+      {
+        key: 'sent_to_cad',
+        header: 'SENT TO CAD',
+        value: (row) => (row.sent_to_cad_at ? 'Sent' : 'Not sent'),
+        render: (row) => <span className={`badge badge--${row.sent_to_cad_at ? 'completed' : 'pending'}`}>{row.sent_to_cad_at ? 'Sent' : 'Not sent'}</span>,
+      },
       { key: 'changes_requested', header: 'CHANGES REQUESTED', value: (row) => row.approvals.changesRequested },
       { key: 'first_remarks', header: 'LATEST REMARKS', value: (row) => row.approvals.initial?.remarks ?? '' },
       {
@@ -519,18 +525,24 @@ export function ApprovalTab({ rows, lookups, loading, onOpen, onApprove }) {
             <button type="button" className="btn btn--small btn--primary" onClick={() => onApprove(row, 'final')}>
               Final approval
             </button>
+            {!row.sent_to_cad_at && (
+              <button type="button" className="btn btn--small" onClick={() => onSendToCad(row)}>
+                Send to CAD
+              </button>
+            )}
           </span>
         ),
       },
     ],
-    [lookups, onOpen, onApprove],
+    [lookups, onOpen, onApprove, onSendToCad],
   )
 
   return (
     <>
       <p className="tab-note">
         Samples with no final approval yet. Give the initial approval (again, if changes were requested), or go
-        straight to the final approval. A sample whose initial approval is No is closed and leaves this list.
+        straight to the final approval. Send to CAD is for a sample that needs its CAD drawing before the final
+        approval. A sample whose initial approval is No is closed and leaves this list.
       </p>
       <DataTable
         tableId="samples-approval"

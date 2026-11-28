@@ -199,6 +199,7 @@ export default function SamplesPage() {
   const accessoriesFrom = useCallback((sample) => setWork({ type: 'accessories', sample }), [])
   const designFrom = useCallback((sample) => setWork({ type: 'design', sample }), [])
   const approveFrom = useCallback((sample, stage) => setWork({ type: 'approval', sample, stage }), [])
+  const sendToCadFrom = useCallback((sample) => setWork({ type: 'to-cad', sample }), [])
 
   const workSaved = useCallback(async () => {
     setWork(null)
@@ -212,6 +213,19 @@ export default function SamplesPage() {
     try {
       await callSampleAction('complete_sample_piece', { p_sample_id: sample.id, p_piece: piece })
       setWorkError('')
+      await reload()
+    } catch (failure) {
+      setWorkError(friendlyError(failure))
+    }
+  }
+
+  const confirmSendToCad = async () => {
+    const { sample } = work
+    setWork(null)
+    try {
+      await callSampleAction('send_sample_to_cad', { p_sample_id: sample.id, p_undo: false })
+      setWorkError('')
+      setNotice(`${sample.sample_no} sent to CAD.`)
       await reload()
     } catch (failure) {
       setWorkError(friendlyError(failure))
@@ -444,7 +458,7 @@ export default function SamplesPage() {
         />
       )}
       {tab === 'approval' && (
-        <ApprovalTab rows={waiting.approval} lookups={lookups} loading={loading} onOpen={openSample} onApprove={approveFrom} />
+        <ApprovalTab rows={waiting.approval} lookups={lookups} loading={loading} onOpen={openSample} onApprove={approveFrom} onSendToCad={sendToCadFrom} />
       )}
       {byPieces[tab] && (
       <DataTable
@@ -494,6 +508,16 @@ export default function SamplesPage() {
       )}
       {work?.type === 'accessories' && (
         <AccessoryDialog sample={work.sample} data={data} onClose={() => setWork(null)} onSaved={workSaved} />
+      )}
+      {work?.type === 'to-cad' && (
+        <ConfirmDialog
+          title={`Send ${work.sample.sample_no} to CAD?`}
+          message="The CAD team can then make its drawing and primary accessory list, before the final approval."
+          confirmLabel="Send to CAD"
+          cancelLabel="Cancel"
+          onCancel={() => setWork(null)}
+          onConfirm={confirmSendToCad}
+        />
       )}
       {work?.type === 'design' && (
         <ConfirmDialog
