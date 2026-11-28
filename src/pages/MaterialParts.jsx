@@ -202,14 +202,25 @@ export function MaterialListDialog({ entry, sample, kind, data, canEdit, isAdmin
   const cadRowById = new Map(assignedCads.flatMap((cad) => cad.rows.map((row) => [row.id, { ...row, cad_no: cad.cad_no }])))
   const particular = (id) => data.cadParticulars.find((row) => row.id === id)?.name ?? ''
   const primaryList = primaryLinesFor(sample, entry.size_ratio_id)
+  // An accessory can be on the CAD list more than once: of each accessory, as many
+  // lines are left to bring in as are not here yet.
+  const leftToBring = (list) => {
+    const here = new Map()
+    lines.forEach((item) => item.accessory_id && here.set(item.accessory_id, (here.get(item.accessory_id) ?? 0) + 1))
+    return list.filter((line) => {
+      const have = here.get(line.accessory_id) ?? 0
+      if (have > 0) here.set(line.accessory_id, have - 1)
+      return have === 0
+    })
+  }
   const primaryToBring =
     kind === 'primary_accessory'
-      ? primaryList.filter((line) => !primaryDetailsPending(line) && !lines.some((item) => item.accessory_id === line.accessory_id))
+      ? leftToBring(primaryList.filter((line) => !primaryDetailsPending(line)))
       : []
   // accessories on the CAD list whose details are still to be filled there: they cannot be brought in yet
   const primaryWaiting =
     kind === 'primary_accessory'
-      ? primaryList.filter((line) => primaryDetailsPending(line) && !lines.some((item) => item.accessory_id === line.accessory_id))
+      ? primaryList.filter(primaryDetailsPending)
       : []
   // Shown on top of the secondary accessory list, to look at only.
   const primaryShown =

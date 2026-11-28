@@ -705,6 +705,11 @@ export function AccessoryLineEditor({ line, index, sizes, canEdit, accessoryOpti
                 <div className="fabric-cell">
                   <label className="field-label" htmlFor={`primary-${line.key}-name`}>
                     Accessory name{fixedName === null && <span className="field-required"> *</span>}
+                    {fixedName === null && marker && (
+                      <span className={`badge badge--${marker === 'filled' ? 'completed' : 'pending'}`} data-primary-marker>
+                        {marker === 'filled' ? 'Details filled' : 'Details pending'}
+                      </span>
+                    )}
                   </label>
                   {fixedName !== null ? (
                     <strong className="primary-line-name" data-primary-name>
@@ -890,12 +895,14 @@ export function PrimaryAccessoryDialog({ sample, sizeRatioId, data, canEdit, onC
   const accessoryOptions = namedOptions(masterList, lines.map((line) => line.accessory_id).filter(Boolean), typedNames)
   const addLabel = addLabelFor(masterList, typedNames)
   const nameOf = (line) => (line.accessory_id ? (data.accessories.find((item) => item.id === line.accessory_id)?.name ?? '') : line.new_accessory)
-  const pickedValues = lines.map((line) => pickValue(line.accessory_id, line.new_accessory))
-  // Ticking adds the table of an accessory, with the unit from the master; unticking takes it away.
+  const valueOf = (line) => pickValue(line.accessory_id, line.new_accessory)
+  const pickedValues = [...new Set(lines.map(valueOf).filter((value) => value !== null))]
+  // Ticking adds the table of an accessory, with the unit from the master; unticking takes
+  // away every table of that accessory. A table added by hand with no name yet stays.
   const setPicked = (values) =>
     setLines((previous) => {
-      const kept = previous.filter((line) => values.includes(pickValue(line.accessory_id, line.new_accessory)))
-      const have = kept.map((line) => pickValue(line.accessory_id, line.new_accessory))
+      const kept = previous.filter((line) => valueOf(line) === null || values.includes(valueOf(line)))
+      const have = kept.map(valueOf)
       const added = values
         .filter((value) => !have.includes(value))
         .map((value) => newPrimaryLine(sizes, isTypedValue(value) ? { name: typedName(value) } : data.accessories.find((item) => item.id === value)))
@@ -908,6 +915,15 @@ export function PrimaryAccessoryDialog({ sample, sizeRatioId, data, canEdit, onC
     setPicked([...pickedValues, known ? known.id : typedValue(name)])
   }
   const pendingCount = lines.filter(isPrimaryPending).length
+  // A table added by hand: when its accessory is picked, the unit comes from the master
+  // unless one was already chosen. A typed name that is already an accessory is taken from the list.
+  const withMasterUnit = (line, changes) => {
+    const known = changes.accessory_id
+      ? data.accessories.find((item) => item.id === changes.accessory_id)
+      : data.accessories.find((item) => item.name.toLowerCase() === (changes.new_accessory ?? '').toLowerCase())
+    if (!known) return changes
+    return { accessory_id: known.id, new_accessory: '', qty_type: line.qty_type ?? known.default_qty_type ?? null }
+  }
 
   const save = async (event) => {
     event.preventDefault()
@@ -987,13 +1003,23 @@ export function PrimaryAccessoryDialog({ sample, sizeRatioId, data, canEdit, onC
             index={index}
             sizes={sizes}
             canEdit={canEdit}
-            fixedName={nameOf(line)}
+            fixedName={line.byHand ? null : nameOf(line)}
             marker={isPrimaryPending(line) ? 'pending' : 'filled'}
+            accessoryOptions={accessoryOptions}
+            addLabel={addLabel}
             colours={data.colours}
-            onChange={(changes) => setLine(line.key, changes)}
+            onChange={(changes) => setLine(line.key, 'accessory_id' in changes ? withMasterUnit(line, changes) : changes)}
             onRemove={() => setLines((previous) => previous.filter((item) => item.key !== line.key))}
           />
         ))}
+        {canEdit && (
+          <div className="primary-add">
+            <button type="button" className="btn" onClick={() => setLines((previous) => [...previous, { ...newPrimaryLine(sizes), byHand: true }])}>
+              Add accessory
+            </button>
+            <span className="hint">For one more table: the same accessory again, or one that is not ticked above.</span>
+          </div>
+        )}
         {error && (
           <p className="alert alert--error" role="alert">
             {error}

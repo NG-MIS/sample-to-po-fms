@@ -76,7 +76,7 @@ Next to discuss: the CAD stage (CAD drawing and its approval).
 | 25 Nov 2026 | Design number assignment and the accessory list of a sample (31 database rule checks; 46 new screen checks, 475 pass in total) |
 | 25 Nov 2026 | Wishlist: Sizes and ratios master, entries at final approval or later, Wishlist screen (29 database rule checks; 43 new screen checks, 520 pass in total) |
 | 25 Nov 2026 | CAD drawings (table view, new, copy, assign to wishlist, fabric by sample people) and the primary accessory list with size groups (41 database rule checks; 69 new screen checks, 591 pass in total) |
-| 28 Nov 2026 | Primary accessories master; primary accessory list by ticking from the master, all tables at once, details now or later with a marker (7 database rule checks; 23 new screen checks, 925 pass in total) |
+| 28 Nov 2026 | Primary accessories master; primary accessory list by ticking from the master, all tables at once, details now or later with a marker (8 database rule checks; 29 new screen checks, 931 pass in total) |
 | 28 Nov 2026 | Pieces completed in order, Neutral colour, .87 in number boxes, No. of pcs in layer from the master (9 database rule checks; 9 new screen checks, 902 pass in total) |
 | 27 Nov 2026 | PO Qty box divides itself as colours are picked, until a qty is typed (893 screen checks pass in total) |
 | 27 Nov 2026 | PO qty divided between colours, not multiplied (3 new screen checks, 892 pass in total) |
