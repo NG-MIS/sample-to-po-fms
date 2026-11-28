@@ -8,7 +8,7 @@ import { useAuth } from '../lib/auth.jsx'
 import { nameMap, useLoad } from '../lib/data.js'
 import { formatDate, formatDateTime, friendlyError } from '../lib/format.js'
 import { BUCKET, isApproved, latestImage, loadSampleData } from '../lib/sampleData.js'
-import { cadsOfEntry, primaryLinesFor } from '../lib/cad.js'
+import { PRIMARY_STATE_LABEL, cadsOfEntry, primaryLinesFor, primaryListState } from '../lib/cad.js'
 import { KINDS, LIST_STATUS_BADGE, LIST_STATUS_LABEL, listStatus } from '../lib/materials.js'
 import { setsText, wishlistKind } from '../lib/wishlist.js'
 import SampleDetail from './SampleDetail.jsx'
@@ -135,10 +135,10 @@ export default function WishlistPage() {
       {
         key: 'primary_accessory',
         header: 'CAD ACCESSORY LIST',
-        value: (row) => (primaryLinesFor(row.sample, row.size_ratio_id).length ? 'Added' : 'Pending'),
+        value: (row) => PRIMARY_STATE_LABEL[primaryListState(primaryLinesFor(row.sample, row.size_ratio_id))],
         render: (row) => {
-          const added = primaryLinesFor(row.sample, row.size_ratio_id).length > 0
-          return <span className={`badge badge--${added ? 'completed' : 'pending'}`}>{added ? 'Added' : 'Pending'}</span>
+          const state = primaryListState(primaryLinesFor(row.sample, row.size_ratio_id))
+          return <span className={`badge badge--${state === 'added' ? 'completed' : 'pending'}`}>{PRIMARY_STATE_LABEL[state]}</span>
         },
       },
       // where each of its four material lists stands: Pending, Updated or Ordered

@@ -13,6 +13,7 @@ import ReceivingPage from './pages/ReceivingPage.jsx'
 import MastersPage from './pages/MastersPage.jsx'
 import SizeRatiosPage from './pages/SizeRatiosPage.jsx'
 import WishlistPage from './pages/WishlistPage.jsx'
+import PrimaryAccessoriesPage from './pages/PrimaryAccessoriesPage.jsx'
 import SimpleListPage from './pages/SimpleListPage.jsx'
 import UsersPage from './pages/UsersPage.jsx'
 
@@ -111,6 +112,7 @@ export default function App() {
             element={<SimpleListPage key="cad-particulars" table="cad_particulars" title="CAD particulars" singular="particular" />}
           />
           <Route path="/sizes" element={<SizeRatiosPage />} />
+          <Route path="/primary-accessories" element={<PrimaryAccessoriesPage />} />
           <Route
             path="/accessories"
             element={<SimpleListPage key="accessories" table="accessories" title="Accessories" singular="accessory" />}

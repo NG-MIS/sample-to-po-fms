@@ -5,6 +5,8 @@ Newest first. A changed decision is not deleted: a new entry is added that repla
 
 | Date | Decision | Reason |
 |---|---|---|
+| 28 Nov 2026 | Primary accessories have their own master screen, but are kept in the one accessories list with a primary mark and a default unit | Nihal wanted the master separate; one underlying list keeps material lists, POs and receiving working and avoids a name being in the system twice |
+| 28 Nov 2026 | "Details pending" is worked out, not ticked: an accessory whose table is left empty is pending; once anything is typed it must be complete | No extra tick to forget; the marker always matches what is filled |
 | 28 Nov 2026 | The 2nd sample can be marked completed only after the 1st; reopening goes the other way round | Nihal's rule; the reopen order keeps the two in step |
 | 28 Nov 2026 | No. of pcs in layer on a CAD row starts as the pcs in a set of the CAD's size and ratio (22-38 1:1 = 9) and can be typed over | Nihal confirmed the number is the total pieces of one set |
 | 28 Nov 2026 | Colour follows: Base, Alternate or Neutral colour | Nihal asked for Neutral as a third choice |

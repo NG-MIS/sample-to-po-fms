@@ -16,6 +16,7 @@ export const MASTERS = [
   { path: '/fabrics', label: 'Fabrics' },
   { path: '/fabric-vendors', label: 'Fabric vendors' },
   { path: '/accessories', label: 'Accessories' },
+  { path: '/primary-accessories', label: 'Primary accessories' },
   { path: '/accessory-vendors', label: 'Accessory vendors' },
   { path: '/sizes', label: 'Sizes and ratios' },
   { path: '/cad-particulars', label: 'CAD particulars' },

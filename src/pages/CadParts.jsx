@@ -21,7 +21,10 @@ import {
   isTypedValue,
   namedOptions,
   newCadRow,
+  isPrimaryPending,
   newPrimaryLine,
+  primaryDetailsPending,
+  primaryListState,
   pickValue,
   primaryLinesFor,
   primaryPayload,
@@ -34,6 +37,7 @@ import {
   withSetPcs,
   toPrimaryLines,
   typedName,
+  typedValue,
 } from '../lib/cad.js'
 import { friendlyError } from '../lib/format.js'
 import { QTY_TYPES, QTY_TYPE_LABEL } from '../lib/sampleAccessories.js'
@@ -118,7 +122,7 @@ export function CadCard({ cad, sample, data, lookups, canCad, canFabric, onEdit,
                 <td>{cad.rows.length}</td>
                 <td>
                   <button type="button" className="btn btn--small" onClick={() => onPrimary(sample, cad.size_ratio_id)}>
-                    {primary.length ? `View (${primary.length})` : canCad ? 'Assign' : 'Not added yet'}
+                    {primary.length ? `View (${primary.length})${primaryListState(primary) === 'details' ? ', details pending' : ''}` : canCad ? 'Assign' : 'Not added yet'}
                   </button>
                 </td>
               </tr>
@@ -485,8 +489,8 @@ export function CadForm({ cad, start, data, onClose, onSaved, onPrimary }) {
                     <p className="hint cad-primary-state">Choose the sample and size first.</p>
                   ) : (
                     <p className="cad-primary-state">
-                      <span className={`badge badge--${primary.length ? 'completed' : 'pending'}`}>
-                        {primary.length ? `Added (${primary.length})` : 'Not added yet'}
+                      <span className={`badge badge--${primaryListState(primary) === 'added' ? 'completed' : 'pending'}`}>
+                        {primary.length ? `Added (${primary.length})${primaryListState(primary) === 'details' ? ', details pending' : ''}` : 'Not added yet'}
                       </span>{' '}
                       <button type="button" className="btn btn--small" onClick={() => onPrimary(sample, table.size_ratio_id)}>
                         {primary.length ? 'View or change' : 'Add primary accessory now'}
@@ -675,7 +679,9 @@ function SizeBoxes({ sizes, covered, firstFree, onPick, label, disabled }) {
 //   onChange - gets the changes to the line
 //   children - more fields of the line, shown under the size groups
 //   colours  - the Colours list, for naming the colour of a general accessory
-export function AccessoryLineEditor({ line, index, sizes, canEdit, accessoryOptions, addLabel, colours = [], onChange, onRemove, children }) {
+//   fixedName - the accessory was chosen before the table opened: its name is shown, not picked
+//   marker    - 'pending' or 'filled': whether the details of the line are filled yet
+export function AccessoryLineEditor({ line, index, sizes, canEdit, accessoryOptions, addLabel, colours = [], onChange, onRemove, children, fixedName = null, marker = null }) {
   const covered = groupSizes(line.groups, sizes)
   // With "same pcs per size group" ticked, the pieces typed in one group go to every group.
   const setGroup = (groupKey, changes) =>
@@ -698,8 +704,18 @@ export function AccessoryLineEditor({ line, index, sizes, canEdit, accessoryOpti
               <div className="primary-line-top">
                 <div className="fabric-cell">
                   <label className="field-label" htmlFor={`primary-${line.key}-name`}>
-                    Accessory name<span className="field-required"> *</span>
+                    Accessory name{fixedName === null && <span className="field-required"> *</span>}
                   </label>
+                  {fixedName !== null ? (
+                    <strong className="primary-line-name" data-primary-name>
+                      {fixedName}{' '}
+                      {marker && (
+                        <span className={`badge badge--${marker === 'filled' ? 'completed' : 'pending'}`} data-primary-marker>
+                          {marker === 'filled' ? 'Details filled' : 'Details pending'}
+                        </span>
+                      )}
+                    </strong>
+                  ) : (
                   <PickList
                     id={`primary-${line.key}-name`}
                     options={accessoryOptions}
@@ -711,10 +727,11 @@ export function AccessoryLineEditor({ line, index, sizes, canEdit, accessoryOpti
                     onCreate={(typed) => onChange({ accessory_id: null, new_accessory: cleanName(typed) })}
                     createLabel={addLabel}
                   />
+                  )}
                 </div>
                 <div className="fabric-cell">
                   <label className="field-label" htmlFor={`primary-${line.key}-type`}>
-                    Qty type<span className="field-required"> *</span>
+                    {fixedName !== null ? 'Unit' : 'Qty type'}<span className="field-required"> *</span>
                   </label>
                   <PickList
                     id={`primary-${line.key}-type`}
@@ -856,8 +873,7 @@ export function PrimaryAccessoryDialog({ sample, sizeRatioId, data, canEdit, onC
   const sizes = combination.sizes
   const saved = primaryLinesFor(sample, sizeRatioId)
   const initial = useMemo(() => {
-    const lines = toPrimaryLines(saved)
-    return lines.length || !canEdit ? lines : [newPrimaryLine(sizes)]
+    return toPrimaryLines(saved, sizes)
     // The form starts from the saved list.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -865,15 +881,37 @@ export function PrimaryAccessoryDialog({ sample, sizeRatioId, data, canEdit, onC
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const setLine = (key, changes) => setLines((previous) => previous.map((line) => (line.key === key ? { ...line, ...changes } : line)))
-  const dirty = JSON.stringify(primaryPayload(lines)) !== JSON.stringify(primaryPayload(toPrimaryLines(saved)))
+  const dirty = JSON.stringify(primaryPayload(lines)) !== JSON.stringify(primaryPayload(toPrimaryLines(saved, sizes)))
 
+  // Step 1: the accessories of this design are ticked from the primary accessory master
+  // (a new one can be typed). Step 2: one table per ticked accessory, all open at once.
   const typedNames = [...new Set(lines.map((line) => line.new_accessory).filter(Boolean))]
-  const accessoryOptions = namedOptions(data.accessories, saved.map((line) => line.accessory_id), typedNames)
-  const addLabel = addLabelFor(data.accessories, typedNames)
+  const masterList = data.accessories.filter((item) => item.is_primary)
+  const accessoryOptions = namedOptions(masterList, lines.map((line) => line.accessory_id).filter(Boolean), typedNames)
+  const addLabel = addLabelFor(masterList, typedNames)
+  const nameOf = (line) => (line.accessory_id ? (data.accessories.find((item) => item.id === line.accessory_id)?.name ?? '') : line.new_accessory)
+  const pickedValues = lines.map((line) => pickValue(line.accessory_id, line.new_accessory))
+  // Ticking adds the table of an accessory, with the unit from the master; unticking takes it away.
+  const setPicked = (values) =>
+    setLines((previous) => {
+      const kept = previous.filter((line) => values.includes(pickValue(line.accessory_id, line.new_accessory)))
+      const have = kept.map((line) => pickValue(line.accessory_id, line.new_accessory))
+      const added = values
+        .filter((value) => !have.includes(value))
+        .map((value) => newPrimaryLine(sizes, isTypedValue(value) ? { name: typedName(value) } : data.accessories.find((item) => item.id === value)))
+      return [...kept, ...added]
+    })
+  const addTyped = (typed) => {
+    const name = cleanName(typed)
+    // a name that is in the accessories list, but not yet a primary accessory, is taken from there
+    const known = data.accessories.find((item) => item.name.toLowerCase() === name.toLowerCase())
+    setPicked([...pickedValues, known ? known.id : typedValue(name)])
+  }
+  const pendingCount = lines.filter(isPrimaryPending).length
 
   const save = async (event) => {
     event.preventDefault()
-    const problem = checkPrimaryLines(lines)
+    const problem = checkPrimaryLines(lines, true)
     if (problem) return setError(problem)
     setBusy(true)
     setError('')
@@ -914,7 +952,34 @@ export function PrimaryAccessoryDialog({ sample, sizeRatioId, data, canEdit, onC
           One list for every wishlist item of {sample.sample_no} in {sizeLabel(combination)}. The qty is for one garment
           piece. If it changes with the size, click the last size of the first group; the next group starts after it.
         </p>
+        {canEdit && (
+          <div className="primary-pick" data-primary-pick>
+            <label className="field-label" htmlFor="primary-pick">
+              Primary accessories of this design
+            </label>
+            <PickList
+              id="primary-pick"
+              multiple
+              options={accessoryOptions}
+              value={pickedValues}
+              onChange={setPicked}
+              onCreate={addTyped}
+              createLabel={addLabel}
+              placeholder="Tick the accessories…"
+            />
+            <span className="hint">
+              Tick them from the primary accessory master, or type a new name to add it. A table opens below for each one.
+              The details can be filled now or later.
+            </span>
+          </div>
+        )}
         {lines.length === 0 && <p className="hint">No primary accessory has been added yet.</p>}
+        {lines.length > 0 && (
+          <p className="hint" data-primary-count>
+            {lines.length} {lines.length === 1 ? 'accessory' : 'accessories'}: {lines.length - pendingCount} with details filled, {pendingCount} with
+            details pending.
+          </p>
+        )}
         {lines.map((line, index) => (
           <AccessoryLineEditor
             key={line.key}
@@ -922,18 +987,13 @@ export function PrimaryAccessoryDialog({ sample, sizeRatioId, data, canEdit, onC
             index={index}
             sizes={sizes}
             canEdit={canEdit}
-            accessoryOptions={accessoryOptions}
-            addLabel={addLabel}
+            fixedName={nameOf(line)}
+            marker={isPrimaryPending(line) ? 'pending' : 'filled'}
             colours={data.colours}
             onChange={(changes) => setLine(line.key, changes)}
             onRemove={() => setLines((previous) => previous.filter((item) => item.key !== line.key))}
           />
         ))}
-        {canEdit && (
-          <button type="button" className="btn" onClick={() => setLines((previous) => [...previous, newPrimaryLine(sizes)])}>
-            Add accessory
-          </button>
-        )}
         {error && (
           <p className="alert alert--error" role="alert">
             {error}
@@ -946,6 +1006,14 @@ export function PrimaryAccessoryDialog({ sample, sizeRatioId, data, canEdit, onC
 
 // One line of a saved primary accessory list as text: "Chain: 22-24 2 pcs × 6 inch; 26-30 …".
 export function PrimaryLineText({ line, sizes, accessoryName }) {
+  if (primaryDetailsPending(line)) {
+    return (
+      <span>
+        {accessoryName}
+        {line.qty_type ? ` (${QTY_TYPE_LABEL[line.qty_type]})` : ''}: <span className="badge badge--pending">Details pending</span>
+      </span>
+    )
+  }
   const covered = groupSizes(line.groups, sizes)
   return (
     <span>

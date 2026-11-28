@@ -206,32 +206,49 @@ export const colourText = (line) =>
 // Every size group has the same number of pieces (and there is more than one group).
 export const hasSamePcs = (groups) => groups.length > 1 && groups.every((group) => String(group.pcs) !== '' && String(group.pcs) === String(groups[0].pcs))
 
-export const newPrimaryLine = (sizes) => ({
+// A new line for an accessory picked from the primary accessory master (or typed
+// new): it starts with the unit set in the master.
+export const newPrimaryLine = (sizes, accessory = {}) => ({
   key: key('primary'),
-  accessory_id: null,
-  new_accessory: '',
-  qty_type: null,
+  accessory_id: accessory.id ?? null,
+  new_accessory: accessory.id ? '' : (accessory.name ?? ''),
+  qty_type: accessory.default_qty_type ?? null,
   groups: [newPrimaryGroup(sizes[sizes.length - 1])],
   ...NO_COLOUR,
   same_pcs: false,
 })
 
-export const toPrimaryLines = (lines) =>
+// A saved line whose details are still to be filled opens with one empty group.
+export const toPrimaryLines = (lines, sizes) =>
   lines.map((line) => ({
     key: line.id,
     accessory_id: line.accessory_id,
     new_accessory: '',
     qty_type: line.qty_type,
-    groups: line.groups.map((group) => ({
-      key: key('group'),
-      upto: group.upto,
-      pcs: text(group.pcs),
-      qty: text(group.qty),
-      breadth: text(group.breadth),
-    })),
+    groups: line.groups.length
+      ? line.groups.map((group) => ({
+          key: key('group'),
+          upto: group.upto,
+          pcs: text(group.pcs),
+          qty: text(group.qty),
+          breadth: text(group.breadth),
+        }))
+      : [newPrimaryGroup(sizes[sizes.length - 1])],
     ...colourFields(line),
     same_pcs: hasSamePcs(line.groups),
   }))
+
+// The details of a line in the form are still to be filled: nothing is typed in its
+// size groups. Such a line is saved as "Details pending" and filled later.
+export const isPrimaryPending = (line) => line.groups.every((group) => [group.pcs, group.qty, group.breadth].every((value) => String(value ?? '').trim() === ''))
+
+// A saved line whose details are still to be filled.
+export const primaryDetailsPending = (line) => line.details_filled === false || line.groups.length === 0
+
+// Where a saved primary accessory list stands: 'pending' (none), 'details' (some
+// accessory still needs its details) or 'added'.
+export const primaryListState = (lines) => (lines.length === 0 ? 'pending' : lines.some(primaryDetailsPending) ? 'details' : 'added')
+export const PRIMARY_STATE_LABEL = { pending: 'Pending', details: 'Details pending', added: 'Added' }
 
 // The single sizes each group of a line covers: [['22','24'], ['26','28','30'], ...].
 export function groupSizes(groups, sizes) {
@@ -256,11 +273,13 @@ export function setGroupEnd(groups, index, upto, sizes) {
 }
 
 // Says what is wrong with the lines, or '' when they can be saved.
-export function checkPrimaryLines(lines) {
+export function checkPrimaryLines(lines, allowPending = false) {
   for (const line of lines) {
     if (!line.accessory_id && !line.new_accessory) return 'Every accessory line needs an accessory name.'
-    if (!line.qty_type) return 'Choose the qty type of every accessory: Quantity, Length or Dimension.'
     if (line.colour_specific && !line.colour_follows) return 'For every colour specific accessory, choose Base colour, Alternate colour or Neutral colour.'
+    // details left empty are filled later
+    if (allowPending && isPrimaryPending(line)) continue
+    if (!line.qty_type) return 'Choose the qty type of every accessory: Quantity, Length or Dimension.'
     for (const group of line.groups) {
       if (!/^\d{1,6}$/.test(group.pcs.trim()) || Number(group.pcs) < 1) {
         return line.qty_type === 'quantity'
@@ -279,18 +298,24 @@ export function checkPrimaryLines(lines) {
 }
 
 export const primaryPayload = (lines) =>
-  lines.map((line) => ({
-    accessory_id: line.accessory_id,
-    new_accessory: line.accessory_id ? '' : line.new_accessory,
-    qty_type: line.qty_type,
-    groups: line.groups.map((group) => ({
-      upto: group.upto,
-      pcs: group.pcs.trim(),
-      qty: line.qty_type === 'quantity' ? null : group.qty.trim(),
-      breadth: line.qty_type === 'dimension' ? group.breadth.trim() : null,
-    })),
-    ...colourPayload(line),
-  }))
+  lines.map((line) => {
+    const pending = isPrimaryPending(line)
+    return {
+      accessory_id: line.accessory_id,
+      new_accessory: line.accessory_id ? '' : line.new_accessory,
+      qty_type: line.qty_type,
+      details_pending: pending,
+      groups: pending
+        ? []
+        : line.groups.map((group) => ({
+            upto: group.upto,
+            pcs: group.pcs.trim(),
+            qty: line.qty_type === 'quantity' ? null : group.qty.trim(),
+            breadth: line.qty_type === 'dimension' ? group.breadth.trim() : null,
+          })),
+      ...colourPayload(line),
+    }
+  })
 
 // The qty of one saved group as shown on screen: "6 pcs", "2 pcs × 6 inch", "3 pcs × 10 × 4 inch".
 export function formatPrimaryQty(qtyType, group) {

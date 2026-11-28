@@ -576,7 +576,7 @@ Created by `supabase/migrations/20261123113937_masters_and_sign_in.sql`.
 | `sample_fabrics` | The fabric lines of each sample: fabric, vendor, rate |
 | `sample_fabric_components` | Which components each fabric line is for |
 | `accessory_vendors` | Accessory vendors master: vendor name, vendor code, active or inactive |
-| `accessories` | Accessories list: the accessory names, active or inactive |
+| `accessories` | Accessories list: the accessory names, active or inactive. `is_primary` marks the ones in the primary accessory master, with `default_qty_type` as the unit their table starts with |
 | `sample_accessories` | The accessory lines of each sample: accessory, qty type, qty, breadth, vendor, rate, remarks |
 | `design_series` | The one design number series: starting number and last number given |
 | `size_ratios` | Sizes and ratios master: size, ratio (empty for a size without ratios), pieces in a set, active or inactive |
@@ -585,7 +585,7 @@ Created by `supabase/migrations/20261123113937_masters_and_sign_in.sql`.
 | `cads` | One row per CAD: CAD number, sample, size and ratio |
 | `cad_rows` | The drawing rows of each CAD, with their fabric, vendor and rate |
 | `cad_wishlist` | No longer used (27 Nov 2026): a wishlist item uses every CAD of its sample, size and ratio. Kept with its old rows, to be removed later |
-| `primary_accessory_lines` | The lines of each primary accessory list (sample + size and ratio), with their size groups |
+| `primary_accessory_lines` | The lines of each primary accessory list (sample + size and ratio), with their size groups. `details_filled` = false while the details of an accessory are still to be filled (no groups yet) |
 | `samples` | One row per sample: sample number, creation date, designer, concept image |
 | `sample_remarks` | Remarks of a sample: typed notes, voice notes, pictures |
 | `components` | Components master: name, active or inactive |
@@ -660,6 +660,7 @@ Masters link.
 | Fabrics | List, add and edit the fabric names | Built |
 | Fabric vendors | List, add and edit: vendor name and vendor code (each code used once) | Built |
 | Accessories | List, add and edit the accessory names | Built |
+| Primary accessories | The primary accessory master: name, default unit (Quantity, Length or Dimension), active. Add, edit, import. Kept in the accessories list, marked primary: adding a name that is already an accessory marks that one; unticking "Primary accessory" takes it out of this master only | Built |
 | Accessory vendors | List, add and edit: vendor name and vendor code (each code used once) | Built |
 | Sizes and ratios | List, add and edit the size and ratio combinations (pcs in a set, single sizes, pcs of each size), with import | Built |
 | Wishlist | Tabs: Wishlist (all entries), Newly approved, Add repeat. Add to wishlist and Add repeat popups; Edit for authority All | Built |
@@ -748,6 +749,7 @@ Newest first.
 
 | Date | Change |
 |---|---|
+| 28 Nov 2026 | Primary accessory list reworked. Step 1: the accessories of the design are ticked from the new **Primary accessories** master (a new name can be typed and joins the master). Step 2: one table per ticked accessory, all open at once, starting with the unit from the master. Details can be filled now or later: a table left empty is saved as **Details pending**, shown on the table, the CAD, and the wishlist (CAD ACCESSORY LIST: Pending, Details pending, Added). An accessory with details pending cannot be brought into the primary accessory material list yet. An accessory can be on a list once. Accessories already on a list were marked primary (migration `primary_accessory_master_and_details_later`) |
 | 28 Nov 2026 | Pieces are completed in order: the 2nd sample only after the 1st; the 1st cannot be reopened while the 2nd is completed (database and screens). A colour specific accessory can follow Base, Alternate or **Neutral** colour. Number boxes take .87 (it becomes 0.87). On the CAD form, No. of pcs in layer is filled with the pcs in a set of the chosen size and ratio from the Sizes and ratios master, on every row where it was not typed; typing over it keeps the typed number (migration `pieces_in_order_and_neutral_colour`) |
 | 27 Nov 2026 | Corrected the entry below: the Qty box stays the qty of one colour. It now changes by itself as colours are picked (needed qty divided by the colours, rounded up to the next 5) until a qty is typed. Screen change only |
 | 27 Nov 2026 | PO qty is the total of the line and is divided between the colours (each share rounded up to the next 5) instead of being multiplied by the number of colours. Screen change only: the database already takes one number per colour |

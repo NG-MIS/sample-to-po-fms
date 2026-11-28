@@ -9,6 +9,7 @@ import {
   colourText,
   formatPrimaryQty,
   namedOptions,
+  primaryDetailsPending,
   primaryLinesFor,
   sizeLabel,
 } from '../lib/cad.js'
@@ -203,7 +204,12 @@ export function MaterialListDialog({ entry, sample, kind, data, canEdit, isAdmin
   const primaryList = primaryLinesFor(sample, entry.size_ratio_id)
   const primaryToBring =
     kind === 'primary_accessory'
-      ? primaryList.filter((line) => !lines.some((item) => item.accessory_id === line.accessory_id))
+      ? primaryList.filter((line) => !primaryDetailsPending(line) && !lines.some((item) => item.accessory_id === line.accessory_id))
+      : []
+  // accessories on the CAD list whose details are still to be filled there: they cannot be brought in yet
+  const primaryWaiting =
+    kind === 'primary_accessory'
+      ? primaryList.filter((line) => primaryDetailsPending(line) && !lines.some((item) => item.accessory_id === line.accessory_id))
       : []
   // Shown on top of the secondary accessory list, to look at only.
   const primaryShown =
@@ -347,8 +353,18 @@ export function MaterialListDialog({ entry, sample, kind, data, canEdit, isAdmin
             <ul className="material-view-list">
               {primaryShown.map((line) => (
                 <li key={line.id}>
-                  <strong>{accessoryName(line.accessory_id)}</strong> ({QTY_TYPE_LABEL[line.qty_type]}): {accessoryGroupsText(line, sizes, formatPrimaryQty)}
-                  {colourText(line) ? `. ${colourText(line)}` : ''}
+                  <strong>{accessoryName(line.accessory_id)}</strong>
+                  {primaryDetailsPending(line) ? (
+                    <>
+                      : <span className="badge badge--pending">Details pending</span>
+                    </>
+                  ) : (
+                    <>
+                      {' '}
+                      ({QTY_TYPE_LABEL[line.qty_type]}): {accessoryGroupsText(line, sizes, formatPrimaryQty)}
+                      {colourText(line) ? `. ${colourText(line)}` : ''}
+                    </>
+                  )}
                 </li>
               ))}
             </ul>
@@ -434,6 +450,13 @@ export function MaterialListDialog({ entry, sample, kind, data, canEdit, isAdmin
                 : primaryToBring.length === 0
                   ? 'Everything on the primary accessory list is already here.'
                   : 'The list set up with the CADs. Review it, then add the vendor and rate.'}
+              {primaryWaiting.length > 0 && (
+                <strong data-primary-waiting>
+                  {' '}
+                  {primaryWaiting.length} {primaryWaiting.length === 1 ? 'accessory has' : 'accessories have'} details pending on the CAD list and
+                  cannot be brought in yet: {primaryWaiting.map((line) => data.accessories.find((item) => item.id === line.accessory_id)?.name).join(', ')}.
+                </strong>
+              )}
             </span>
           </div>
         )}
