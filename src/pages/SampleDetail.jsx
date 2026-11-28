@@ -19,8 +19,8 @@ import {
   APPROVAL_STAGES,
   BUCKET,
   DECISION_LABEL,
-  decisionChoice,
   decisionLabel,
+  isApproved,
   PIECES,
   PIECE_LABEL,
   PIECE_STATUS_LABEL,
@@ -448,6 +448,7 @@ export function SampleBody({ sample, data, onChanged }) {
                 </span>
               )
             })}
+            {sample.sent_to_cad_at && !isApproved(sample) && <span className="badge badge--completed">Sent to CAD</span>}
             {sample.approvals.changesRequested > 0 && `Changes requested: ${sample.approvals.changesRequested}`}
           </>
         }
@@ -523,6 +524,40 @@ export function SampleBody({ sample, data, onChanged }) {
             </div>
           )
         })}
+        {/* Send to CAD: its own step, for a sample that needs its drawing before the final approval. */}
+        <div className="piece-card" data-approval="cad">
+          <div className="piece-head">
+            <strong>Send to CAD</strong>
+            {isApproved(sample) ? (
+              <span className="badge badge--completed">With CAD</span>
+            ) : sample.sent_to_cad_at ? (
+              <span className="badge badge--completed">Sent to CAD</span>
+            ) : (
+              <span className="badge badge--pending">Not sent</span>
+            )}
+          </div>
+          {isApproved(sample) ? (
+            <p className="hint">The final approval is Yes, so the sample is with CAD already.</p>
+          ) : sample.sent_to_cad_at ? (
+            <p className="hint">
+              By {names.person.get(sample.sent_to_cad_by)}, {formatDateTime(sample.sent_to_cad_at)}. CAD can make the drawing before the final approval.
+            </p>
+          ) : (
+            <p className="hint">For a sample that is not final approved yet but needs its CAD drawing. It then shows in Pending drawing.</p>
+          )}
+          <div className="piece-actions">
+            {!closed && !isApproved(sample) && !sample.sent_to_cad_at && (canApprove || isAdmin) && (
+              <button type="button" className="btn btn--small btn--primary" onClick={() => setDialog({ type: 'to-cad' })}>
+                Send to CAD
+              </button>
+            )}
+            {!isApproved(sample) && sample.sent_to_cad_at && isAdmin && (
+              <button type="button" className="btn btn--small" onClick={() => setDialog({ type: 'from-cad' })}>
+                Take back
+              </button>
+            )}
+          </div>
+        </div>
       </div>
       </Fold>
 
@@ -556,6 +591,26 @@ export function SampleBody({ sample, data, onChanged }) {
           cancelLabel="Not yet"
           onCancel={() => setDialog(null)}
           onConfirm={() => runConfirmed('complete_sample_piece', { p_sample_id: sample.id, p_piece: dialog.piece })}
+        />
+      )}
+      {dialog?.type === 'to-cad' && (
+        <ConfirmDialog
+          title={`Send ${sample.sample_no} to CAD?`}
+          message="The CAD team can then make its drawing and primary accessory list, before the final approval."
+          confirmLabel="Send to CAD"
+          cancelLabel="Cancel"
+          onCancel={() => setDialog(null)}
+          onConfirm={() => runConfirmed('send_sample_to_cad', { p_sample_id: sample.id, p_undo: false })}
+        />
+      )}
+      {dialog?.type === 'from-cad' && (
+        <ConfirmDialog
+          title={`Take ${sample.sample_no} back from CAD?`}
+          message="It leaves Pending drawing until it is sent again or gets its final approval."
+          confirmLabel="Take back"
+          cancelLabel="Cancel"
+          onCancel={() => setDialog(null)}
+          onConfirm={() => runConfirmed('send_sample_to_cad', { p_sample_id: sample.id, p_undo: true })}
         />
       )}
       {dialog?.type === 'reopen' && (
@@ -824,18 +879,18 @@ export function ApprovalDialog({ sample, stage, correct = false, sizeRatios, onC
   const info = APPROVAL_STAGES[stage]
   const latest = sample.approvals[stage]
   const current = correct ? latest : null
-  const [decision, setDecision] = useState(decisionChoice(current))
+  const [decision, setDecision] = useState(current?.decision ?? null)
   const [remarks, setRemarks] = useState(current?.remarks ?? '')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [wishLines, setWishLines] = useState([])
   const offersWishlist = Boolean(sizeRatios) && !correct && stage === 'final' && decision === 'yes'
   const dirty =
-    decision !== decisionChoice(current) || remarks !== (current?.remarks ?? '') || wishLines.length > 0
+    decision !== (current?.decision ?? null) || remarks !== (current?.remarks ?? '') || wishLines.length > 0
 
   const save = async (event) => {
     event.preventDefault()
-    if (!decision) return setError(`Choose the decision: ${info.decisions.map((key) => DECISION_LABEL[key].replace(', and', ' and')).join(', ').replace(/, ([^,]*)$/, ' or $1')}.`)
+    if (!decision) return setError(`Choose ${info.decisions.map((key) => DECISION_LABEL[key]).join(', ').replace(/, ([^,]*)$/, ' or $1')}.`)
     const wishProblem = offersWishlist ? checkWishlistLines(wishLines) : ''
     if (wishProblem) return setError(wishProblem)
     const wishEntries = offersWishlist ? wishlistPayload(wishLines) : []
@@ -852,10 +907,9 @@ export function ApprovalDialog({ sample, stage, correct = false, sizeRatios, onC
         await call('set_sample_approval', {
           p_sample_id: sample.id,
           p_stage: stage,
-          p_decision: decision === 'yes_cad' ? 'yes' : decision,
+          p_decision: decision,
           p_remarks: remarks,
           p_correct: correct,
-          p_send_to_cad: decision === 'yes_cad',
         })
       }
       await onSaved()
@@ -908,8 +962,7 @@ export function ApprovalDialog({ sample, stage, correct = false, sizeRatios, onC
         {!correct && stage === 'initial' && (
           <p className="hint">
             {latest ? `Changes were requested ${sample.approvals.changesRequested} ${sample.approvals.changesRequested === 1 ? 'time' : 'times'} so far. ` : ''}
-            Yes, and send to CAD lets the CAD team make the drawing before the final approval. Maybe asks for changes and
-            lets you approve again later. No closes the sample: everything on it stops.
+            Maybe asks for changes and lets you approve again later. No closes the sample: everything on it stops.
           </p>
         )}
         {!correct && stage === 'final' && (

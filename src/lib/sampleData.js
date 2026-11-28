@@ -26,10 +26,9 @@ export const accessoryStatus = (sample) => (sample.accessories.length === 0 ? 'p
 // Approved for production: the final approval is Yes.
 export const isApproved = (sample) => sample.approvals.final?.decision === 'yes'
 
-// Ready for the CAD team: the final approval is Yes, or, while there is no final
-// approval yet, the initial approval was "Yes, and send to CAD".
-export const isReadyForCad = (sample) =>
-  isApproved(sample) || (!sample.approvals.final && sample.approvals.initial?.decision === 'yes' && Boolean(sample.approvals.initial.send_to_cad))
+// Ready for the CAD team: the final approval is Yes, or the sample was sent to CAD
+// (its own step, for a sample that is not final approved yet but needs its drawing).
+export const isReadyForCad = (sample) => isApproved(sample) || (Boolean(sample.sent_to_cad_at) && sample.approvals.initial?.decision !== 'no')
 
 // The next design number that would be given, or null while the starting
 // number has not been set in Masters.
@@ -58,17 +57,14 @@ export const STAGES = [
   { key: 'photoshoot', label: 'Photoshoot' },
 ]
 
-// yes_cad is a choice on the approval form only: it is saved as Yes with "sent to CAD".
-export const DECISION_LABEL = { yes: 'Yes', yes_cad: 'Yes, and send to CAD', no: 'No', maybe: 'Maybe' }
-// A given approval in words: "Yes", "Yes, sent to CAD", "No" or "Maybe".
-export const decisionLabel = (approval) => (approval.decision === 'yes' && approval.send_to_cad ? 'Yes, sent to CAD' : DECISION_LABEL[approval.decision])
-// A given approval as a choice of the approval form.
-export const decisionChoice = (approval) => (approval ? (approval.decision === 'yes' && approval.send_to_cad ? 'yes_cad' : approval.decision) : null)
+export const DECISION_LABEL = { yes: 'Yes', no: 'No', maybe: 'Maybe' }
+// A given approval in words: "Yes", "No" or "Maybe".
+export const decisionLabel = (approval) => DECISION_LABEL[approval.decision]
 
 // A sample is closed when its latest initial approval is No. Everything stops on it.
 export const isClosed = (sample) => sample.approvals.initial?.decision === 'no'
 export const APPROVAL_STAGES = {
-  initial: { label: 'Initial approval', decisions: ['yes', 'yes_cad', 'no', 'maybe'] },
+  initial: { label: 'Initial approval', decisions: ['yes', 'no', 'maybe'] },
   final: { label: 'Final approval', decisions: ['yes', 'no'] },
 }
 

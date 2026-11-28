@@ -5,7 +5,7 @@ Newest first. A changed decision is not deleted: a new entry is added that repla
 
 | Date | Decision | Reason |
 |---|---|---|
-| 28 Nov 2026 | "Yes, and send to CAD" lets CAD make the drawing and primary accessory list before final approval; wishlist and design number still wait for final approval | Nihal: some changes after initial approval do not affect the drawing; he confirmed the rest waits |
+| 28 Nov 2026 | Send to CAD is its own simple step beside initial and final approval, not a choice inside the initial approval (replaces the first version built the same day). It lets CAD make the drawing and primary accessory list before final approval; wishlist and design number still wait | Nihal: "with initial approve and final approve... i want a third, make it simple send to cad, for what is not final approved but needs cad drawing" |
 | 28 Nov 2026 | The secondary accessory tick list offers the whole accessories master | Nihal: "whole" |
 | 28 Nov 2026 | Sums are worked out when the box is left or Enter is pressed, not on every key | A half-typed sum (5+) must not turn into a number while it is being typed |
 | 28 Nov 2026 | The same accessory can be on a primary accessory list more than once, added with "Add accessory" | Nihal: it is needed at times, also for an accessory not in the ticked list |
